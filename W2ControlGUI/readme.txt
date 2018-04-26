@@ -1,0 +1,2 @@
+Those who have already installed an earlier version of W2Control should be able to use the exe file directly. 
+Otherwise, you must use the setup program in the zipped GUI package. Scott Wells 11April2018

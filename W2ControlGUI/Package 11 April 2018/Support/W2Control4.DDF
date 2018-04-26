@@ -1,0 +1,38 @@
+.OPTION EXPLICIT
+.Set Cabinet=off
+.Set Compress=off
+.Set MaxDiskSize=CDROM
+.Set ReservePerCabinetSize=6144
+.Set DiskDirectoryTemplate=".."
+.Set CompressionType=MSZIP
+.Set CompressionLevel=7
+.Set CompressionMemory=21
+.Set CabinetNameTemplate="W2Control4.CAB"
+"Setup.Lst"
+"setup.exe"
+.Set Cabinet=on
+.Set Compress=on
+"W2Control4.exe"
+"msvbvm60.dll"
+"OLEAUT32.DLL"
+"OLEPRO32.DLL"
+"ASYCFILT.DLL"
+"STDOLE2.TLB"
+"COMCAT.DLL"
+"EXCEL.EXE"
+"msado60.tlb"
+"TabCtl32.Ocx"
+"ComDlg32.OCX"
+"comctl32.Ocx"
+"ComCt232.ocx"
+"MSFlxGrd.ocx"
+"MSDatGrd.ocx"
+"msstdfmt.dll"
+"MSCOMCTL.OCX"
+"mscomct2.ocx"
+"richtx32.Ocx"
+"RICHED32.DLL"
+"MSCAL.OCX"
+"SETUP1.EXE"
+"VB6STKIT.DLL"
+"ST6UNST.EXE"

@@ -1,0 +1,16 @@
+Particle Input File     S.Wells PSU based on Andy Goodwin Fish Migration Program
+ON/OFF, # of Fish at Each Segment, # Segments, Time at which to Deposit Particles AND start transport
+PART CNTRL    ON/OFF NPART/SEG      NSEG DELAYDATE  LINE    SEDVEL  DXTHEORY  
+                  ON       010         3      01.0    ON   0.00000       OFF 
+Segment Locations where particles would be deposited (Repeat Lines after 9 Inputs) [Deposit NPART in each layer]
+PART SEG        IPRT      IPRT      IPRT      IPRT      IPRT      IPRT      IPRT      IPRT      IPRT
+                  61        62        63
+Layer top for each segment location
+PART TOP        TPRT      TPRT      TPRT      TPRT      TPRT      TPRT      TPRT      TPRT      TPRT
+                 100       100       100
+Layer bottom for each segment location
+PART BOT        BPRT      BPRT      BPRT      BPRT      BPRT      BPRT      BPRT      BPRT      BPRT
+                 120       120       120
+Initial Particle Characteristics
+     FXLOC     FZLOC   OUTFREQ     Initial x and z location in segment (m) OUTFREQ in days for particle locations
+      00.0       0.0       1.0

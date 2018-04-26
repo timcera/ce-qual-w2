@@ -1,0 +1,73 @@
+ENVIRONMENTAL PERFORMANCE CRITERIA CE-QUAL-W2 MODEL
+EPR COMP  INTVLS SELECTC   JDAY1   JDAY2    ISTR    IEND    ISTR    IEND    ISTR    IEND 
+1             20     OFF
+
+TEMP/VEL VELOCTY   VINCR    VTOP    TEMP   TINCR    TTOP  DEPTHC   DINCR    DTOP    
+             OFF   0.050    0.50      ON     1.0    30.0     OFF     10.    120.    
+
+CST       ACTIVE INTSCLE TOPLMIT              
+TDS          OFF    1.00   20.00              TDS   
+WaterAge     OFF    1.00   20.00              Age   
+H2S          OFF   0.005   00.10              H2S   
+CH4          OFF   0.020   00.40              CH4   
+SO4          OFF    1.00   20.00              SO4   
+Tracer       OFF   0.001   0.020              Tracer
+Turb         OFF    1.00   20.00              Turb  
+FeII         OFF    1.00   20.00              FeII  
+FeOOH        OFF    1.00   20.00              FeOOH 
+MnII         OFF    1.00   20.00              MnII  
+MnO2         OFF    1.00   20.00              MnO2  
+Cond         OFF    1.00   20.00              Cond  
+TotCol       OFF    1.00   20.00              TotCol
+EColi        OFF    1.00   20.00              EColi 
+ISS1         OFF    1.00   20.00              ISS1  
+ISS2         OFF    10.0  200.00              ISS2  
+PO4          OFF   0.100  2.0000              PO4   
+NH4          OFF   0.005  0.1000              NH4   
+NO3          OFF    0.10   2.000              NO3   
+DSI          OFF    1.00   20.00              DSI   
+PSI          OFF    1.00   20.00              PSI   
+FE           OFF    1.00   20.00              FE    
+LDOM         OFF    1.00   20.00              LDOM  
+RDOM         OFF    1.00   20.00              RDOM  
+LPOM         OFF    1.00   20.00              LPOM  
+RPOM         OFF    1.00   20.00              RPOM  
+ALG1         OFF    1.00   20.00              ALG1  
+DO            ON    0.50   10.00              DO              ! 26
+TIC          OFF    1.00   20.00              TIC   
+ALK          OFF    1.00   20.00              ALK   
+ZOO1         OFF    1.00   20.00              ZOO1  
+LDOM-P       OFF    1.00   20.00              LDOM-P
+RDOM-P       OFF    1.00   20.00              RDOM-P
+LPOM-P       OFF    1.00   20.00              LPOM-P
+RPOM-P       OFF    1.00   20.00              RPOM-P
+LDOM-N       OFF    1.00   20.00              LDOM-N
+RDOM-N       OFF    1.00   20.00              RDOM-N
+LPOM-N       OFF    1.00   20.00              LPOM-N
+RPOM-N       OFF    1.00   20.00              RPOM-N
+                                              
+CST DERI  ACTIVE INTSCLE TOPLMIT              
+DOC          OFF    1.00   20.00              DOC   
+POC          OFF    1.00   20.00              POC   
+TOC          OFF    1.00   20.00              TOC   
+DON          OFF    1.00   20.00              DON   
+PON          OFF    1.00   20.00              PON   
+TON          OFF    1.00   20.00              TON   
+TKN          OFF    1.00   20.00              TKN   
+TN           OFF    0.10   2.000              TN    
+DOP          OFF    1.00   20.00              DOP   
+POP          OFF    1.00   20.00              POP   
+TOP          OFF    1.00   20.00              TOP   
+TP           OFF    0.05   1.000              TP    
+APR          OFF    1.00   20.00              APR   
+CHLA          ON    1.00   20.00              CHLA         ! 14
+ATOT         OFF    1.00   20.00              ATOT  
+%DO          OFF    1.00   20.00              %DO   
+TSS          OFF    1.00   20.00              TSS   
+TISS         OFF    1.00   20.00              TISS  
+CBOD         OFF    1.00   20.00              CBOD  
+pH           OFF    0.50   12.00              pH    
+CO2          OFF    1.00   20.00              CO2   
+HCO3         OFF    1.00   20.00              HCO3  
+CO3          OFF    1.00   20.00              CO3   
+               

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VisualStudioUserFile ProjectCreator="Intel Fortran" Keyword="Win32 Application" Version="11.0" ProjectIdGuid="{67BCEB4E-1875-44B5-B6DE-06E83F427036}">
+	<Configurations>
+		<Configuration Name="Debug|Win32" WorkingDirectory="C:\scott\PSU\courses\ce576 envir fluid 2\Projects\2017 Projects\Project 4 2017\w2 model"/>
+		<Configuration Name="Release|Win32" WorkingDirectory="C:\Scott\research\Oroville-Thermalito\Model Feather River - Extended"/>
+		<Configuration Name="Debug|x64" WorkingDirectory="C:\Scott\research\Oroville-Thermalito\Model Feather River - Extended"/>
+		<Configuration Name="Release|x64" WorkingDirectory="C:\scott\research\corps of engineers\tomcole\w2code\code verification tests\problem13_sed"/></Configurations></VisualStudioUserFile>

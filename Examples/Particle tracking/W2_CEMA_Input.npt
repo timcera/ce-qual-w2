@@ -1,0 +1,178 @@
+$Additional CEMA related W2 input
+$Please see help file for input description
+$All lines at top of file starting with $ are comments and disregarded by the model
+"Global Switch for all sediment diagenesis features,", .FALSE.
+"H2S Constituent Number (Generic Constituent),", 3
+"CH4 Constituent Number (Generic Constituent),", 4
+"SO4 Constituent Number (Generic Constituent),", 5
+"Turbidity Constituent Number (Generic Constituent),", 7
+"Fe(II) Constituent Number (Generic Constituent),", 8
+"FeOOH Constituent Number (Generic Constituent),", 9
+"Mn(II) Constituent Number (Generic Constituent),", 10
+"MnO2 Constituent Number (Generic Constituent),", 11
+"Mature Fine Tailing (MFT) Constituent Number (ISS Constituent),", 15
+"Switch to perform bed consolidation,", .FALSE.
+"Fraction of layer thickness at which water layer is added,", 1.0
+"Number of bed consolidation regions,", 1
+"Starting segment for regions,", 1
+"Ending segment for regions,", 132
+"Data type for bed consolidation for each region (0: Constant, 1: Time varying),", 1
+"Bed consolidation rate (m/d),", 0.02739726
+"Bed consolidation data file,", "Regn1.npt,"
+"Initial bed thickness in meters,", 1.0
+"Initial sediment bed porosity,", 0.8
+"Porewater pH,", 7.0
+"Include modeling of dynamic calculation of pH in sediments,", .FALSE.
+"Include modeling of alkalinity in sediments,", .FALSE.
+"Sediment bed particle size in microns,", 100
+"Sediment type 1: Cohesive, 2: Non-cohesive,", 2
+"Sediment bulk density (kg/m³),", 2600
+"Sediment particle settling velocity (m/d),", 5.0
+"Include sediment resuspension and deposition processes,", .FALSE.
+"Write bed elevation snapshot output,", .FALSE.
+"Write bed porosity snapshot output,", .FALSE.
+"Include FFT Layer,", .FALSE.
+"FFT Layer Number of Periods,", 5
+"FFT Layer Start Times,", 1,65,125,200,300
+"FFT Layer End Times,", 50,100,175,250,400
+"Initial tailings concentration in FFT (gm/m³),", 360000
+"Settling velocity of FFT to MFT (m/d),", 0.d0
+"Move FFT layer during consolidation,", .FALSE.
+"Include sediment diagenesis processes,", .FALSE.
+"Number of regions for different initial sediment concentrations,",     133
+"Starting segment for regions,",    1,    2,    3,    4,    5,    6,    7,    8,    9,   10,   11,   12,   13,   14,   15,   16,   17,   18,   19,   20,   21,   22,   23,   24,   25,   26,   27,   28,   29,   30,   31,   32,   33,   34,   35,   36,   37,   38,   39,   40,   41,   42,   43,   44,   45,   46,   47,   48,   49,   50,   51,   52,   53,   54,   55,   56,   57,   58,   59,   60,   61,   62,   63,   64,   65,   66,   67,   68,   69,   70,   71,   72,   73,   74,   75,   76,   77,   78,   79,   80,   81,   82,   83,   84,   85,   86,   87,   88,   89,   90,   91,   92,   93,   94,   95,   96,   97,   98,   99,  100,  101,  102,  103,  104,  105,  106,  107,  108,  109,  110,  111,  112,  113,  114,  115,  116,  117,  118,  119,  120,  121,  122,  123,  124,  125,  126,  127,  128,  129,  130,  131,  132,  133,
+"Ending segment for regions,",    1,    2,    3,    4,    5,    6,    7,    8,    9,   10,   11,   12,   13,   14,   15,   16,   17,   18,   19,   20,   21,   22,   23,   24,   25,   26,   27,   28,   29,   30,   31,   32,   33,   34,   35,   36,   37,   38,   39,   40,   41,   42,   43,   44,   45,   46,   47,   48,   49,   50,   51,   52,   53,   54,   55,   56,   57,   58,   59,   60,   61,   62,   63,   64,   65,   66,   67,   68,   69,   70,   71,   72,   73,   74,   75,   76,   77,   78,   79,   80,   81,   82,   83,   84,   85,   86,   87,   88,   89,   90,   91,   92,   93,   94,   95,   96,   97,   98,   99,  100,  101,  102,  103,  104,  105,  106,  107,  108,  109,  110,  111,  112,  113,  114,  115,  116,  117,  118,  119,  120,  121,  122,  123,  124,  125,  126,  127,  128,  129,  130,  131,  132,  133,
+"Initial temperature for each region C,", 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00, 20.00,
+"Initial particulate organic carbon (total) concentration for each region mgC/l,",  0.00    ,  663.    ,  640.    ,  992.    ,  947.    ,  588.    ,  882.    ,  758.    ,  952.    , 0.102E+04,  931.    ,  731.    ,  823.    , 0.103E+04, 0.103E+04, 0.124E+04,  946.    ,  996.    ,  856.    ,  950.    ,  537.    ,  685.    ,  619.    ,  792.    ,  820.    ,  746.    ,  787.    ,  632.    , 0.126E+04,  877.    ,  670.    , 0.113E+04,  989.    , 0.103E+04,  955.    ,  792.    ,  919.    , 0.105E+04, 0.114E+04,  980.    ,  954.    , 0.103E+04,  785.    ,  971.    , 0.156E+04, 0.122E+04, 0.109E+04, 0.111E+04, 0.112E+04,  862.    ,  905.    , 0.150E+04, 0.119E+04,  837.    , 0.127E+04, 0.130E+04, 0.119E+04, 0.141E+04, 0.141E+04, 0.126E+04, 0.134E+04, 0.128E+04, 0.149E+04,  914.    ,  0.00    ,  0.00    ,  523.    ,  740.    , 0.109E+04, 0.143E+04, 0.156E+04, 0.101E+04,  924.    ,  765.    ,  947.    , 0.109E+04,  976.    ,  664.    ,  757.    ,  444.    ,  564.    ,  887.    ,  555.    ,  685.    ,  716.    ,  969.    ,  981.    , 0.132E+04, 0.119E+04, 0.101E+04, 0.118E+04, 0.115E+04, 0.119E+04, 0.134E+04,  0.00    ,  0.00    ,  805.    ,  949.    ,  501.    ,  956.    ,  915.    , 0.105E+04,  997.    ,  937.    , 0.104E+04,  883.    , 0.112E+04,  869.    ,  815.    ,  976.    ,  893.    ,  913.    ,  0.00    ,  0.00    , 0.104E+04,  971.    , 0.108E+04,  916.    ,  946.    , 0.137E+04,  0.00    ,  0.00    , 0.113E+04, 0.105E+04,  0.00    ,  0.00    , 0.174E+04, 0.166E+04, 0.148E+04, 0.133E+04, 0.105E+04,  703.    ,  0.00    ,
+"Initial particulate organic nitrogen (total) concentration for each region mgN/l,",  0.00    ,  11.9    ,  11.5    ,  17.8    ,  17.0    ,  10.6    ,  15.9    ,  13.7    ,  17.1    ,  18.3    ,  16.8    ,  13.2    ,  14.8    ,  18.6    ,  18.6    ,  22.4    ,  17.0    ,  17.9    ,  15.4    ,  17.1    ,  9.66    ,  12.3    ,  11.1    ,  14.3    ,  14.8    ,  13.4    ,  14.2    ,  11.4    ,  22.6    ,  15.8    ,  12.1    ,  20.3    ,  17.8    ,  18.6    ,  17.2    ,  14.2    ,  16.5    ,  19.0    ,  20.5    ,  17.6    ,  17.2    ,  18.5    ,  14.1    ,  17.5    ,  28.1    ,  22.0    ,  19.6    ,  19.9    ,  20.1    ,  15.5    ,  16.3    ,  27.0    ,  21.4    ,  15.1    ,  22.8    ,  23.3    ,  21.4    ,  25.4    ,  25.3    ,  22.7    ,  24.2    ,  23.0    ,  26.9    ,  16.5    ,  0.00    ,  0.00    ,  9.42    ,  13.3    ,  19.6    ,  25.7    ,  28.1    ,  18.2    ,  16.6    ,  13.8    ,  17.0    ,  19.6    ,  17.6    ,  12.0    ,  13.6    ,  7.98    ,  10.2    ,  16.0    ,  9.99    ,  12.3    ,  12.9    ,  17.4    ,  17.7    ,  23.7    ,  21.4    ,  18.2    ,  21.2    ,  20.7    ,  21.4    ,  24.2    ,  0.00    ,  0.00    ,  14.5    ,  17.1    ,  9.03    ,  17.2    ,  16.5    ,  18.9    ,  18.0    ,  16.9    ,  18.7    ,  15.9    ,  20.2    ,  15.6    ,  14.7    ,  17.6    ,  16.1    ,  16.4    ,  0.00    ,  0.00    ,  18.8    ,  17.5    ,  19.5    ,  16.5    ,  17.0    ,  24.6    ,  0.00    ,  0.00    ,  20.4    ,  18.9    ,  0.00    ,  0.00    ,  31.3    ,  29.9    ,  26.7    ,  24.0    ,  18.8    ,  12.6    ,  0.00    ,
+"Initial particulate organic nitrogen (total) concentration for each region mgN/l,",  0.00    ,  3.05    ,  2.94    ,  4.56    ,  4.36    ,  2.71    ,  4.06    ,  3.49    ,  4.38    ,  4.69    ,  4.28    ,  3.36    ,  3.78    ,  4.76    ,  4.74    ,  5.71    ,  4.35    ,  4.58    ,  3.94    ,  4.37    ,  2.47    ,  3.15    ,  2.85    ,  3.65    ,  3.77    ,  3.43    ,  3.62    ,  2.91    ,  5.78    ,  4.03    ,  3.08    ,  5.19    ,  4.55    ,  4.76    ,  4.39    ,  3.64    ,  4.23    ,  4.85    ,  5.25    ,  4.51    ,  4.39    ,  4.73    ,  3.61    ,  4.47    ,  7.18    ,  5.62    ,  5.01    ,  5.10    ,  5.13    ,  3.97    ,  4.16    ,  6.90    ,  5.47    ,  3.85    ,  5.82    ,  5.96    ,  5.48    ,  6.48    ,  6.46    ,  5.80    ,  6.18    ,  5.88    ,  6.87    ,  4.20    ,  0.00    ,  0.00    ,  2.41    ,  3.40    ,  5.02    ,  6.56    ,  7.19    ,  4.65    ,  4.25    ,  3.52    ,  4.35    ,  5.02    ,  4.49    ,  3.06    ,  3.48    ,  2.04    ,  2.59    ,  4.08    ,  2.55    ,  3.15    ,  3.29    ,  4.46    ,  4.51    ,  6.05    ,  5.46    ,  4.64    ,  5.42    ,  5.29    ,  5.48    ,  6.18    ,  0.00    ,  0.00    ,  3.71    ,  4.37    ,  2.31    ,  4.40    ,  4.21    ,  4.83    ,  4.59    ,  4.31    ,  4.77    ,  4.06    ,  5.17    ,  4.00    ,  3.75    ,  4.49    ,  4.11    ,  4.20    ,  0.00    ,  0.00    ,  4.80    ,  4.47    ,  4.97    ,  4.21    ,  4.35    ,  6.29    ,  0.00    ,  0.00    ,  5.22    ,  4.83    ,  0.00    ,  0.00    ,  8.00    ,  7.65    ,  6.82    ,  6.13    ,  4.81    ,  3.23    ,  0.00    ,
+"Initial sulfate concentration for each region mgS/l,",1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,
+"Initial ammonia concentration for each region mgN/l,",.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,
+"Initial total phosphate concentration for each region mgP/l,",.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,.500E-01,
+"Initial sulfide concentration for each region mgP/l,",0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,
+"Initial dissolved methane concentration for each region mgC/l,",0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,0.00    ,
+"Initial total inorganic carbon concentration for each region mgC/l,",5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,5.13    ,
+"Initial alkalinity concentration for each region mg/l as CaCO3,",16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,16.5    ,
+"Initial Ferrous Iron concentration for each region mg/l as CaCO3,",1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,
+"Initial Iron Oxyhydroxide concentration for each region mgFe/l,",1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,
+"Initial Mn(II) concentration for each region mgMn/l,",1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,
+"Initial manganese dioxide concentration for each region mgMn/l,",1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,1.00    ,
+"Include generic sediment BOD constituents,", .FALSE.
+"Number of generic sediment BOD constituents,", 3
+"Generic sediment BOD constituent names,","SBOD1","SBOD2","SBOD3"
+"Number of regions for initializing generic sediment BOD constituents,", 1
+"Starting segment for generic BOD initialization for each region,", 2
+"Ending segment for generic BOD initialization for each region,", 4
+"Initial concentration for generic BOD per region mg/l,",0.0
+"Initial concentration for generic BOD per region mg/l,",0.0
+"Initial concentration for generic BOD per region mg/l,",0.0
+"Number of regions for different generic sediment BOD constituent consumption rate,", 1
+"Starting segment for generic BOD consumption for each region,", 2
+"Ending segment for generic BOD consumption for each region,", 4
+"Consumption rate for generic BOD per region 1/d,",0.0
+"Consumption rate for generic BOD per region 1/d,",0.0
+"Consumption rate for generic BOD per region 1/d,",0.0
+"Temperature coefficient for generic BOD decay per region,",1.01
+"Temperature coefficient for generic BOD decay per region,",1.02
+"Temperature coefficient for generic BOD decay per region,",1.03
+"Number of regions for different diagenesis related rates,", 1
+"Starting segment for regions,", 2
+"Ending segment for regions,", 132
+"Fraction of labile poc for each diagenesis region,",0.09
+"Fraction of refractory poc for each diagenesis region,",0.909
+"Fraction of labile pon for each diagenesis region,",0.09
+"Fraction of refractory pon for each diagenesis region,",0.909
+"Fraction of labile pop for each diagenesis region,",0.09
+"Fraction of refractory pop for each diagenesis region,",0.909
+"Pore water diffusion coefficient m²/d,",0.0005
+"DO Threshold for aerobic layer oxidation rates mgO2/l,",2.0
+"Nitrification rate in aerobic layer (NH3->NO3) at DO below threshold m/d,",0.02
+"Nitrification rate in aerobic layer (NH3->NO3) at DO above threshold m/d,",0.12
+"Denitrification rate in aerobic layer (NO3->N2) at DO below threshold m/d,",0.01
+"Denitrification rate in aerobic layer (NO3->N2) at DO above threshold m/d,",0.05
+"Denitrification rate in anerobic layer (NO3->N2) m/d,",0.25
+"Methane oxidation rate in aerobic layer m/d,",0.7
+"Nitrification half-saturation constant for NH4N in aerobic layer mgN/l,",0.728
+"Nitrification half-saturation constant for O2 in aerobic layer mgO2/l,",0.37
+"Temperature coefficient for pore water diffusion between layers,",1.08
+"Temperature coefficient for nitrification,",1.123
+"Temperature coefficient for denitrification,",1.08
+"Temperature coefficient for methane oxidation,",1.079
+"Sulfate concentration above which sulfide over methane is produced mgS/l,",20.0
+"Sulfide oxidation rate in aerobic layer m/d,",0.2
+"Temperature coefficient for sulfide oxidation,",1.08
+"Sulfide oxidation normalization constant for O2 mgO2/l,",4.0
+"Mineralization rate for labile PON 1/d,",0.0100
+"Mineralization rate for refractory PON 1/d,",0.00047
+"Mineralization rate for inert/slow refractory PON 1/d,",0.00001
+"Mineralization rate for labile POC 1/d,",0.0100
+"Mineralization rate for refractory POC 1/d,",0.00047
+"Mineralization rate for inert/slow refractory POC 1/d,",0.00001
+"Mineralization rate for labile POP 1/d,",0.0100
+"Mineralization rate for refractory POP 1/d,",0.00047
+"Mineralization rate for inert/slow refractory POP 1/d,",0.00001
+"Temperature coefficient for labile PON,",1.1
+"Temperature coefficient refractory PON,",1.15
+"Temperature coefficient inert/slow refractory PON,",1.17
+"Temperature coefficient labile POC,",1.1
+"Temperature coefficient refractory POC,",1.15
+"Temperature coefficient for inert/slow refractory POC,",1.17
+"Temperature coefficient labile POP,",1.1
+"Temperature coefficient refractory POP,",1.15
+"Temperature coefficient for inert/slow refractory POP,",1.17
+"Oxygen stoichiometry for H2S decay in water column,",1.88
+"Oxygen stoichiometry for CH4 decay in water column,",5.33
+"Phosphorus Sorption Coefficient in Aerobic Layer m^3/g",0.00005
+"Phosphorus Sorption Coefficient in Anaerobic Layer m^3/g",0.01
+"Methane production calculation method (0: Analytical, 1: Numerical),", 1
+"Equilibrium constant for NH4+ <-> NH3 ionization. Provide as pK,", 9.1
+"Equilibrium constant for HS- <-> H2S ionization. Provide as pK,", 9.0
+"Henry's constant for NH3d <-> NH3g in atm/M,", 0.0179
+"Henry's constant for CH4d <-> CH4g in atm/M,", 469
+"Henry's constant for H2Sd <-> H2Sg in atm/M,", 10
+"Henry's constant for CO2d <-> CO2g in atm/M,", 29
+"Gas diffusion coefficient in sediment in m²/s,", 1.0d-9
+"Calibration parameter R1 in m,", 0.0014
+"Young's modulus E in N/m²,", 1.4d+9
+"Critical stress intensity factor for sediments K1c in N/m^3/2,", 300
+"Bubbles release scale,", 0.02
+"Fraction of critical pressure at which cracks close,", 0.20
+"Switch to limit bubble size,", .TRUE.
+"Maximum bubble radius in mm,", 80
+"Switch to use slow release of bubbles,", .TRUE. 
+"Bubbles release fraction (sediments),", 0.005
+"Bubbles accumulation fraction,", 0.1
+"Number of bubbles release array,",1200
+"Bubbles release fraction (atmosphere),", 0.001
+"Bubbles-Water gas exchange rate (1/s),",1.0d-7
+"Apply additional turbulence due to bubbles release,",.FALSE.
+"Turbulence scaling factor for bubbles release,",0.001
+"Coefficient Bturb in Aturb*ln(TSS) + Bturb = ln(Turbidity),",-0.294
+"Coefficient Aturb in Aturb*ln(TSS) + Bturb = ln(Turbidity),",1.243
+"Write sediment fluxes,", .TRUE.
+"Particle Mixing Velocity between Aerobic and Anaerobic Layers m/d", 0.05
+"Burial Velocity m/d", 0.001
+"Include modeling of Iron (FeOOH and Fe(II)) in sediments,", .FALSE.
+"Include modeling of Manganese (Mn(II) and MnO2) in sediments,", .FALSE.
+"Half-saturation constant for O2 for FeOOH reduction to Fe(II) g/m^3", 0.2
+"Reduction rate, FeOOH to Fe(II) d-1", 4.0
+"Oxidation rate, Fe(II) to FeOOH m^3/d-g", 1.0
+"FeOOH Settling Velocity m/d", 0.001
+"Fe(II) Sorption Coefficient in Aerobic Layer m^3/g",0.00005
+"Fe(II) Sorption Coefficient in Anaerobic Layer m^3/g",0.01
+"Oxygen stoichiometry for Fe(II) decay gO/gFe,",0.143
+"Half-saturation constant for O2 for MnO2 reduction to Mn(II) g/m^3", 0.2
+"Reduction rate, MnO2 to Mn(II) d-1", 0.002 
+"Oxidation rate, Mn(II) to MnO2 m^3/d-g", 0.0001
+"MnO2 Settling Velocity m/d", 0.001
+"Mn(II) Sorption Coefficient in Aerobic Layer m^3/g",0.00005
+"Mn(II) Sorption Coefficient in Anaerobic Layer m^3/g",0.01
+"Oxygen stoichiometry for Mn(II) decay gO/gMn,",0.291
+"Include particulate organic matter resuspension processes,", .FALSE.
+"Algorithm for resuspension of particulate organic matter (0: Wind Induced Resuspension, 1: Bottom Scour Resuspension),", 1
+"Critical shear stress for particulate organic matter resuspension dynes/cm^2",0.001
+"Critical Shields parameter for POM", 10.0
+"Use Cao method to estimate critical Shields parameter (rather than using input value)," .FALSE.
+"Specific gravity of particulate organic matter," 1.5
+"Particulate organic matter particle diameter m," 0.0001
+"Frequency of Sediment Diagenesis Output in days,", 1.0
