@@ -1,398 +1,529 @@
-SUBROUTINE HYDROINOUT
-
-USE MAIN
-USE GLOBAL;     USE NAMESC; USE GEOMC;  USE LOGICC; USE PREC;  USE SURFHE;  USE KINETIC; USE SHADEC; USE EDDY
-  USE STRUCTURES; USE TRANS;  USE TVDC;   USE SELWC;  USE GDAYC; USE SCREENC; USE TDGAS;   USE RSTART
-  USE MACROPHYTEC; USE POROSITYC; USE ZOOPLANKTONC  
-  IMPLICIT NONE
-  EXTERNAL RESTART_OUTPUT
-  INTEGER   :: JBU, JBD, JLAT, JWU
-  REAL(R8)  :: ELW, CGAS, TM, VPTG, DTVL, RHOTR, VQTR, VQTRI, QTRFR, AKBR, FW
-  REAL(R8)  :: TSUM,QSUMM
+!*==hydroinout.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
+ 
+     subroutine HYDROINOUT
+ 
+     use MAIN
+     use GLOBAL
+     use NAMESC
+     use GEOMC
+     use LOGICC
+     use PREC
+     use SURFHE
+     use KINETIC
+     use SHADEC
+     use EDDY
+     use STRUCTURES
+     use TRANS
+     use TVDC
+     use SELWC
+     use GDAYC
+     use SCREENC
+     use TDGAS
+     use RSTART
+     use MACROPHYTEC
+     use POROSITYC
+     use ZOOPLANKTONC
+     use f77kinds
+     implicit none
+!
+!*** Start of declarations rewritten by SPAG
+!
+! Local variables
+!
+     real(r8) :: akbr, cgas, dtvl, elw, fw, qsumm, qtrfr, rhotr, tm, tsum,     &
+               & vptg, vqtr, vqtri
+     integer :: jbd, jbu, jlat, jwu
+     external RESTART_OUTPUT
+!
+!*** End of declarations rewritten by SPAG
+!
 !***********************************************************************************************************************************
-!**                                            Task 2.1: Hydrodynamic sources/sinks                                               **
+!**  Task 2.1: Hydrodynamic sources/sinks                                     
 !***********************************************************************************************************************************
-
-    QINSUM = 0.0; TINSUM = 0.0; CINSUM = 0.0; UXBR = 0.0; UYBR = 0.0;  tdgon=.false.        ! cb 1/16/13
-    DO JW=1,NWB
-      KT = KTWB(JW)
-      DO JB=BS(JW),BE(JW)
-        IF(BR_INACTIVE(JB))CYCLE
-        IU   = CUS(JB)
-        ID   = DS(JB)
-        TSUM = 0.0; CSUM = 0.0; QSUM(JB) = 0.0; QOUT(:,JB) = 0.0; TOUT(JB)=0.0; COUT(:,JB)=0.0    
-
-!****** Densities
-
-        DO I=IU-1,ID+1
-          DO K=KT,KB(I)
-            TISS(K,I) = 0.0
-            DO JS=1,NSS
-              TISS(K,I) = TISS(K,I)+SS(K,I,JS)
-            END DO
-            RHO(K,I) = DENSITY(T2(K,I),DMAX1(TDS(K,I),0.0D0),DMAX1(TISS(K,I),0.0D0))
-          END DO
-        END DO
-! v3.5 deleted pumpback code from v3.2
-        DO JS=1,NSTR(JB)
-          IF (QSTR(JS,JB) /= 0.0) THEN
-            CALL DOWNSTREAM_WITHDRAWAL (JS)
-          END IF
-        END DO
-        DO K=KT,KB(ID)
-          QSUM(JB)        = QSUM(JB)       +QOUT(K,JB)
-          TSUM            = TSUM           +QOUT(K,JB)*T2(K,ID)
-          CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QOUT(K,JB)*C2(K,ID,CN(1:NAC))
-        END DO
-        IF (QSUM(JB) /= 0.0) THEN
-          TOUT(JB)           = TSUM           /QSUM(JB)
-          COUT(CN(1:NAC),JB) = CSUM(CN(1:NAC))/QSUM(JB)
-        END IF
-        IF (QSUM(JB) /= 0.0 .AND. DAM_OUTFLOW(JB)) THEN                                                                !TC 08/03/04
-          TINSUM(JBDAM(JB))           = (TSUM           +QINSUM(JBDAM(JB))*TINSUM(JBDAM(JB)))          /(QSUM(JB)                  &
-                                        +QINSUM(JBDAM(JB)))
-          CINSUM(CN(1:NAC),JBDAM(JB)) = (CSUM(CN(1:NAC))+QINSUM(JBDAM(JB))*CINSUM(CN(1:NAC),JBDAM(JB)))/(QSUM(JB)                  &
-                                        +QINSUM(JBDAM(JB)))
-          QINSUM(JBDAM(JB))           =  QINSUM(JBDAM(JB))+QSUM(JB)
-        END IF
-      END DO
-    END DO
-    ILAT = 0
-    JWW  = NWD
-    withdrawals = jww > 0
-    if(nwdt>nwd)qwd(nwd+1:nwdt)=0.0    ! SW 10/30/2017
-    JTT  = NTR
-    tributaries = jtt > 0
-    if(ntrt>ntr)qtr(ntr+1:ntrt)=0.0    ! SW 10/30/2017
-    JSS  = NSTR
-    IF (SPILLWAY) THEN
-      CALL SPILLWAY_FLOW
-      DO JS=1,NSP
-
-!****** Positive flows
-
-        JLAT = 0
-        JBU  = JBUSP(JS)
-        JBD  = JBDSP(JS)
-        tdgon=.false.        ! cb 1/16/13
-        jsg=js
-        nnsg=0
-        if (cac(ndo) == '      ON' .and. gasspc(js) == '      ON')tdgon=.true.
-        IF (QSP(JS) >= 0.0) THEN
-          IF (LATERAL_SPILLWAY(JS)) THEN
-            JWW       = JWW+1
-            IWD(JWW)  = IUSP(JS)
-            QWD(JWW)  = QSP(JS)
-            KTWD(JWW) = KTUSP(JS)
-            KBWD(JWW) = KBUSP(JS)
-            EWD(JWW)  = ESP(JS)
-            JBWD(JWW) = JBU
-            I         = MAX(CUS(JBWD(JWW)),IWD(JWW))
-            JB        = JBWD(JWW)
-            JW        = JWUSP(JS)
-            KT        = KTWB(JW)
-            jwd=jww
-            CALL LATERAL_WITHDRAWAL !(JWW)
-            DO K=KTW(JWW),KBW(JWW)
-              QSS(K,I) = QSS(K,I)-QSW(K,JWW)
-            END DO
-                IF (IDSP(JS) /= 0)then   ! cb 9/11/13
-            JTT  = JTT+1
-              QTR(JTT)         = QSP(JS)
-              ITR(JTT)         = IDSP(JS)
-              PLACE_QTR(JTT)   = PDSPC(JS) == ' DENSITY'
-              SPECIFY_QTR(JTT) = PDSPC(JS) == ' SPECIFY'
-              IF (SPECIFY_QTR(JTT)) THEN
-                ELTRT(JTT) = ETDSP(JS)
-                ELTRB(JTT) = EBDSP(JS)
-              END IF
-              JBTR(JTT) = JBD
-                end if  ! cb 9/11/13
-            IF (IDSP(JS) /= 0 .AND. QSP(JS)>0.0) THEN
-            TSUM  =  0.0; QSUMM = 0.0; CSUM = 0.0
-            DO K=KTW(JWW),KBW(JWW)
-              QSUMM           = QSUMM          +QSW(K,JWW)
-              TSUM            = TSUM           +QSW(K,JWW)*T2(K,IWD(JWW))
-              CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QSW(K,JWW)*C2(K,IWD(JWW),CN(1:NAC))
-            END DO
-            TTR(JTT) = TSUM/QSUMM
-            DO JC=1,NAC
-              CTR(CN(JC),JTT) = CSUM(CN(JC))/QSUMM
-              IF (CN(JC) == NDO .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN
-                TDG_SPILLWAY(JWW,JS) = .TRUE.
-                CALL TOTAL_DISSOLVED_GAS (0,PALT(I),0,JS,TTR(JTT),CTR(CN(JC),JTT))   ! DO
-              END IF
-              IF (CN(JC) == NGN2 .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN
-                TDG_SPILLWAY(JWW,JS) = .TRUE.
-                CALL TOTAL_DISSOLVED_GAS (1,PALT(I),0,JS,TTR(JTT),CTR(CN(JC),JTT))   ! N2
-              END IF
-            END DO
-          ELSE IF (CAC(NDO) == '      ON' .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN
-            TDG_SPILLWAY(JWW,JS) = .TRUE.
-          END IF
-            
-          ELSE
-            JSS(JBU)                 =  JSS(JBU)+1
-            KTSW(JSS(JBU),JBU)       =  KTUSP(JS)
-            KBSW(JSS(JBU),JBU)       =  KBUSP(JS)
-            JB                       =  JBU
-            POINT_SINK(JSS(JBU),JBU) = .TRUE.
-            ID                       =  IUSP(JS)
-            QSTR(JSS(JBU),JBU)       =  QSP(JS)
-            ESTR(JSS(JBU),JBU)       =  ESP(JS)
-            KT                       =  KTWB(JWUSP(JS))
-            JW                       =  JWUSP(JS)
-            CALL DOWNSTREAM_WITHDRAWAL(JSS(JBU))           
-              QSUM(JB) = 0.0; TSUM = 0.0; CSUM = 0.0
-            DO K=KT,KB(ID)
-              QSUM(JB) = QSUM(JB)+QOUT(K,JB)
-              TSUM     = TSUM+QOUT(K,JB)*T2(K,ID)
-              DO JC=1,NAC
-                IF (CN(JC)==NDO .AND. CAC(NDO) == '      ON' .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN     ! MM 5/21/2009
-                  T2R4=T2(K,ID)
-                  CGAS=C2(K,ID,CN(JC))                                                                                      ! MM 5/21/2009
-                  CALL TOTAL_DISSOLVED_GAS (0,PALT(ID),0,JS,T2R4,CGAS)    ! O2
-                  CSUM(CN(JC)) = CSUM(CN(JC))+QOUT(K,JB)*CGAS
+ 
+!    **
+     qinsum = 0.0
+!***********************************************************************************************************************************
+!**  Task 2.1: Hydrodynamic sources/sinks                                     
+!***********************************************************************************************************************************
+ 
+!    **
+     tinsum = 0.0
+!***********************************************************************************************************************************
+!**  Task 2.1: Hydrodynamic sources/sinks                                     
+!***********************************************************************************************************************************
+ 
+!    **
+     cinsum = 0.0
+!***********************************************************************************************************************************
+!**  Task 2.1: Hydrodynamic sources/sinks                                     
+!***********************************************************************************************************************************
+ 
+!    **
+     uxbr = 0.0
+!***********************************************************************************************************************************
+!**  Task 2.1: Hydrodynamic sources/sinks                                     
+!***********************************************************************************************************************************
+ 
+!    **
+     uybr = 0.0
+!***********************************************************************************************************************************
+!**  Task 2.1: Hydrodynamic sources/sinks                                     
+!***********************************************************************************************************************************
+ 
+!    **
+     tdgon = .FALSE.                                                                        ! cb 1/16/13
+     do jw = 1, nwb
+         kt = KTWB(jw)
+         do jb = BS(jw), BE(jw)
+             if(BR_INACTIVE(jb))cycle
+             iu = CUS(jb)
+             id = DS(jb)
+             tsum = 0.0
+             csum = 0.0
+             QSUM(jb) = 0.0
+             qout(:, jb) = 0.0
+             TOUT(jb) = 0.0
+             cout(:, jb) = 0.0
+ 
+!******      Densities
+ 
+             do i = iu - 1, id + 1
+                 do k = kt, KB(i)
+                     TISS(k, i) = 0.0
+                     do js = 1, nss
+                         TISS(k, i) = TISS(k, i) + SS(k, i, js)
+                     enddo
+                     RHO(k, i) = DENSITY(T2(k, i), DMAX1(TDS(k, i), 0.0D0),    &
+                               & DMAX1(TISS(k, i), 0.0D0))
+                 enddo
+             enddo
+!            v3.5 deleted pumpback code from v3.2
+             do js = 1, NSTR(jb)
+                 if(QSTR(js, jb)/=0.0)call DOWNSTREAM_WITHDRAWAL(js)
+             enddo
+             do k = kt, KB(id)
+                 QSUM(jb) = QSUM(jb) + qout(k, jb)
+                 tsum = tsum + qout(k, jb)*T2(k, id)
+                 csum(cn(1:nac)) = csum(cn(1:nac)) + qout(k, jb)               &
+                                 & *C2(k, id, cn(1:nac))
+             enddo
+             if(QSUM(jb)/=0.0)then
+                 TOUT(jb) = tsum/QSUM(jb)
+                 cout(cn(1:nac), jb) = csum(cn(1:nac))/QSUM(jb)
+             endif
+             if(QSUM(jb)/=0.0 .AND. DAM_OUTFLOW(jb))then                                                               !TC 08/03/04
+                 tinsum(JBDAM(jb)) = (tsum + qinsum(JBDAM(jb))*tinsum(JBDAM(jb)&
+                                   & ))/(QSUM(jb) + qinsum(JBDAM(jb)))
+                 cinsum(cn(1:nac), JBDAM(jb))                                  &
+                   & = (csum(cn(1:nac)) + qinsum(JBDAM(jb))                    &
+                   & *cinsum(cn(1:nac), JBDAM(jb)))                            &
+                   & /(QSUM(jb) + qinsum(JBDAM(jb)))
+                 qinsum(JBDAM(jb)) = qinsum(JBDAM(jb)) + QSUM(jb)
+             endif
+         enddo
+     enddo
+     ilat = 0
+     jww = nwd
+     withdrawals = jww>0
+     if(nwdt>nwd)qwd(nwd + 1:nwdt) = 0.0
+                                       ! SW 10/30/2017
+     jtt = ntr
+     tributaries = jtt>0
+     if(ntrt>ntr)qtr(ntr + 1:ntrt) = 0.0
+                                       ! SW 10/30/2017
+     jss = NSTR
+     if(spillway)then
+         call SPILLWAY_FLOW
+         do js = 1, nsp
+ 
+!******      Positive flows
+ 
+             jlat = 0
+             jbu = JBUSP(js)
+             jbd = JBDSP(js)
+             tdgon = .FALSE. ! cb 1/16/13
+             jsg = js
+             nnsg = 0
+             if(CAC(ndo)=='      ON' .AND. GASSPC(js)=='      ON')             &
+              & tdgon = .TRUE.
+             if(QSP(js)>=0.0)then
+                 if(LATERAL_SPILLWAY(js))then
+                     jww = jww + 1
+                     IWD(jww) = IUSP(js)
+                     qwd(jww) = QSP(js)
+                     KTWD(jww) = KTUSP(js)
+                     KBWD(jww) = KBUSP(js)
+                     EWD(jww) = ESP(js)
+                     JBWD(jww) = jbu
+                     i = MAX(CUS(JBWD(jww)), IWD(jww))
+                     jb = JBWD(jww)
+                     jw = JWUSP(js)
+                     kt = KTWB(jw)
+                     jwd = jww
+                     call LATERAL_WITHDRAWAL
+                                    !(JWW)
+                     do k = KTW(jww), KBW(jww)
+                         QSS(k, i) = QSS(k, i) - QSW(k, jww)
+                     enddo
+                     if(IDSP(js)/=0)then ! cb 9/11/13
+                         jtt = jtt + 1
+                         qtr(jtt) = QSP(js)
+                         ITR(jtt) = IDSP(js)
+                         PLACE_QTR(jtt) = PDSPC(js)==' DENSITY'
+                         SPECIFY_QTR(jtt) = PDSPC(js)==' SPECIFY'
+                         if(SPECIFY_QTR(jtt))then
+                             ELTRT(jtt) = ETDSP(js)
+                             ELTRB(jtt) = EBDSP(js)
+                         endif
+                         JBTR(jtt) = jbd
+                     endif
+                        ! cb 9/11/13
+                     if(IDSP(js)/=0 .AND. QSP(js)>0.0)then
+                         tsum = 0.0
+                         qsumm = 0.0
+                         csum = 0.0
+                         do k = KTW(jww), KBW(jww)
+                             qsumm = qsumm + QSW(k, jww)
+                             tsum = tsum + QSW(k, jww)*T2(k, IWD(jww))
+                             csum(cn(1:nac)) = csum(cn(1:nac)) + QSW(k, jww)   &
+                               & *C2(k, IWD(jww), cn(1:nac))
+                         enddo
+                         TTR(jtt) = tsum/qsumm
+                         do jc = 1, nac
+                             CTR(cn(jc), jtt) = csum(cn(jc))/qsumm
+                             if(cn(jc)==ndo .AND. GASSPC(js)=='      ON' .AND. &
+                              & QSP(js)>0.0)then
+                                 TDG_SPILLWAY(jww, js) = .TRUE.
+                                 call TOTAL_DISSOLVED_GAS(0, PALT(i), 0, js,   &
+                                   & TTR(jtt), CTR(cn(jc), jtt))                     ! DO
+                             endif
+                             if(cn(jc)==ngn2 .AND. GASSPC(js)=='      ON' .AND.&
+                              & QSP(js)>0.0)then
+                                 TDG_SPILLWAY(jww, js) = .TRUE.
+                                 call TOTAL_DISSOLVED_GAS(1, PALT(i), 0, js,   &
+                                   & TTR(jtt), CTR(cn(jc), jtt))                     ! N2
+                             endif
+                         enddo
+                     elseif(CAC(ndo)=='      ON' .AND. GASSPC(js)              &
+                          & =='      ON' .AND. QSP(js)>0.0)then
+                         TDG_SPILLWAY(jww, js) = .TRUE.
+                     endif
+ 
+                 else
+                     jss(jbu) = jss(jbu) + 1
+                     KTSW(jss(jbu), jbu) = KTUSP(js)
+                     KBSW(jss(jbu), jbu) = KBUSP(js)
+                     jb = jbu
+                     POINT_SINK(jss(jbu), jbu) = .TRUE.
+                     id = IUSP(js)
+                     QSTR(jss(jbu), jbu) = QSP(js)
+                     ESTR(jss(jbu), jbu) = ESP(js)
+                     kt = KTWB(JWUSP(js))
+                     jw = JWUSP(js)
+                     call DOWNSTREAM_WITHDRAWAL(jss(jbu))
+                     QSUM(jb) = 0.0
+                     tsum = 0.0
+                     csum = 0.0
+                     do k = kt, KB(id)
+                         QSUM(jb) = QSUM(jb) + qout(k, jb)
+                         tsum = tsum + qout(k, jb)*T2(k, id)
+                         do jc = 1, nac
+                             if(cn(jc)==ndo .AND. CAC(ndo)=='      ON' .AND.   &
+                              & GASSPC(js)=='      ON' .AND. QSP(js)>0.0)then                                             ! MM 5/21/2009
+                                 t2r4 = T2(k, id)
+                                 cgas = C2(k, id, cn(jc))                                                                   ! MM 5/21/2009
+                                 call TOTAL_DISSOLVED_GAS(0, PALT(id), 0, js,  &
+                                   & t2r4, cgas)                          ! O2
+                                 csum(cn(jc)) = csum(cn(jc)) + qout(k, jb)*cgas
                 !ELSEIF (CN(JC)==NGN2 .AND. CAC(NGN2) == '      ON' .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN     ! SW 10/27/15
-                ELSEIF (CN(JC)==NGN2 .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN     ! SW 10/27/15
-                  if(CAC(NGN2) == '      ON')then                                                                                ! cb 1/13/16
-                    T2R4=T2(K,ID)
-                    CGAS=C2(K,ID,CN(JC))                                                                                      ! 
-                    CALL TOTAL_DISSOLVED_GAS (1,PALT(ID),0,JS,T2R4,CGAS)   ! N2
-                    CSUM(CN(JC)) = CSUM(CN(JC))+QOUT(K,JB)*CGAS
-                  end if
-                ELSE
-                  CSUM(CN(JC)) = CSUM(CN(JC))+QOUT(K,JB)*C2(K,ID,CN(JC))
-                END IF
-              END DO
-            END DO
-            IF (QSUM(JB) /= 0.0) THEN
-              TOUT(JB)           = TSUM           /QSUM(JB)
-              COUT(CN(1:NAC),JB) = CSUM(CN(1:NAC))/QSUM(JB)
-            END IF
-            IF (IDSP(JS) /= 0 .AND. US(JBD) == IDSP(JS)) THEN
-              QSUMM = 0.0; TSUM  = 0.0;  CSUM  = 0.0
-              DO K=KT,KB(ID)
-                QSUMM = QSUMM+QNEW(K)
-                TSUM  = TSUM+QNEW(K)*T2(K,ID)
-                DO JC=1,NAC
-                  IF (CN(JC)==NDO .AND. CAC(NDO) == '      ON' .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN             ! MM 5/21/2009
-                    T2R4=T2(K,ID)
-                    CGAS=C2(K,ID,CN(JC))                                                                                            ! MM 5/21/2009
-                    CALL TOTAL_DISSOLVED_GAS (0,PALT(ID),0,JS,T2R4,CGAS)
-                    CSUM(CN(JC)) = CSUM(CN(JC))+QNEW(K)*CGAS
+                             elseif(cn(jc)==ngn2 .AND. GASSPC(js)              &
+                                  & =='      ON' .AND. QSP(js)>0.0)then                           ! SW 10/27/15
+                                 if(CAC(ngn2)=='      ON')then                                                                   ! cb 1/13/16
+                                     t2r4 = T2(k, id)
+                                     cgas = C2(k, id, cn(jc))                                                                 !
+                                     call TOTAL_DISSOLVED_GAS(1, PALT(id), 0,  &
+                                       & js, t2r4, cgas)                   ! N2
+                                     csum(cn(jc)) = csum(cn(jc)) + qout(k, jb) &
+                                       & *cgas
+                                 endif
+                             else
+                                 csum(cn(jc)) = csum(cn(jc)) + qout(k, jb)     &
+                                   & *C2(k, id, cn(jc))
+                             endif
+                         enddo
+                     enddo
+                     if(QSUM(jb)/=0.0)then
+                         TOUT(jb) = tsum/QSUM(jb)
+                         cout(cn(1:nac), jb) = csum(cn(1:nac))/QSUM(jb)
+                     endif
+                     if(IDSP(js)/=0 .AND. US(jbd)==IDSP(js))then
+                         qsumm = 0.0
+                         tsum = 0.0
+                         csum = 0.0
+                         do k = kt, KB(id)
+                             qsumm = qsumm + QNEW(k)
+                             tsum = tsum + QNEW(k)*T2(k, id)
+                             do jc = 1, nac
+                                 if(cn(jc)==ndo .AND. CAC(ndo)                 &
+                                  & =='      ON' .AND. GASSPC(js)              &
+                                  & =='      ON' .AND. QSP(js)>0.0)then                                                             ! MM 5/21/2009
+                                     t2r4 = T2(k, id)
+                                     cgas = C2(k, id, cn(jc))                                                                       ! MM 5/21/2009
+                                     call TOTAL_DISSOLVED_GAS(0, PALT(id), 0,  &
+                                       & js, t2r4, cgas)
+                                     csum(cn(jc)) = csum(cn(jc)) + QNEW(k)*cgas
                   !ELSEIF (CN(JC)==NGN2 .AND. CAC(NGN2) == '      ON' .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN             ! SW 10/27/15
-                  ELSEIF (CN(JC)==NGN2 .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN             ! SW 10/27/15
-                    if(CAC(NGN2) == '      ON')then                                                                                ! cb 1/13/16
-                      T2R4=T2(K,ID)
-                      CGAS=C2(K,ID,CN(JC))                                                                                            ! 
-                      CALL TOTAL_DISSOLVED_GAS (1,PALT(ID),0,JS,T2R4,CGAS)
-                      CSUM(CN(JC)) = CSUM(CN(JC))+QNEW(K)*CGAS
-                    end if
-                  ELSE
-                    CSUM(CN(JC)) = CSUM(CN(JC))+QNEW(K)*C2(K,ID,CN(JC))
-                  END IF
-                END DO
-              END DO
-              IF (QSUMM /= 0.0) THEN
-                TINSUM(JBD)           = (TSUM           +QINSUM(JBD)*TINSUM(JBD))          /(QSUMM+QINSUM(JBD))
-                CINSUM(CN(1:NAC),JBD) = (CSUM(CN(1:NAC))+QINSUM(JBD)*CINSUM(CN(1:NAC),JBD))/(QSUMM+QINSUM(JBD))
-                QINSUM(JBD)           =  QINSUM(JBD)+QSUMM
-              END IF
-        ELSEIF (IDSP(JS) /= 0) THEN
-              JTT              = JTT+1
-              QTR(JTT)         = QSP(JS)
-              ITR(JTT)         = IDSP(JS)
-              PLACE_QTR(JTT)   = PDSPC(JS) == ' DENSITY'
-              SPECIFY_QTR(JTT) = PDSPC(JS) == ' SPECIFY'
-              IF (SPECIFY_QTR(JTT)) THEN
-                ELTRT(JTT) = ETDSP(JS)
-                ELTRB(JTT) = EBDSP(JS)
-              END IF
-              JBTR(JTT) = JBD
-                  TTR(JTT) =  TOUT(JB)
-                DO JC=1,NAC
-                  CTR(CN(JC),JTT) = COUT(CN(JC),JB)
-                  IF (CN(JC) == NDO .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN
-                    CALL TOTAL_DISSOLVED_GAS (0,PALT(ITR(JTT)),0,JS,TTR(JTT),CTR(CN(JC),JTT))
-                  END IF
-                  IF (CN(JC) == NGN2 .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN     ! SW 10/27/15
-                    CALL TOTAL_DISSOLVED_GAS (1,PALT(ITR(JTT)),0,JS,TTR(JTT),CTR(CN(JC),JTT))
-                  END IF
-                END DO
-               END IF
-          END IF
-        ELSE IF (QSP(JS) < 0.0) THEN
-          JTT              =  JTT+1
-          JWW              =  JWW+1
-          IWD(JWW)         =  IDSP(JS)
-          ITR(JTT)         =  IUSP(JS)
-          QTR(JTT)         = -QSP(JS)
-          QWD(JWW)         = -QSP(JS)
-          KTWD(JWW)        =  KTDSP(JS)
-          KBWD(JWW)        =  KBDSP(JS)
-          EWD(JWW)         =  ESP(JS)
-          PLACE_QTR(JTT)   =  PUSPC(JS) == ' DENSITY'
-          SPECIFY_QTR(JTT) =  PUSPC(JS) == ' SPECIFY'
-          IF (SPECIFY_QTR(JTT)) THEN
-            ELTRT(JTT) = ETUSP(JS)
-            ELTRB(JTT) = EBUSP(JS)
-          END IF
-          JBTR(JTT) = JBU
-          JBWD(JWW) = JBD
-          I         = MAX(CUS(JBWD(JWW)),IWD(JWW))
-          JB        = JBWD(JWW)
-          JW        = JWDSP(JS)
-          KT        = KTWB(JW)
-          jwd=jww
-          CALL LATERAL_WITHDRAWAL !(JWW)
-          DO K=KTW(JWW),KBW(JWW)
-            QSS(K,I) = QSS(K,I)-QSW(K,JWW)
-          END DO
-          IF (IDSP(JS) /= 0) THEN
-            TSUM  =  0.0; QSUMM = 0.0; CSUM = 0.0
-            DO K=KTW(JWW),KBW(JWW)
-              QSUMM           = QSUMM          +QSW(K,JWW)
-              TSUM            = TSUM           +QSW(K,JWW)*T2(K,IWD(JWW))
-              CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QSW(K,JWW)*C2(K,IWD(JWW),CN(1:NAC))
-            END DO
-            TTR(JTT) = TSUM/QSUMM
-            DO JC=1,NAC
-              CTR(CN(JC),JTT) = CSUM(CN(JC))/QSUMM
-              IF (CN(JC) == NDO .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN
-                TDG_SPILLWAY(JWW,JS) = .TRUE.
-                CALL TOTAL_DISSOLVED_GAS (0,PALT(I),0,JS,TTR(JTT),CTR(CN(JC),JTT))    ! O2
-              END IF
-              IF (CN(JC) == NGN2 .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN
-                TDG_SPILLWAY(JWW,JS) = .TRUE.
-                CALL TOTAL_DISSOLVED_GAS (1,PALT(I),0,JS,TTR(JTT),CTR(CN(JC),JTT))    ! N2
-              END IF
-            END DO
-          ELSE IF (CAC(NDO) == '      ON' .AND. GASSPC(JS) == '      ON' .AND. QSP(JS) > 0.0) THEN
-            TDG_SPILLWAY(JWW,JS) = .TRUE.
-          END IF
-        END IF
-      END DO
-    END IF
-    IF (PUMPS) THEN
-      DO JP=1,NPU
-        JLAT = 0
-        JWU  = JWUPU(JP)
-        JBU  = JBUPU(JP)
-        JBD  = JBDPU(JP)
-        tdgon=.false.        ! cb 1/16/13
-          IF (LATERAL_PUMP(JP)) THEN
-            ELW = EL(KTWB(JWU),IUPU(JP))-Z(IUPU(JP))*COSA(JBU)
+                                 elseif(cn(jc)==ngn2 .AND. GASSPC(js)          &
+                                       &=='      ON' .AND. QSP(js)>0.0)then                                 ! SW 10/27/15
+                                     if(CAC(ngn2)=='      ON')then                                                                 ! cb 1/13/16
+                                         t2r4 = T2(k, id)
+                                         cgas = C2(k, id, cn(jc))                                                                     !
+                                         call TOTAL_DISSOLVED_GAS(1, PALT(id), &
+                                           & 0, js, t2r4, cgas)
+                                         csum(cn(jc)) = csum(cn(jc)) + QNEW(k) &
+                                           & *cgas
+                                     endif
+                                 else
+                                     csum(cn(jc)) = csum(cn(jc)) + QNEW(k)     &
+                                       & *C2(k, id, cn(jc))
+                                 endif
+                             enddo
+                         enddo
+                         if(qsumm/=0.0)then
+                             tinsum(jbd) = (tsum + qinsum(jbd)*tinsum(jbd))    &
+                               & /(qsumm + qinsum(jbd))
+                             cinsum(cn(1:nac), jbd)                            &
+                               & = (csum(cn(1:nac)) + qinsum(jbd)              &
+                               & *cinsum(cn(1:nac), jbd))/(qsumm + qinsum(jbd))
+                             qinsum(jbd) = qinsum(jbd) + qsumm
+                         endif
+                     elseif(IDSP(js)/=0)then
+                         jtt = jtt + 1
+                         qtr(jtt) = QSP(js)
+                         ITR(jtt) = IDSP(js)
+                         PLACE_QTR(jtt) = PDSPC(js)==' DENSITY'
+                         SPECIFY_QTR(jtt) = PDSPC(js)==' SPECIFY'
+                         if(SPECIFY_QTR(jtt))then
+                             ELTRT(jtt) = ETDSP(js)
+                             ELTRB(jtt) = EBDSP(js)
+                         endif
+                         JBTR(jtt) = jbd
+                         TTR(jtt) = TOUT(jb)
+                         do jc = 1, nac
+                             CTR(cn(jc), jtt) = cout(cn(jc), jb)
+                             if(cn(jc)==ndo .AND. GASSPC(js)=='      ON' .AND. &
+                              & QSP(js)>0.0)                                   &
+                              & call TOTAL_DISSOLVED_GAS(0, PALT(ITR(jtt)), 0, &
+                              & js, TTR(jtt), CTR(cn(jc), jtt))
+                             if(cn(jc)==ngn2 .AND. GASSPC(js)=='      ON' .AND.&
+                              & QSP(js)>0.0)                                   &
+                              & call TOTAL_DISSOLVED_GAS(1, PALT(ITR(jtt)), 0, &
+                              & js, TTR(jtt), CTR(cn(jc), jtt))                                   ! SW 10/27/15
+                         enddo
+                     endif
+                 endif
+             elseif(QSP(js)<0.0)then
+                 jtt = jtt + 1
+                 jww = jww + 1
+                 IWD(jww) = IDSP(js)
+                 ITR(jtt) = IUSP(js)
+                 qtr(jtt) = -QSP(js)
+                 qwd(jww) = -QSP(js)
+                 KTWD(jww) = KTDSP(js)
+                 KBWD(jww) = KBDSP(js)
+                 EWD(jww) = ESP(js)
+                 PLACE_QTR(jtt) = PUSPC(js)==' DENSITY'
+                 SPECIFY_QTR(jtt) = PUSPC(js)==' SPECIFY'
+                 if(SPECIFY_QTR(jtt))then
+                     ELTRT(jtt) = ETUSP(js)
+                     ELTRB(jtt) = EBUSP(js)
+                 endif
+                 JBTR(jtt) = jbu
+                 JBWD(jww) = jbd
+                 i = MAX(CUS(JBWD(jww)), IWD(jww))
+                 jb = JBWD(jww)
+                 jw = JWDSP(js)
+                 kt = KTWB(jw)
+                 jwd = jww
+                 call LATERAL_WITHDRAWAL
+                                  !(JWW)
+                 do k = KTW(jww), KBW(jww)
+                     QSS(k, i) = QSS(k, i) - QSW(k, jww)
+                 enddo
+                 if(IDSP(js)/=0)then
+                     tsum = 0.0
+                     qsumm = 0.0
+                     csum = 0.0
+                     do k = KTW(jww), KBW(jww)
+                         qsumm = qsumm + QSW(k, jww)
+                         tsum = tsum + QSW(k, jww)*T2(k, IWD(jww))
+                         csum(cn(1:nac)) = csum(cn(1:nac)) + QSW(k, jww)       &
+                           & *C2(k, IWD(jww), cn(1:nac))
+                     enddo
+                     TTR(jtt) = tsum/qsumm
+                     do jc = 1, nac
+                         CTR(cn(jc), jtt) = csum(cn(jc))/qsumm
+                         if(cn(jc)==ndo .AND. GASSPC(js)=='      ON' .AND.     &
+                          & QSP(js)>0.0)then
+                             TDG_SPILLWAY(jww, js) = .TRUE.
+                             call TOTAL_DISSOLVED_GAS(0, PALT(i), 0, js,       &
+                               & TTR(jtt), CTR(cn(jc), jtt))                          ! O2
+                         endif
+                         if(cn(jc)==ngn2 .AND. GASSPC(js)=='      ON' .AND.    &
+                          & QSP(js)>0.0)then
+                             TDG_SPILLWAY(jww, js) = .TRUE.
+                             call TOTAL_DISSOLVED_GAS(1, PALT(i), 0, js,       &
+                               & TTR(jtt), CTR(cn(jc), jtt))                          ! N2
+                         endif
+                     enddo
+                 elseif(CAC(ndo)=='      ON' .AND. GASSPC(js)=='      ON' .AND.&
+                      & QSP(js)>0.0)then
+                     TDG_SPILLWAY(jww, js) = .TRUE.
+                 endif
+             endif
+         enddo
+     endif
+     if(pumps)then
+         do jp = 1, npu
+             jlat = 0
+             jwu = JWUPU(jp)
+             jbu = JBUPU(jp)
+             jbd = JBDPU(jp)
+             tdgon = .FALSE. ! cb 1/16/13
+             if(LATERAL_PUMP(jp))then
+                 elw = EL(KTWB(jwu), IUPU(jp)) - Z(IUPU(jp))*COSA(jbu)
         !    JWW       = JWW+1      ! SW 9/25/13
-        !    JBWD(JWW) = JBU  
+        !    JBWD(JWW) = JBU
         !    IWD(JWW)  = IUPU(JP)
-            JWW       = JWW+1      ! SW 10/30/2017
-            JBWD(JWW) = JBU  
-            IWD(JWW)  = IUPU(JP)
-            ELSE
-            ELW = EL(KTWB(JWU),IUPU(JP))-Z(IUPU(JP))*COSA(JBU)-SINA(JBU)*DLX(IUPU(JP))*0.5
+                 jww = jww + 1     ! SW 10/30/2017
+                 JBWD(jww) = jbu
+                 IWD(jww) = IUPU(jp)
+             else
+                 elw = EL(KTWB(jwu), IUPU(jp)) - Z(IUPU(jp))*COSA(jbu)         &
+                     & - SINA(jbu)*DLX(IUPU(jp))*0.5
         !    JSS(JBU)                 =  JSS(JBU)+1     ! SW 9/25/13
-            JSS(JBU)                 =  JSS(JBU)+1     ! SW 10/30/2017
-          END IF
-        IF (JDAY >= ENDPU(JP)) PUMPON(JP) = .FALSE.                                                        !  CB 1/13/06
-        IF (JDAY >= STRTPU(JP) .AND. JDAY < ENDPU(JP)) THEN
-
-          IF (ELW <= EOFFPU(JP)) PUMPON(JP) = .FALSE.                                                       ! CB 1/13/06
-          IF (ELW > EOFFPU(JP) .AND. QPU(JP) > 0.0) THEN
-            IF (ELW >= EONPU(JP)) PUMPON(JP) = .TRUE.
-            IF (PUMPON(JP)) THEN
-              IF (LATERAL_PUMP(JP)) THEN
-                JLAT      = 1
+                 jss(jbu) = jss(jbu) + 1               ! SW 10/30/2017
+             endif
+             if(jday>=ENDPU(jp))PUMPON(jp) = .FALSE.                                                       !  CB 1/13/06
+             if(jday>=STRTPU(jp) .AND. jday<ENDPU(jp))then
+ 
+                 if(elw<=EOFFPU(jp))PUMPON(jp) = .FALSE.                                                    ! CB 1/13/06
+                 if(elw>EOFFPU(jp) .AND. QPU(jp)>0.0)then
+                     if(elw>=EONPU(jp))PUMPON(jp) = .TRUE.
+                     if(PUMPON(jp))then
+                         if(LATERAL_PUMP(jp))then
+                             jlat = 1
                 !JWW       = JWW+1               ! SW 9/25/13
-                !JBWD(JWW) = JBU  
+                !JBWD(JWW) = JBU
                 !IWD(JWW)  = IUPU(JP)
-                QWD(JWW)  = QPU(JP)
-                KTWD(JWW) = KTPU(JP)
-                KBWD(JWW) = KBPU(JP)
-                EWD(JWW)  = EPU(JP)
-                I         = MAX(CUS(JBWD(JWW)),IWD(JWW))
-                JB        = JBWD(JWW)
-                JW        = JWU
-                KT        = KTWB(JW)
-                jwd=jww
-                CALL LATERAL_WITHDRAWAL         ! (JWW)
-                DO K=KTW(JWW),KBW(JWW)
-                  QSS(K,I) = QSS(K,I)-QSW(K,JWW)
-                END DO
-                IF (IDPU(JP) /= 0) THEN           ! MOVED CODE SW 9/25/13
-                  JTT              = JTT+1
-                  QTR(JTT)         = QPU(JP)
-                  ITR(JTT)         = IDPU(JP)
-                  PLACE_QTR(JTT)   = PPUC(JP) == ' DENSITY'
-                  SPECIFY_QTR(JTT) = PPUC(JP) == ' SPECIFY'
-                  IF (SPECIFY_QTR(JTT)) THEN
-                    ELTRT(JTT) = ETPU(JP)
-                    ELTRB(JTT) = EBPU(JP)
-                  END IF
-                  JBTR(JTT) = JBD
-                    TSUM = 0.0; QSUMM = 0.0; CSUM(CN(1:NAC)) = 0.0
-                    DO K=KTW(JWW),KBW(JWW)
-                      QSUMM           = QSUMM          +QSW(K,JWW)
-                      TSUM            = TSUM           +QSW(K,JWW)*T2(K,IWD(JWW))
-                      CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QSW(K,JWW)*C2(K,IWD(JWW),CN(1:NAC))
-                    END DO
-                    IF(QSUMM > 0.0)THEN
-                    TTR(JTT)           = TSUM           /QSUMM
-                    CTR(CN(1:NAC),JTT) = CSUM(CN(1:NAC))/QSUMM
-                    ENDIF
-                 ENDIF        ! SW 9/25/13 END MOVED CODE
-              ELSE
+                             qwd(jww) = QPU(jp)
+                             KTWD(jww) = KTPU(jp)
+                             KBWD(jww) = KBPU(jp)
+                             EWD(jww) = EPU(jp)
+                             i = MAX(CUS(JBWD(jww)), IWD(jww))
+                             jb = JBWD(jww)
+                             jw = jwu
+                             kt = KTWB(jw)
+                             jwd = jww
+                             call LATERAL_WITHDRAWAL
+                                                ! (JWW)
+                             do k = KTW(jww), KBW(jww)
+                                 QSS(k, i) = QSS(k, i) - QSW(k, jww)
+                             enddo
+                             if(IDPU(jp)/=0)then  ! MOVED CODE SW 9/25/13
+                                 jtt = jtt + 1
+                                 qtr(jtt) = QPU(jp)
+                                 ITR(jtt) = IDPU(jp)
+                                 PLACE_QTR(jtt) = PPUC(jp)==' DENSITY'
+                                 SPECIFY_QTR(jtt) = PPUC(jp)==' SPECIFY'
+                                 if(SPECIFY_QTR(jtt))then
+                                     ELTRT(jtt) = ETPU(jp)
+                                     ELTRB(jtt) = EBPU(jp)
+                                 endif
+                                 JBTR(jtt) = jbd
+                                 tsum = 0.0
+                                 qsumm = 0.0
+                                 csum(cn(1:nac)) = 0.0
+                                 do k = KTW(jww), KBW(jww)
+                                     qsumm = qsumm + QSW(k, jww)
+                                     tsum = tsum + QSW(k, jww)*T2(k, IWD(jww))
+                                     csum(cn(1:nac)) = csum(cn(1:nac))         &
+                                       & + QSW(k, jww)                         &
+                                       & *C2(k, IWD(jww), cn(1:nac))
+                                 enddo
+                                 if(qsumm>0.0)then
+                                     TTR(jtt) = tsum/qsumm
+                                     CTR(cn(1:nac), jtt) = csum(cn(1:nac))     &
+                                       & /qsumm
+                                 endif
+                             endif
+                              ! SW 9/25/13 END MOVED CODE
+                         else
                 !JSS(JBU)                 =  JSS(JBU)+1     ! SW 9/25/13
-                KTSW(JSS(JBU),JBU)       =  KTPU(JP)
-                KBSW(JSS(JBU),JBU)       =  KBPU(JP)
-                JB                       =  JBU
-                POINT_SINK(JSS(JBU),JBU) = .TRUE.
-                ID                       =  IUPU(JP)
-                QSTR(JSS(JBU),JBU)       =  QPU(JP)
-                ESTR(JSS(JBU),JBU)       =  EPU(JP)
-                KT                       =  KTWB(JWU)
-                JW                       =  JWU
-                CALL DOWNSTREAM_WITHDRAWAL (JSS(JBU))
-                IF (IDPU(JP) /= 0 .AND. US(JBD) == IDPU(JP)) THEN
-                  QSUMM = 0.0; TSUM  = 0.0; CSUM  = 0.0
-                  DO K=KT,KB(ID)
-                    QSUMM           = QSUMM          +QNEW(K)
-                    TSUM            = TSUM           +QNEW(K)*T2(K,ID)
-                    CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QNEW(K)*C2(K,ID,CN(1:NAC))
-                  END DO
-                  IF (QSUMM /= 0.0) THEN
-                    TINSUM(JBD)           = (TSUM           +TINSUM(JBD)          *QINSUM(JBD))/(QSUMM+QINSUM(JBD))
-                    CINSUM(CN(1:NAC),JBD) = (CSUM(CN(1:NAC))+CINSUM(CN(1:NAC),JBD)*QINSUM(JBD))/(QSUMM+QINSUM(JBD))
-                    QINSUM(JBD)           =  QINSUM(JBD)    +QSUMM
-                  END IF
-                END IF
-                QSUM(JB) = 0.0; TSUM = 0.0; CSUM = 0.0
-                DO K=KT,KB(ID)
-                  QSUM(JB)        = QSUM(JB)       +QOUT(K,JB)
-                  TSUM            = TSUM           +QOUT(K,JB)*T2(K,ID)
-                  CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QOUT(K,JB)*C2(K,ID,CN(1:NAC))
-                END DO
-                IF (QSUM(JB) /= 0.0) THEN
-                  TOUT(JB)           = TSUM           /QSUM(JB)
-                  COUT(CN(1:NAC),JB) = CSUM(CN(1:NAC))/QSUM(JB)
-                END IF
-                 IF (IDPU(JP) /= 0) THEN     ! SW 9/25/13 Moved code start
-                IF (US(JBD) /= IDPU(JP) .OR. HEAD_FLOW(JBD) .OR. UP_HEAD(JBD)) THEN
-                  JTT              = JTT+1
-                  QTR(JTT)         = QPU(JP)
-                  ITR(JTT)         = IDPU(JP)
-                  PLACE_QTR(JTT)   = PPUC(JP) == ' DENSITY'
-                  SPECIFY_QTR(JTT) = PPUC(JP) == ' SPECIFY'
-                  IF (SPECIFY_QTR(JTT)) THEN
-                    ELTRT(JTT) = ETPU(JP)
-                    ELTRB(JTT) = EBPU(JP)
-                  END IF
-                  JBTR(JTT) = JBD
-                    TTR(JTT)          = TOUT(JB)
-                    CTR(CN(1:NAC),JTT)= COUT(CN(1:NAC),JB)
-                  END IF
-                ENDIF                     ! Moved code end SW 9/25/13
-              END IF
+                             KTSW(jss(jbu), jbu) = KTPU(jp)
+                             KBSW(jss(jbu), jbu) = KBPU(jp)
+                             jb = jbu
+                             POINT_SINK(jss(jbu), jbu) = .TRUE.
+                             id = IUPU(jp)
+                             QSTR(jss(jbu), jbu) = QPU(jp)
+                             ESTR(jss(jbu), jbu) = EPU(jp)
+                             kt = KTWB(jwu)
+                             jw = jwu
+                             call DOWNSTREAM_WITHDRAWAL(jss(jbu))
+                             if(IDPU(jp)/=0 .AND. US(jbd)==IDPU(jp))then
+                                 qsumm = 0.0
+                                 tsum = 0.0
+                                 csum = 0.0
+                                 do k = kt, KB(id)
+                                     qsumm = qsumm + QNEW(k)
+                                     tsum = tsum + QNEW(k)*T2(k, id)
+                                     csum(cn(1:nac)) = csum(cn(1:nac))         &
+                                       & + QNEW(k)*C2(k, id, cn(1:nac))
+                                 enddo
+                                 if(qsumm/=0.0)then
+                                     tinsum(jbd)                               &
+                                       & = (tsum + tinsum(jbd)*qinsum(jbd))    &
+                                       & /(qsumm + qinsum(jbd))
+                                     cinsum(cn(1:nac), jbd)                    &
+                                       & = (csum(cn(1:nac)) +                  &
+                                       & cinsum(cn(1:nac), jbd)*qinsum(jbd))   &
+                                       & /(qsumm + qinsum(jbd))
+                                     qinsum(jbd) = qinsum(jbd) + qsumm
+                                 endif
+                             endif
+                             QSUM(jb) = 0.0
+                             tsum = 0.0
+                             csum = 0.0
+                             do k = kt, KB(id)
+                                 QSUM(jb) = QSUM(jb) + qout(k, jb)
+                                 tsum = tsum + qout(k, jb)*T2(k, id)
+                                 csum(cn(1:nac)) = csum(cn(1:nac))             &
+                                   & + qout(k, jb)*C2(k, id, cn(1:nac))
+                             enddo
+                             if(QSUM(jb)/=0.0)then
+                                 TOUT(jb) = tsum/QSUM(jb)
+                                 cout(cn(1:nac), jb) = csum(cn(1:nac))/QSUM(jb)
+                             endif
+                             if(IDPU(jp)/=0)then
+                                             ! SW 9/25/13 Moved code start
+                                 if(US(jbd)/=IDPU(jp) .OR. HEAD_FLOW(jbd) .OR. &
+                                  & UP_HEAD(jbd))then
+                                     jtt = jtt + 1
+                                     qtr(jtt) = QPU(jp)
+                                     ITR(jtt) = IDPU(jp)
+                                     PLACE_QTR(jtt) = PPUC(jp)==' DENSITY'
+                                     SPECIFY_QTR(jtt) = PPUC(jp)==' SPECIFY'
+                                     if(SPECIFY_QTR(jtt))then
+                                         ELTRT(jtt) = ETPU(jp)
+                                         ELTRB(jtt) = EBPU(jp)
+                                     endif
+                                     JBTR(jtt) = jbd
+                                     TTR(jtt) = TOUT(jb)
+                                     CTR(cn(1:nac), jtt) = cout(cn(1:nac), jb)
+                                 endif
+                             endif        ! Moved code end SW 9/25/13
+                         endif
             !  IF (IDPU(JP) /= 0) THEN
                 !IF (US(JBD) /= IDPU(JP) .OR. HEAD_FLOW(JBD) .OR. UP_HEAD(JBD)) THEN      ! SW 9/25/13 MOVED CODE ABOVE
                 !  JTT              = JTT+1
@@ -431,602 +562,673 @@ USE GLOBAL;     USE NAMESC; USE GEOMC;  USE LOGICC; USE PREC;  USE SURFHE;  USE 
                 !  QINSUM(JBD)           =  QINSUM(JBD)+QSUMM
                 !END IF
             !  END IF
-            END IF
-          END IF
-        END IF
-      END DO
-    END IF
-    IF (PIPES) THEN
-      YSS   = YS
-      VSS   = VS
-      VSTS  = VST
-      YSTS  = YST
-      DTPS  = DTP
-      QOLDS = QOLD
-      CALL PIPE_FLOW        ! (NIT)
-      DO JP=1,NPI
-       
-        if(dynpipe(jp) == '      ON')then                     ! SW 5/10/10
-        qpi(jp)=qpi(jp)*bp(jp)
-        endif
-
-
-!****** Positive flows
-
-        JLAT = 0
-        JBU  = JBUPI(JP)
-        JBD  = JBDPI(JP)
-        tdgon=.false.        ! cb 1/16/13
-        IF (QPI(JP) >= 0.0) THEN
-          IF (LATERAL_PIPE(JP)) THEN
-            JLAT      = 1
-            JWW       = JWW+1
-            IWD(JWW)  = IUPI(JP)
-            QWD(JWW)  = QPI(JP)
-            KTWD(JWW) = KTUPI(JP)
-            KBWD(JWW) = KBUPI(JP)
-            EWD(JWW)  = EUPI(JP)
-            JBWD(JWW) = JBU
-            I         = MAX(CUS(JBWD(JWW)),IWD(JWW))
-            JB        = JBWD(JWW)
-            JW        = JWUPI(JP)
-            KT        = KTWB(JW)
-            jwd=jww
-            CALL LATERAL_WITHDRAWAL    !(JWW)
-            DO K=KTW(JWW),KBW(JWW)
-              QSS(K,I) = QSS(K,I)-QSW(K,JWW)
-            END DO
-          ELSE
-            JSS(JBU)                 =  JSS(JBU)+1
-            KTSW(JSS(JBU),JBU)       =  KTDPI(JP)
-            KBSW(JSS(JBU),JBU)       =  KBDPI(JP)
-            JB                       =  JBU
-            POINT_SINK(JSS(JBU),JBU) = .TRUE.
-            ID                       =  IUPI(JP)
-            QSTR(JSS(JBU),JBU)       =  QPI(JP)
-            ESTR(JSS(JBU),JBU)       =  EUPI(JP)
-            KT                       =  KTWB(JWUPI(JP))
-            JW                       =  JWUPI(JP)
-            CALL DOWNSTREAM_WITHDRAWAL(JSS(JBU))
-            IF (IDPI(JP) /= 0 .AND. US(JBD) == IDPI(JP)) THEN
-              QSUMM = 0.0; TSUM  = 0.0; CSUM  = 0.0
-              DO K=KT,KB(ID)
-                QSUMM           = QSUMM          +QNEW(K)
-                TSUM            = TSUM           +QNEW(K)*T2(K,ID)
-                CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QNEW(K)*C2(K,ID,CN(1:NAC))
-              END DO
-              IF (QSUMM /= 0.0) THEN
-                TINSUM(JBD)           = (TSUM           +QINSUM(JBD)*TINSUM(JBD))          /(QSUMM+QINSUM(JBD))
-                CINSUM(CN(1:NAC),JBD) = (CSUM(CN(1:NAC))+QINSUM(JBD)*CINSUM(CN(1:NAC),JBD))/(QSUMM+QINSUM(JBD))
-                QINSUM(JBD)           =  QINSUM(JBD)    +QSUMM
-              END IF
-            END IF
-            QSUM(JB) = 0.0; TSUM = 0.0; CSUM = 0.0
-            DO K=KT,KB(ID)
-              QSUM(JB)        = QSUM(JB)       +QOUT(K,JB)
-              TSUM            = TSUM           +QOUT(K,JB)*T2(K,ID)
-              CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QOUT(K,JB)*C2(K,ID,CN(1:NAC))
-            END DO
-            IF (QSUM(JB) /= 0.0) THEN
-              TOUT(JB)           = TSUM           /QSUM(JB)
-              COUT(CN(1:NAC),JB) = CSUM(CN(1:NAC))/QSUM(JB)
-            END IF
-          END IF
-          IF (IDPI(JP) /= 0) THEN
-            IF (US(JBD) /= IDPI(JP) .OR. HEAD_FLOW(JBD) .OR. UP_HEAD(JBD)) THEN
-              JTT              = JTT+1
-              QTR(JTT)         = QPI(JP)
-              ITR(JTT)         = IDPI(JP)
-              PLACE_QTR(JTT)   = PDPIC(JP) == ' DENSITY'
-              SPECIFY_QTR(JTT) = PDPIC(JP) == ' SPECIFY'
-              IF (SPECIFY_QTR(JTT)) THEN
-                ELTRT(JTT) = ETDPI(JP)
-                ELTRB(JTT) = EBDPI(JP)
-              END IF
-              JBTR(JTT) = JBD
-              IF (JLAT == 1) THEN
-                TSUM = 0.0; QSUMM = 0.0; CSUM(CN(1:NAC)) = 0.0
-                DO K=KTW(JWW),KBW(JWW)
-                  QSUMM           = QSUMM          +QSW(K,JWW)
-                  TSUM            = TSUM           +QSW(K,JWW)*T2(K,IWD(JWW))
-                  CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QSW(K,JWW)*C2(K,IWD(JWW),CN(1:NAC))
-                END DO
-                TTR(JTT)           = TSUM           /QSUMM
-                CTR(CN(1:NAC),JTT) = CSUM(CN(1:NAC))/QSUMM
-              ELSE
-                TTR(JTT)           = TOUT(JB)
-                CTR(CN(1:NAC),JTT) = COUT(CN(1:NAC),JB)
-              END IF
-            ELSE
-              IF (LATERAL_PIPE(JP)) THEN
-                TSUM      = 0.0; QSUMM = 0.0; CSUM = 0.0
-                ILAT(JWW) = 1
-                JB        = JBD
-                DO K=KTW(JWW),KBW(JWW)
-                  QSUMM           = QSUMM          +QSW(K,JWW)
-                  TSUM            = TSUM           +QSW(K,JWW)*T2(K,IWD(JWW))
-                  CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QSW(K,JWW)*C2(K,IWD(JWW),CN(1:NAC))
-                END DO
-                TINSUM(JB)           = (TINSUM(JB)          *QINSUM(JB)+TSUM)           /(QSUMM+QINSUM(JB))
-                CINSUM(CN(1:NAC),JB) = (CINSUM(CN(1:NAC),JB)*QINSUM(JB)+CSUM(CN(1:NAC)))/(QSUMM+QINSUM(JB))
-                QINSUM(JB)           =  QSUMM               +QINSUM(JB)
-              END IF
-            END IF
-          END IF
-        ELSE
-          JTT              =  JTT+1
-          JWW              =  JWW+1
-          IWD(JWW)         =  IDPI(JP)
-          ITR(JTT)         =  IUPI(JP)
-          QTR(JTT)         = -QPI(JP)
-          QWD(JWW)         = -QPI(JP)
-          KTWD(JWW)        =  KTDPI(JP)
-          KBWD(JWW)        =  KBDPI(JP)
-          EWD(JWW)         =  EDPI(JP)
-          PLACE_QTR(JTT)   =  PUPIC(JP) == ' DENSITY'
-          SPECIFY_QTR(JTT) =  PUPIC(JP) == ' SPECIFY'
-          IF (SPECIFY_QTR(JTT)) THEN
-            ELTRT(JTT) = ETUPI(JP)
-            ELTRB(JTT) = EBUPI(JP)
-          END IF
-          JBTR(JTT) = JBU
-          JBWD(JWW) = JBD
-          I         = MAX(CUS(JBWD(JWW)),IWD(JWW))
-          JB        = JBWD(JWW)
-          JW        = JWDPI(JP)
-          KT        = KTWB(JW)
-          jwd=jww
-          CALL LATERAL_WITHDRAWAL   !(JWW)
-          DO K=KTW(JWW),KBW(JWW)
-            QSS(K,I) = QSS(K,I)-QSW(K,JWW)
-          END DO
-          IF (IDPI(JP) /= 0) THEN
-            TSUM  = 0.0; QSUMM = 0.0; CSUM  = 0.0
-            DO K=KTW(JWW),KBW(JWW)
-              QSUMM           = QSUMM          +QSW(K,JWW)
-              TSUM            = TSUM           +QSW(K,JWW)*T2(K,IWD(JWW))
-              CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QSW(K,JWW)*C2(K,IWD(JWW),CN(1:NAC))
-            END DO
-            TTR(JTT)           = TSUM           /QSUMM
-            CTR(CN(1:NAC),JTT) = CSUM(CN(1:NAC))/QSUMM
-          END IF
-        END IF
-      END DO
-    END IF
-    IF (GATES) THEN
-      CALL GATE_FLOW
-      DO JG=1,NGT
-
-!****** Positive flows
-
-        JLAT = 0
-        JBU  = JBUGT(JG)
-        JBD  = JBDGT(JG)
-        tdgon=.false.        ! cb 1/16/13
-        jsg=jg
-        nnsg=1
-        if (cac(ndo) == '      ON' .and. gasgtc(jg) == '      ON')tdgon=.true.
-        IF (QGT(JG) >= 0.0) THEN
-          IF (LATERAL_GATE(JG)) THEN
+                     endif
+                 endif
+             endif
+         enddo
+     endif
+     if(pipes)then
+         yss = ys
+         vss = vs
+         vsts = vst
+         ysts = yst
+         dtps = dtp
+         qolds = qold
+         call PIPE_FLOW     ! (NIT)
+         do jp = 1, npi
+ 
+             if(DYNPIPE(jp)=='      ON')QPI(jp) = QPI(jp)*BP(jp)
+                                                              ! SW 5/10/10
+ 
+ 
+!******      Positive flows
+ 
+             jlat = 0
+             jbu = JBUPI(jp)
+             jbd = JBDPI(jp)
+             tdgon = .FALSE. ! cb 1/16/13
+             if(QPI(jp)>=0.0)then
+                 if(LATERAL_PIPE(jp))then
+                     jlat = 1
+                     jww = jww + 1
+                     IWD(jww) = IUPI(jp)
+                     qwd(jww) = QPI(jp)
+                     KTWD(jww) = KTUPI(jp)
+                     KBWD(jww) = KBUPI(jp)
+                     EWD(jww) = EUPI(jp)
+                     JBWD(jww) = jbu
+                     i = MAX(CUS(JBWD(jww)), IWD(jww))
+                     jb = JBWD(jww)
+                     jw = JWUPI(jp)
+                     kt = KTWB(jw)
+                     jwd = jww
+                     call LATERAL_WITHDRAWAL
+                                       !(JWW)
+                     do k = KTW(jww), KBW(jww)
+                         QSS(k, i) = QSS(k, i) - QSW(k, jww)
+                     enddo
+                 else
+                     jss(jbu) = jss(jbu) + 1
+                     KTSW(jss(jbu), jbu) = KTDPI(jp)
+                     KBSW(jss(jbu), jbu) = KBDPI(jp)
+                     jb = jbu
+                     POINT_SINK(jss(jbu), jbu) = .TRUE.
+                     id = IUPI(jp)
+                     QSTR(jss(jbu), jbu) = QPI(jp)
+                     ESTR(jss(jbu), jbu) = EUPI(jp)
+                     kt = KTWB(JWUPI(jp))
+                     jw = JWUPI(jp)
+                     call DOWNSTREAM_WITHDRAWAL(jss(jbu))
+                     if(IDPI(jp)/=0 .AND. US(jbd)==IDPI(jp))then
+                         qsumm = 0.0
+                         tsum = 0.0
+                         csum = 0.0
+                         do k = kt, KB(id)
+                             qsumm = qsumm + QNEW(k)
+                             tsum = tsum + QNEW(k)*T2(k, id)
+                             csum(cn(1:nac)) = csum(cn(1:nac)) + QNEW(k)       &
+                               & *C2(k, id, cn(1:nac))
+                         enddo
+                         if(qsumm/=0.0)then
+                             tinsum(jbd) = (tsum + qinsum(jbd)*tinsum(jbd))    &
+                               & /(qsumm + qinsum(jbd))
+                             cinsum(cn(1:nac), jbd)                            &
+                               & = (csum(cn(1:nac)) + qinsum(jbd)              &
+                               & *cinsum(cn(1:nac), jbd))/(qsumm + qinsum(jbd))
+                             qinsum(jbd) = qinsum(jbd) + qsumm
+                         endif
+                     endif
+                     QSUM(jb) = 0.0
+                     tsum = 0.0
+                     csum = 0.0
+                     do k = kt, KB(id)
+                         QSUM(jb) = QSUM(jb) + qout(k, jb)
+                         tsum = tsum + qout(k, jb)*T2(k, id)
+                         csum(cn(1:nac)) = csum(cn(1:nac)) + qout(k, jb)       &
+                           & *C2(k, id, cn(1:nac))
+                     enddo
+                     if(QSUM(jb)/=0.0)then
+                         TOUT(jb) = tsum/QSUM(jb)
+                         cout(cn(1:nac), jb) = csum(cn(1:nac))/QSUM(jb)
+                     endif
+                 endif
+                 if(IDPI(jp)/=0)then
+                     if(US(jbd)/=IDPI(jp) .OR. HEAD_FLOW(jbd) .OR. UP_HEAD(jbd)&
+                      & )then
+                         jtt = jtt + 1
+                         qtr(jtt) = QPI(jp)
+                         ITR(jtt) = IDPI(jp)
+                         PLACE_QTR(jtt) = PDPIC(jp)==' DENSITY'
+                         SPECIFY_QTR(jtt) = PDPIC(jp)==' SPECIFY'
+                         if(SPECIFY_QTR(jtt))then
+                             ELTRT(jtt) = ETDPI(jp)
+                             ELTRB(jtt) = EBDPI(jp)
+                         endif
+                         JBTR(jtt) = jbd
+                         if(jlat==1)then
+                             tsum = 0.0
+                             qsumm = 0.0
+                             csum(cn(1:nac)) = 0.0
+                             do k = KTW(jww), KBW(jww)
+                                 qsumm = qsumm + QSW(k, jww)
+                                 tsum = tsum + QSW(k, jww)*T2(k, IWD(jww))
+                                 csum(cn(1:nac)) = csum(cn(1:nac))             &
+                                   & + QSW(k, jww)*C2(k, IWD(jww), cn(1:nac))
+                             enddo
+                             TTR(jtt) = tsum/qsumm
+                             CTR(cn(1:nac), jtt) = csum(cn(1:nac))/qsumm
+                         else
+                             TTR(jtt) = TOUT(jb)
+                             CTR(cn(1:nac), jtt) = cout(cn(1:nac), jb)
+                         endif
+                     elseif(LATERAL_PIPE(jp))then
+                         tsum = 0.0
+                         qsumm = 0.0
+                         csum = 0.0
+                         ilat(jww) = 1
+                         jb = jbd
+                         do k = KTW(jww), KBW(jww)
+                             qsumm = qsumm + QSW(k, jww)
+                             tsum = tsum + QSW(k, jww)*T2(k, IWD(jww))
+                             csum(cn(1:nac)) = csum(cn(1:nac)) + QSW(k, jww)   &
+                               & *C2(k, IWD(jww), cn(1:nac))
+                         enddo
+                         tinsum(jb) = (tinsum(jb)*qinsum(jb) + tsum)           &
+                                    & /(qsumm + qinsum(jb))
+                         cinsum(cn(1:nac), jb)                                 &
+                           & = (cinsum(cn(1:nac), jb)*qinsum(jb)               &
+                           & + csum(cn(1:nac)))/(qsumm + qinsum(jb))
+                         qinsum(jb) = qsumm + qinsum(jb)
+                     endif
+                 endif
+             else
+                 jtt = jtt + 1
+                 jww = jww + 1
+                 IWD(jww) = IDPI(jp)
+                 ITR(jtt) = IUPI(jp)
+                 qtr(jtt) = -QPI(jp)
+                 qwd(jww) = -QPI(jp)
+                 KTWD(jww) = KTDPI(jp)
+                 KBWD(jww) = KBDPI(jp)
+                 EWD(jww) = EDPI(jp)
+                 PLACE_QTR(jtt) = PUPIC(jp)==' DENSITY'
+                 SPECIFY_QTR(jtt) = PUPIC(jp)==' SPECIFY'
+                 if(SPECIFY_QTR(jtt))then
+                     ELTRT(jtt) = ETUPI(jp)
+                     ELTRB(jtt) = EBUPI(jp)
+                 endif
+                 JBTR(jtt) = jbu
+                 JBWD(jww) = jbd
+                 i = MAX(CUS(JBWD(jww)), IWD(jww))
+                 jb = JBWD(jww)
+                 jw = JWDPI(jp)
+                 kt = KTWB(jw)
+                 jwd = jww
+                 call LATERAL_WITHDRAWAL
+                                    !(JWW)
+                 do k = KTW(jww), KBW(jww)
+                     QSS(k, i) = QSS(k, i) - QSW(k, jww)
+                 enddo
+                 if(IDPI(jp)/=0)then
+                     tsum = 0.0
+                     qsumm = 0.0
+                     csum = 0.0
+                     do k = KTW(jww), KBW(jww)
+                         qsumm = qsumm + QSW(k, jww)
+                         tsum = tsum + QSW(k, jww)*T2(k, IWD(jww))
+                         csum(cn(1:nac)) = csum(cn(1:nac)) + QSW(k, jww)       &
+                           & *C2(k, IWD(jww), cn(1:nac))
+                     enddo
+                     TTR(jtt) = tsum/qsumm
+                     CTR(cn(1:nac), jtt) = csum(cn(1:nac))/qsumm
+                 endif
+             endif
+         enddo
+     endif
+     if(gates)then
+         call GATE_FLOW
+         do jg = 1, ngt
+ 
+!******      Positive flows
+ 
+             jlat = 0
+             jbu = JBUGT(jg)
+             jbd = JBDGT(jg)
+             tdgon = .FALSE. ! cb 1/16/13
+             jsg = jg
+             nnsg = 1
+             if(CAC(ndo)=='      ON' .AND. GASGTC(jg)=='      ON')             &
+              & tdgon = .TRUE.
+             if(QGT(jg)>=0.0)then
+                 if(LATERAL_GATE(jg))then
  !           JLAT      = 1
-            JWW       = JWW+1
-            IWD(JWW)  = IUGT(JG)
-            QWD(JWW)  = QGT(JG)
-            KTWD(JWW) = KTUGT(JG)
-            KBWD(JWW) = KBUGT(JG)
-            EWD(JWW)  = EGT(JG)
-            IF(DYNGTC(JG) == '     ZGT' .AND. GT2CHAR == 'EGT2ELEV')THEN                    ! SW 2/25/11
-              IF(EGT2(JG) /=  0.0)THEN
-              EWD(JWW) = EGT2(JG)
-              ENDIF
-            ENDIF
-            JBWD(JWW) = JBU
-            I         = MAX(CUS(JBWD(JWW)),IWD(JWW))
-            JW        = JWUGT(JG)
-            JB        = JBWD(JWW)
-            KT        = KTWB(JW)
-            jwd=jww
-            CALL LATERAL_WITHDRAWAL    !(JWW)
-            DO K=KTW(JWW),KBW(JWW)
-              QSS(K,I) = QSS(K,I)-QSW(K,JWW)
-            END DO
-            IF (IDGT(JG) /= 0) THEN
-              CSUM(CN(1:NAC)) = 0.0; TSUM = 0.0; QSUMM = 0.0
-              JTT              = JTT+1                     !  SW 4/1/09
-              QTR(JTT)         = QGT(JG)                   !  SW 4/1/09
-              ITR(JTT)         = IDGT(JG)                  !  SW 4/1/09
-              PLACE_QTR(JTT)   = PDGTC(JG) == ' DENSITY'   !  SW 4/1/09
-              SPECIFY_QTR(JTT) = PDGTC(JG) == ' SPECIFY'   !  SW 4/1/09
-              IF (SPECIFY_QTR(JTT)) THEN                   !  SW 4/1/09
-                ELTRT(JTT) = ETDGT(JG)                     !  SW 4/1/09
-                ELTRB(JTT) = EBDGT(JG)                     !  SW 4/1/09
-              END IF
-              JBTR(JTT) = JBD                              !  SW 4/1/09
-              DO K=KTW(JWW),KBW(JWW)
-                QSUMM           = QSUMM          +QSW(K,JWW)
-                TSUM            = TSUM           +QSW(K,JWW)*T2(K,IWD(JWW))
-                CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QSW(K,JWW)*C2(K,IWD(JWW),CN(1:NAC))
-              END DO
-              IF(QSUMM==0.0)THEN
-              TTR(JTT)=0.0
-              CTR(:,JTT)=0.0
-              ELSE
-              TTR(JTT) = TSUM/QSUMM
-              DO JC=1,NAC
-                CTR(CN(JC),JTT) = CSUM(CN(JC))/QSUMM
-                IF (CN(JC) == NDO .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN
-                  TDG_GATE(JWW,JG) = .TRUE.
-                  CALL TOTAL_DISSOLVED_GAS (0,PALT(ID),1,JG,TTR(JTT),CTR(CN(JC),JTT))   ! O2
-                END IF
-                IF (CN(JC) == NGN2 .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN
-                  TDG_GATE(JWW,JG) = .TRUE.
-                  CALL TOTAL_DISSOLVED_GAS (1,PALT(ID),1,JG,TTR(JTT),CTR(CN(JC),JTT))   ! N2
-                END IF
-              END DO
-              ENDIF
-            ELSE IF (CAC(NDO) == '      ON' .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN    
-              TDG_GATE(JWW,JG) = .TRUE.
-            END IF
-          ELSE
-            JSS(JBU)                 =  JSS(JBU)+1
-            KTSW(JSS(JBU),JBU)       =  KTUGT(JG)
-            KBSW(JSS(JBU),JBU)       =  KBUGT(JG)
-            JB                       =  JBU
-            POINT_SINK(JSS(JBU),JBU) = .TRUE.
-            ID                       =  IUGT(JG)
-            ESTR(JSS(JBU),JBU)       =  EGT(JG)
-            IF(DYNGTC(JG) == '     ZGT' .AND. GT2CHAR == 'EGT2ELEV')THEN                    ! SW 2/25/11
-              IF(EGT2(JG) /=  0.0)THEN
-              ESTR(JSS(JBU),JBU)       =  EGT2(JG)
-              ENDIF
-            ENDIF
-            QSTR(JSS(JBU),JBU)       =  QGT(JG)
-            KT                       =  KTWB(JWUGT(JG))
-            JW                       =  JWUGT(JG)
-            CALL DOWNSTREAM_WITHDRAWAL (JSS(JBU))
-            QSUM(JB) = 0.0; TSUM = 0.0; CSUM = 0.0
-            DO K=KT,KB(ID)
-              QSUM(JB) = QSUM(JB)+QOUT(K,JB)
-              TSUM     = TSUM+QOUT(K,JB)*T2(K,ID)
-              DO JC=1,NAC
-                IF (CN(JC) == NDO .AND. CAC(NDO) == '      ON' .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN   ! MM 5/21/2009
-                  T2R4=T2(K,ID)
-                  CGAS=C2(K,ID,CN(JC))                                                                                    ! MM 5/21/2009                  
-                  CALL TOTAL_DISSOLVED_GAS (0,PALT(ID),1,JG,T2R4,CGAS)
-                  CSUM(CN(JC)) = CSUM(CN(JC))+QOUT(K,JB)*CGAS
+                     jww = jww + 1
+                     IWD(jww) = IUGT(jg)
+                     qwd(jww) = QGT(jg)
+                     KTWD(jww) = KTUGT(jg)
+                     KBWD(jww) = KBUGT(jg)
+                     EWD(jww) = EGT(jg)
+                     if(DYNGTC(jg)=='     ZGT' .AND. gt2char=='EGT2ELEV')then               ! SW 2/25/11
+                         if(EGT2(jg)/=0.0)EWD(jww) = EGT2(jg)
+                     endif
+                     JBWD(jww) = jbu
+                     i = MAX(CUS(JBWD(jww)), IWD(jww))
+                     jw = JWUGT(jg)
+                     jb = JBWD(jww)
+                     kt = KTWB(jw)
+                     jwd = jww
+                     call LATERAL_WITHDRAWAL
+                                       !(JWW)
+                     do k = KTW(jww), KBW(jww)
+                         QSS(k, i) = QSS(k, i) - QSW(k, jww)
+                     enddo
+                     if(IDGT(jg)/=0)then
+                         csum(cn(1:nac)) = 0.0
+                         tsum = 0.0
+                         qsumm = 0.0
+                         jtt = jtt + 1                     !  SW 4/1/09
+                         qtr(jtt) = QGT(jg)                !  SW 4/1/09
+                         ITR(jtt) = IDGT(jg)               !  SW 4/1/09
+                         PLACE_QTR(jtt) = PDGTC(jg)==' DENSITY'
+                                                           !  SW 4/1/09
+                         SPECIFY_QTR(jtt) = PDGTC(jg)==' SPECIFY'
+                                                           !  SW 4/1/09
+                         if(SPECIFY_QTR(jtt))then          !  SW 4/1/09
+                             ELTRT(jtt) = ETDGT(jg)        !  SW 4/1/09
+                             ELTRB(jtt) = EBDGT(jg)        !  SW 4/1/09
+                         endif
+                         JBTR(jtt) = jbd                   !  SW 4/1/09
+                         do k = KTW(jww), KBW(jww)
+                             qsumm = qsumm + QSW(k, jww)
+                             tsum = tsum + QSW(k, jww)*T2(k, IWD(jww))
+                             csum(cn(1:nac)) = csum(cn(1:nac)) + QSW(k, jww)   &
+                               & *C2(k, IWD(jww), cn(1:nac))
+                         enddo
+                         if(qsumm==0.0)then
+                             TTR(jtt) = 0.0
+                             CTR(:, jtt) = 0.0
+                         else
+                             TTR(jtt) = tsum/qsumm
+                             do jc = 1, nac
+                                 CTR(cn(jc), jtt) = csum(cn(jc))/qsumm
+                                 if(cn(jc)==ndo .AND. GASGTC(jg)               &
+                                  & =='      ON' .AND. QGT(jg)>0.0)then
+                                     TDG_GATE(jww, jg) = .TRUE.
+                                     call TOTAL_DISSOLVED_GAS(0, PALT(id), 1,  &
+                                       & jg, TTR(jtt), CTR(cn(jc), jtt))                ! O2
+                                 endif
+                                 if(cn(jc)==ngn2 .AND. GASGTC(jg)              &
+                                  & =='      ON' .AND. QGT(jg)>0.0)then
+                                     TDG_GATE(jww, jg) = .TRUE.
+                                     call TOTAL_DISSOLVED_GAS(1, PALT(id), 1,  &
+                                       & jg, TTR(jtt), CTR(cn(jc), jtt))                ! N2
+                                 endif
+                             enddo
+                         endif
+                     elseif(CAC(ndo)=='      ON' .AND. GASGTC(jg)              &
+                          & =='      ON' .AND. QGT(jg)>0.0)then
+                         TDG_GATE(jww, jg) = .TRUE.
+                     endif
+                 else
+                     jss(jbu) = jss(jbu) + 1
+                     KTSW(jss(jbu), jbu) = KTUGT(jg)
+                     KBSW(jss(jbu), jbu) = KBUGT(jg)
+                     jb = jbu
+                     POINT_SINK(jss(jbu), jbu) = .TRUE.
+                     id = IUGT(jg)
+                     ESTR(jss(jbu), jbu) = EGT(jg)
+                     if(DYNGTC(jg)=='     ZGT' .AND. gt2char=='EGT2ELEV')then               ! SW 2/25/11
+                         if(EGT2(jg)/=0.0)ESTR(jss(jbu), jbu) = EGT2(jg)
+                     endif
+                     QSTR(jss(jbu), jbu) = QGT(jg)
+                     kt = KTWB(JWUGT(jg))
+                     jw = JWUGT(jg)
+                     call DOWNSTREAM_WITHDRAWAL(jss(jbu))
+                     QSUM(jb) = 0.0
+                     tsum = 0.0
+                     csum = 0.0
+                     do k = kt, KB(id)
+                         QSUM(jb) = QSUM(jb) + qout(k, jb)
+                         tsum = tsum + qout(k, jb)*T2(k, id)
+                         do jc = 1, nac
+                             if(cn(jc)==ndo .AND. CAC(ndo)=='      ON' .AND.   &
+                              & GASGTC(jg)=='      ON' .AND. QGT(jg)>0.0)then                                             ! MM 5/21/2009
+                                 t2r4 = T2(k, id)
+                                 cgas = C2(k, id, cn(jc))                                                                 ! MM 5/21/2009
+                                 call TOTAL_DISSOLVED_GAS(0, PALT(id), 1, jg,  &
+                                   & t2r4, cgas)
+                                 csum(cn(jc)) = csum(cn(jc)) + qout(k, jb)*cgas
                  !ELSEIF (CN(JC) == NGN2 .AND. CAC(NGN2) == '      ON' .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN   ! SW 10/27/15
-                ELSEIF (CN(JC) == NGN2 .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN   ! SW 10/27/15
-                  if(CAC(NGN2) == '      ON')then                                                                                ! cb 1/13/16
-                      T2R4=T2(K,ID)
-                      CGAS=C2(K,ID,CN(JC))                                                                                    !                  
-                      CALL TOTAL_DISSOLVED_GAS (1,PALT(ID),1,JG,T2R4,CGAS)
-                      CSUM(CN(JC)) = CSUM(CN(JC))+QOUT(K,JB)*CGAS
-                    end if
-                ELSE
-                  CSUM(CN(JC)) = CSUM(CN(JC))+QOUT(K,JB)*C2(K,ID,CN(JC))
-                END IF
-              END DO
-            END DO
-            IF (QSUM(JB) /= 0.0) THEN
-              TOUT(JB)           = TSUM           /QSUM(JB)
-              COUT(CN(1:NAC),JB) = CSUM(CN(1:NAC))/QSUM(JB)
-            END IF
-            IF (IDGT(JG) /= 0 .AND. US(JBD) == IDGT(JG)) THEN
-              QSUMM = 0.0
-              TSUM  = 0.0
-              CSUM  = 0.0
-              DO K=KT,KB(ID)
-                QSUMM = QSUMM+QNEW(K)
-                TSUM  = TSUM+QNEW(K)*T2(K,ID)
-                DO JC=1,NAC
-                  IF (CN(JC) == NDO .AND. CAC(NDO) == '      ON' .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN   ! MM 5/21/2009
-                    T2R4=T2(K,ID)
-                    CGAS=C2(K,ID,CN(JC))                                                                                    ! MM 5/21/2009
-                    CALL TOTAL_DISSOLVED_GAS(0,PALT(ID),1,JG,T2R4,CGAS)   ! O2
-                    CSUM(CN(JC)) = CSUM(CN(JC))+QNEW(K)*CGAS
+                             elseif(cn(jc)==ngn2 .AND. GASGTC(jg)              &
+                                  & =='      ON' .AND. QGT(jg)>0.0)then                           ! SW 10/27/15
+                                 if(CAC(ngn2)=='      ON')then                                                                   ! cb 1/13/16
+                                     t2r4 = T2(k, id)
+                                     cgas = C2(k, id, cn(jc))                                                                 !
+                                     call TOTAL_DISSOLVED_GAS(1, PALT(id), 1,  &
+                                       & jg, t2r4, cgas)
+                                     csum(cn(jc)) = csum(cn(jc)) + qout(k, jb) &
+                                       & *cgas
+                                 endif
+                             else
+                                 csum(cn(jc)) = csum(cn(jc)) + qout(k, jb)     &
+                                   & *C2(k, id, cn(jc))
+                             endif
+                         enddo
+                     enddo
+                     if(QSUM(jb)/=0.0)then
+                         TOUT(jb) = tsum/QSUM(jb)
+                         cout(cn(1:nac), jb) = csum(cn(1:nac))/QSUM(jb)
+                     endif
+                     if(IDGT(jg)/=0 .AND. US(jbd)==IDGT(jg))then
+                         qsumm = 0.0
+                         tsum = 0.0
+                         csum = 0.0
+                         do k = kt, KB(id)
+                             qsumm = qsumm + QNEW(k)
+                             tsum = tsum + QNEW(k)*T2(k, id)
+                             do jc = 1, nac
+                                 if(cn(jc)==ndo .AND. CAC(ndo)                 &
+                                  & =='      ON' .AND. GASGTC(jg)              &
+                                  & =='      ON' .AND. QGT(jg)>0.0)then                                                     ! MM 5/21/2009
+                                     t2r4 = T2(k, id)
+                                     cgas = C2(k, id, cn(jc))                                                               ! MM 5/21/2009
+                                     call TOTAL_DISSOLVED_GAS(0, PALT(id), 1,  &
+                                       & jg, t2r4, cgas)                  ! O2
+                                     csum(cn(jc)) = csum(cn(jc)) + QNEW(k)*cgas
                   !ELSEIF (CN(JC) == NGN2 .AND. CAC(NGN2) == '      ON' .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN   ! SW 10/27/15
-                  ELSEIF (CN(JC) == NGN2 .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN   ! SW 10/27/15
-                    if(CAC(NGN2) == '      ON')then
-                      T2R4=T2(K,ID)
-                      CGAS=C2(K,ID,CN(JC))                                                                                    ! 
-                      CALL TOTAL_DISSOLVED_GAS(1,PALT(ID),1,JG,T2R4,CGAS)   ! N2
-                      CSUM(CN(JC)) = CSUM(CN(JC))+QNEW(K)*CGAS
-                    END IF
-                  ELSE
-                    CSUM(CN(JC)) = CSUM(CN(JC))+QNEW(K)*C2(K,ID,CN(JC))
-                  END IF
-                END DO
-              END DO
-              IF (QSUMM /= 0.0) THEN
-                TINSUM(JBD)           = (TSUM           +QINSUM(JBD)*TINSUM(JBD))          /(QSUMM+QINSUM(JBD))
-                CINSUM(CN(1:NAC),JBD) = (CSUM(CN(1:NAC))+QINSUM(JBD)*CINSUM(CN(1:NAC),JBD))/(QSUMM+QINSUM(JBD))
-                QINSUM(JBD)           =  QINSUM(JBD)    +QSUMM
-              END IF
-           ELSEIF (IDGT(JG) /= 0) THEN
-              JTT              = JTT+1
-              QTR(JTT)         = QGT(JG)
-              ITR(JTT)         = IDGT(JG)
-              PLACE_QTR(JTT)   = PDGTC(JG) == ' DENSITY'
-              SPECIFY_QTR(JTT) = PDGTC(JG) == ' SPECIFY'
-              IF (SPECIFY_QTR(JTT)) THEN
-                ELTRT(JTT) = ETDGT(JG)
-                ELTRB(JTT) = EBDGT(JG)
-              END IF
-              JBTR(JTT) = JBD
-                TTR(JTT) =  TOUT(JB)
-                DO JC=1,NAC
-                  CTR(CN(JC),JTT) = COUT(CN(JC),JB)
-                  IF (CN(JC) == NDO .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN
-                    CALL TOTAL_DISSOLVED_GAS (0,PALT(ID),0,JS,TTR(JTT),CTR(CN(JC),JTT))    ! O2
-                  END IF
-                  IF (CN(JC) == NGN2 .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN
-                    CALL TOTAL_DISSOLVED_GAS (1,PALT(ID),0,JS,TTR(JTT),CTR(CN(JC),JTT))    ! N2
-                  END IF
-                END DO
-            END IF
-          END IF
-        ELSE IF (QGT(JG) < 0.0) THEN
-          JTT              =  JTT+1
-          JWW              =  JWW+1
-          IWD(JWW)         =  IDGT(JG)
-          ITR(JTT)         =  IUGT(JG)
-          QTR(JTT)         = -QGT(JG)
-          QWD(JWW)         = -QGT(JG)
-          KTWD(JWW)        =  KTDGT(JG)
-          KBWD(JWW)        =  KBDGT(JG)
-          EWD(JWW)         =  EGT(JG)
-          PLACE_QTR(JTT)   =  PUGTC(JG) == ' DENSITY'
-          SPECIFY_QTR(JTT) =  PUGTC(JG) == ' SPECIFY'
-          IF (SPECIFY_QTR(JTT)) THEN
-            ELTRT(JTT) = ETUGT(JG)
-            ELTRB(JTT) = EBUGT(JG)
-          END IF
-          JBTR(JTT) = JBU
-          JBWD(JWW) = JBD
-          I         = MAX(CUS(JBWD(JWW)),IWD(JWW))
-          JW        = JWDGT(JG)
-          JB        = JBWD(JWW)
-          KT        = KTWB(JW)
-          jwd=jww
-          CALL LATERAL_WITHDRAWAL !(JWW)
-          DO K=KTW(JWW),KBW(JWW)
-            QSS(K,I) = QSS(K,I)-QSW(K,JWW)
-          END DO
-          IF (IDGT(JG) /= 0) THEN
-            CSUM(CN(1:NAC)) = 0.0; TSUM = 0.0; QSUMM = 0.0
-            DO K=KTW(JWW),KBW(JWW)
-              QSUMM           = QSUMM          +QSW(K,JWW)
-              TSUM            = TSUM           +QSW(K,JWW)*T2(K,IWD(JWW))
-              CSUM(CN(1:NAC)) = CSUM(CN(1:NAC))+QSW(K,JWW)*C2(K,IWD(JWW),CN(1:NAC))
-            END DO
-            TTR(JTT) = TSUM/QSUMM
-            DO JC=1,NAC
-              CTR(CN(JC),JTT) = CSUM(CN(JC))/QSUMM
-              IF (CN(JC) == NDO .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN
-                TDG_GATE(JWW,JG) = .TRUE.
-                CALL TOTAL_DISSOLVED_GAS (0,PALT(ID),1,JG,TTR(JTT),CTR(CN(JC),JTT))
-              END IF
-              IF (CN(JC) == NGN2 .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN
-                TDG_GATE(JWW,JG) = .TRUE.
-                CALL TOTAL_DISSOLVED_GAS (1,PALT(ID),1,JG,TTR(JTT),CTR(CN(JC),JTT))
-              END IF
-            END DO
-          ELSE IF (CAC(NDO) == '      ON' .AND. GASGTC(JG) == '      ON' .AND. QGT(JG) > 0.0) THEN
-            TDG_GATE(JWW,JG) = .TRUE.
-          END IF
-        END IF
-      END DO
-    END IF
-    
-    tdgon=.false.                         ! cb 1/17/13
-    tributaries = jtt > 0
-    withdrawals = jww > 0
-    
-    
-    DO JW=1,NWB
-        DO JB=BS(JW),BE(JW)
-            IF(BR_INACTIVE(JB))THEN
+                                 elseif(cn(jc)==ngn2 .AND. GASGTC(jg)          &
+                                       &=='      ON' .AND. QGT(jg)>0.0)then                         ! SW 10/27/15
+                                     if(CAC(ngn2)=='      ON')then
+                                         t2r4 = T2(k, id)
+                                         cgas = C2(k, id, cn(jc))                                                             !
+                                         call TOTAL_DISSOLVED_GAS(1, PALT(id), &
+                                           & 1, jg, t2r4, cgas)             ! N2
+                                         csum(cn(jc)) = csum(cn(jc)) + QNEW(k) &
+                                           & *cgas
+                                     endif
+                                 else
+                                     csum(cn(jc)) = csum(cn(jc)) + QNEW(k)     &
+                                       & *C2(k, id, cn(jc))
+                                 endif
+                             enddo
+                         enddo
+                         if(qsumm/=0.0)then
+                             tinsum(jbd) = (tsum + qinsum(jbd)*tinsum(jbd))    &
+                               & /(qsumm + qinsum(jbd))
+                             cinsum(cn(1:nac), jbd)                            &
+                               & = (csum(cn(1:nac)) + qinsum(jbd)              &
+                               & *cinsum(cn(1:nac), jbd))/(qsumm + qinsum(jbd))
+                             qinsum(jbd) = qinsum(jbd) + qsumm
+                         endif
+                     elseif(IDGT(jg)/=0)then
+                         jtt = jtt + 1
+                         qtr(jtt) = QGT(jg)
+                         ITR(jtt) = IDGT(jg)
+                         PLACE_QTR(jtt) = PDGTC(jg)==' DENSITY'
+                         SPECIFY_QTR(jtt) = PDGTC(jg)==' SPECIFY'
+                         if(SPECIFY_QTR(jtt))then
+                             ELTRT(jtt) = ETDGT(jg)
+                             ELTRB(jtt) = EBDGT(jg)
+                         endif
+                         JBTR(jtt) = jbd
+                         TTR(jtt) = TOUT(jb)
+                         do jc = 1, nac
+                             CTR(cn(jc), jtt) = cout(cn(jc), jb)
+                             if(cn(jc)==ndo .AND. GASGTC(jg)=='      ON' .AND. &
+                              & QGT(jg)>0.0)                                   &
+                              & call TOTAL_DISSOLVED_GAS(0, PALT(id), 0, js,   &
+                              & TTR(jtt), CTR(cn(jc), jtt))                                ! O2
+                             if(cn(jc)==ngn2 .AND. GASGTC(jg)=='      ON' .AND.&
+                              & QGT(jg)>0.0)                                   &
+                              & call TOTAL_DISSOLVED_GAS(1, PALT(id), 0, js,   &
+                              & TTR(jtt), CTR(cn(jc), jtt))                                ! N2
+                         enddo
+                     endif
+                 endif
+             elseif(QGT(jg)<0.0)then
+                 jtt = jtt + 1
+                 jww = jww + 1
+                 IWD(jww) = IDGT(jg)
+                 ITR(jtt) = IUGT(jg)
+                 qtr(jtt) = -QGT(jg)
+                 qwd(jww) = -QGT(jg)
+                 KTWD(jww) = KTDGT(jg)
+                 KBWD(jww) = KBDGT(jg)
+                 EWD(jww) = EGT(jg)
+                 PLACE_QTR(jtt) = PUGTC(jg)==' DENSITY'
+                 SPECIFY_QTR(jtt) = PUGTC(jg)==' SPECIFY'
+                 if(SPECIFY_QTR(jtt))then
+                     ELTRT(jtt) = ETUGT(jg)
+                     ELTRB(jtt) = EBUGT(jg)
+                 endif
+                 JBTR(jtt) = jbu
+                 JBWD(jww) = jbd
+                 i = MAX(CUS(JBWD(jww)), IWD(jww))
+                 jw = JWDGT(jg)
+                 jb = JBWD(jww)
+                 kt = KTWB(jw)
+                 jwd = jww
+                 call LATERAL_WITHDRAWAL
+                                  !(JWW)
+                 do k = KTW(jww), KBW(jww)
+                     QSS(k, i) = QSS(k, i) - QSW(k, jww)
+                 enddo
+                 if(IDGT(jg)/=0)then
+                     csum(cn(1:nac)) = 0.0
+                     tsum = 0.0
+                     qsumm = 0.0
+                     do k = KTW(jww), KBW(jww)
+                         qsumm = qsumm + QSW(k, jww)
+                         tsum = tsum + QSW(k, jww)*T2(k, IWD(jww))
+                         csum(cn(1:nac)) = csum(cn(1:nac)) + QSW(k, jww)       &
+                           & *C2(k, IWD(jww), cn(1:nac))
+                     enddo
+                     TTR(jtt) = tsum/qsumm
+                     do jc = 1, nac
+                         CTR(cn(jc), jtt) = csum(cn(jc))/qsumm
+                         if(cn(jc)==ndo .AND. GASGTC(jg)=='      ON' .AND.     &
+                          & QGT(jg)>0.0)then
+                             TDG_GATE(jww, jg) = .TRUE.
+                             call TOTAL_DISSOLVED_GAS(0, PALT(id), 1, jg,      &
+                               & TTR(jtt), CTR(cn(jc), jtt))
+                         endif
+                         if(cn(jc)==ngn2 .AND. GASGTC(jg)=='      ON' .AND.    &
+                          & QGT(jg)>0.0)then
+                             TDG_GATE(jww, jg) = .TRUE.
+                             call TOTAL_DISSOLVED_GAS(1, PALT(id), 1, jg,      &
+                               & TTR(jtt), CTR(cn(jc), jtt))
+                         endif
+                     enddo
+                 elseif(CAC(ndo)=='      ON' .AND. GASGTC(jg)=='      ON' .AND.&
+                      & QGT(jg)>0.0)then
+                     TDG_GATE(jww, jg) = .TRUE.
+                 endif
+             endif
+         enddo
+     endif
+ 
+     tdgon = .FALSE.                      ! cb 1/17/13
+     tributaries = jtt>0
+     withdrawals = jww>0
+ 
+ 
+     do jw = 1, nwb
+         do jb = BS(jw), BE(jw)
+             if(BR_INACTIVE(jb))then
                 ! CONVERT INFLOWS TO TRIBS SET TO THE CUS(1) LOCATION
-                JTT=JTT+1
-                ITR(JTT)         =  CUS(1)   ! HARDWIRED TO FIRST BRANCH
-                  QTR(JTT)         = QIN(JB)
-                  TTR(JTT)         = TIN(JB)
-                    DO JC=1,NAC
-                    CTR(CN(JC),JTT) = CIN(CN(JC),JB)
-                    END DO
+                 jtt = jtt + 1
+                 ITR(jtt) = CUS(1)           ! HARDWIRED TO FIRST BRANCH
+                 qtr(jtt) = QIN(jb)
+                 TTR(jtt) = TIN(jb)
+                 do jc = 1, nac
+                     CTR(cn(jc), jtt) = CIN(cn(jc), jb)
+                 enddo
                !  PLACE_QTR(JTT)   =  '   DISTR'
-                  PLACE_QTR(JTT)   =  .FALSE.         !SR 01/22/2018
-                  JBTR(JTT) = 1
-            ENDIF        
-        ENDDO
-    ENDDO
-    
-    
-    
-    DO JW=1,NWB
-      KT = KTWB(JW)
-      DO JB=BS(JW),BE(JW)
-      IF(BR_INACTIVE(JB))CYCLE  ! SW 6/12/2017
-        IU = CUS(JB)
-        ID = DS(JB)
-        IF (EVAPORATION(JW)) THEN
-          EVBR(JB) = 0.0
-          DO I=IU,ID
-            FW = AFW(JW)+BFW(JW)*WIND2(I)**CFW(JW)
-            IF (RH_EVAP(JW)) THEN
-              EA = EXP(2.3026*(7.5*TDEW(JW)/(TDEW(JW)+237.3)+0.6609))
-              ES = EXP(2.3026*(7.5*T2(KT,I)/(T2(KT,I)+237.3)+0.6609))
-              IF (TDEW(JW) < 0.0) EA = EXP(2.3026*(9.5*TDEW(JW)/(TDEW(JW)+265.5)+0.6609))
-              IF (T2(KT,I) < 0.0) ES = EXP(2.3026*(9.5*T2(KT,I)/(T2(KT,I)+265.5)+0.6609))
-              TAIRV = (TAIR(JW)+273.0)/(1.0-0.378*EA/760.0)
-              DTV   = (T2(KT,I)+273.0)/(1.0-0.378*ES/760.0)-TAIRV
-              DTVL  =  0.0084*WIND2(I)**3
-              IF (DTV < DTVL) DTV = DTVL
-              FW = (3.59*DTV**0.3333333+4.26*WIND2(I))
-            END IF
-            TM    = (T2(KT,I)+TDEW(JW))*0.5
-            VPTG  =  0.35+0.015*TM+0.0012*TM*TM
-            EV(I) =  VPTG*(T2(KT,I)-TDEW(JW))*FW*BI(KT,I)*DLX(I)/2.45E9
-            IF (EV(I) < 0.0 .OR. ICE(I)) EV(I) = 0.0
-            QSS(KT,I) = QSS(KT,I)-EV(I)
-            EVBR(JB)  = EVBR(JB)+EV(I)
-          END DO
-        END IF
-        IF (PRECIPITATION(JW)) THEN
-          QPRBR(JB) = 0.0
-          DO I=IU,ID
-            QPR(I)    = PR(JB)*BI(KT,I)*DLX(I)
-            QPRBR(JB) = QPRBR(JB)+QPR(I)
-            QSS(KT,I) = QSS(KT,I)+QPR(I)
-          END DO
-        END IF
-        IF (TRIBUTARIES) THEN
-          DO JT=1,JTT
-
-!********** Inflow fractions
-
-            IF (JB == JBTR(JT)) THEN
-              I = MAX(ITR(JT),IU)
-              QTRF(KT:KB(I),JT) = 0.0
-              IF (PLACE_QTR(JT)) THEN
-
-!************** Inflow layer
-
-                SSTOT = 0.0
-                DO J=NSSS,NSSE
-                  SSTOT = SSTOT+CTR(J,JT)
-                END DO
-                RHOTR = DENSITY(TTR(JT),CTR(NTDS,JT),SSTOT)
-                K     = KT
-                DO WHILE (RHOTR > RHO(K,I) .AND. K < KB(I))
-                  K = K+1
-                END DO
-                KTTR(JT) = K
-                KBTR(JT) = K
-
-!************** Layer inflows
-
-                VQTR  =  QTR(JT)*DLT
-                VQTRI =  VQTR
-                QTRFR =  1.0
-                INCR  = -1
-                DO WHILE (QTRFR > 0.0)
-                  IF (K <= KB(I)) THEN
-                    V1 = VOL(K,I)
-                    IF (VQTR > 0.5*V1) THEN
-                      QTRF(K,JT) = 0.5*V1/VQTRI
-                      QTRFR      = QTRFR-QTRF(K,JT)
-                      VQTR       = VQTR-QTRF(K,JT)*VQTRI
-                      IF (K == KT) THEN
-                        K    = KBTR(JT)
-                        INCR = 1
-                      END IF
-                    ELSE
-                      QTRF(K,JT) = QTRFR
-                      QTRFR      = 0.0
-                    END IF
-                    IF (INCR < 0) KTTR(JT) = K
-                    IF (INCR > 0) KBTR(JT) = MIN(KB(I),K)
-                    K = K+INCR
-                  ELSE
-                    QTRF(KT,JT) = QTRF(KT,JT)+QTRFR
-                    QTRFR       = 0.0
-                  END IF
-                END DO
-              ELSE
-                IF (SPECIFY_QTR(JT)) THEN
-                  KTTR(JT) = 2
+                 PLACE_QTR(jtt) = .FALSE.             !SR 01/22/2018
+                 JBTR(jtt) = 1
+             endif
+         enddo
+     enddo
+ 
+ 
+ 
+     do jw = 1, nwb
+         kt = KTWB(jw)
+         do jb = BS(jw), BE(jw)
+             if(BR_INACTIVE(jb))cycle
+                                ! SW 6/12/2017
+             iu = CUS(jb)
+             id = DS(jb)
+             if(EVAPORATION(jw))then
+                 EVBR(jb) = 0.0
+                 do i = iu, id
+                     fw = AFW(jw) + BFW(jw)*WIND2(i)**CFW(jw)
+                     if(RH_EVAP(jw))then
+                         ea = EXP                                              &
+                            & (2.3026*(7.5*TDEW(jw)/(TDEW(jw) + 237.3) + 0.6609&
+                            & ))
+                         es = EXP(2.3026*(7.5*T2(kt, i)/(T2(kt,i) + 237.3) +   &
+                            & 0.6609))
+                         if(TDEW(jw)<0.0)                                      &
+                          & ea = EXP(2.3026*(9.5*TDEW(jw)/(TDEW(jw) + 265.5)   &
+                          & + 0.6609))
+                         if(T2(kt, i)<0.0)                                     &
+                          & es = EXP(2.3026*(9.5*T2(kt, i)/(T2(kt,i) + 265.5)  &
+                          & + 0.6609))
+                         tairv = (TAIR(jw) + 273.0)/(1.0 - 0.378*ea/760.0)
+                         dtv = (T2(kt, i) + 273.0)/(1.0 - 0.378*es/760.0)      &
+                             & - tairv
+                         dtvl = 0.0084*WIND2(i)**3
+                         if(dtv<dtvl)dtv = dtvl
+                         fw = (3.59*dtv**0.3333333 + 4.26*WIND2(i))
+                     endif
+                     tm = (T2(kt, i) + TDEW(jw))*0.5
+                     vptg = 0.35 + 0.015*tm + 0.0012*tm*tm
+                     EV(i) = vptg*(T2(kt, i) - TDEW(jw))*fw*BI(kt, i)*DLX(i)   &
+                           & /2.45E9
+                     if(EV(i)<0.0 .OR. ICE(i))EV(i) = 0.0
+                     QSS(kt, i) = QSS(kt, i) - EV(i)
+                     EVBR(jb) = EVBR(jb) + EV(i)
+                 enddo
+             endif
+             if(PRECIPITATION(jw))then
+                 QPRBR(jb) = 0.0
+                 do i = iu, id
+                     QPR(i) = PR(jb)*BI(kt, i)*DLX(i)
+                     QPRBR(jb) = QPRBR(jb) + QPR(i)
+                     QSS(kt, i) = QSS(kt, i) + QPR(i)
+                 enddo
+             endif
+             if(tributaries)then
+                 do jt = 1, jtt
+ 
+!**********          Inflow fractions
+ 
+                     if(jb==JBTR(jt))then
+                         i = MAX(ITR(jt), iu)
+                         qtrf(kt:KB(i), jt) = 0.0
+                         if(PLACE_QTR(jt))then
+ 
+!**************              Inflow layer
+ 
+                             sstot = 0.0
+                             do j = nsss, nsse
+                                 sstot = sstot + CTR(j, jt)
+                             enddo
+                             rhotr = DENSITY(TTR(jt), CTR(ntds, jt), sstot)
+                             k = kt
+                             do while (rhotr>RHO(k, i) .AND. k<KB(i))
+                                 k = k + 1
+                             enddo
+                             KTTR(jt) = k
+                             KBTR(jt) = k
+ 
+!**************              Layer inflows
+ 
+                             vqtr = qtr(jt)*dlt
+                             vqtri = vqtr
+                             qtrfr = 1.0
+                             incr = -1
+                             do while (qtrfr>0.0)
+                                 if(k<=KB(i))then
+                                     v1 = VOL(k, i)
+                                     if(vqtr>0.5*v1)then
+                                         qtrf(k, jt) = 0.5*v1/vqtri
+                                         qtrfr = qtrfr - qtrf(k, jt)
+                                         vqtr = vqtr - qtrf(k, jt)*vqtri
+                                         if(k==kt)then
+                                         k = KBTR(jt)
+                                         incr = 1
+                                         endif
+                                     else
+                                         qtrf(k, jt) = qtrfr
+                                         qtrfr = 0.0
+                                     endif
+                                     if(incr<0)KTTR(jt) = k
+                                     if(incr>0)KBTR(jt) = MIN(KB(i), k)
+                                     k = k + incr
+                                 else
+                                     qtrf(kt, jt) = qtrf(kt, jt) + qtrfr
+                                     qtrfr = 0.0
+                                 endif
+                             enddo
+                         else
+                             if(SPECIFY_QTR(jt))then
+                                 KTTR(jt) = 2
      !             DO WHILE (EL(KTTR(JT),I) > ELTRT(JT))
-                  DO WHILE (EL(KTTR(JT),I) > ELTRT(JT)  .and. EL(KTTR(JT)+1,I) > ELTRT(JT))    ! SW 10/3/13
-                    KTTR(JT) = KTTR(JT)+1
-                  END DO
-                  KBTR(JT) = KMX-1
-                  DO WHILE (EL(KBTR(JT),I) < ELTRB(JT))
-                    KBTR(JT) = KBTR(JT)-1
-                  END DO
-                ELSE
-                  KTTR(JT) = KT
-                  KBTR(JT) = KB(I)
-                END IF
-                KTTR(JT) = MAX(KT,KTTR(JT))
-                KBTR(JT) = MIN(KB(I),KBTR(JT))
-                IF (KBTR(JT) < KTTR(JT)) KBTR(JT) = KTTR(JT)
-                BHSUM = 0.0
-                DO K=KTTR(JT),KBTR(JT)
-                  BHSUM = BHSUM+BH2(K,I)
-                END DO
-                DO K=KTTR(JT),KBTR(JT)
-                  QTRF(K,JT) = BH2(K,I)/BHSUM
-                END DO
-              END IF
-              DO K=KTTR(JT),KBTR(JT)
-                QSS(K,I) = QSS(K,I)+QTR(JT)*QTRF(K,JT)
-              END DO
-            END IF
-          END DO
-        END IF
-        IF (DIST_TRIBS(JB)) THEN
-          AKBR = 0.0
-          DO I=IU,ID
-            AKBR = AKBR+BI(KT,I)*DLX(I)
-          END DO
-          DO I=IU,ID
-            QDT(I)    = QDTR(JB)*BI(KT,I)*DLX(I)/AKBR
-            QSS(KT,I) = QSS(KT,I)+QDT(I)
-          END DO
-        END IF
-        IF (WITHDRAWALS) THEN
-          DO JWD=1,NWD
-            IF (JB == JBWD(JWD)) THEN
-              I = MAX(CUS(JBWD(JWD)),IWD(JWD))
-              CALL LATERAL_WITHDRAWAL    !(JWD)
-              DO K=KTW(JWD),KBW(JWD)
-                QSS(K,I) = QSS(K,I)-QSW(K,JWD)
-              END DO
-            END IF
-          END DO
-        END IF
-        IF (UH_INTERNAL(JB)) THEN
-          IF (UHS(JB) /= DS(JBUH(JB)) .OR. DHS(JBUH(JB)) /= US(JB)) THEN
-            IF (JBUH(JB) >= BS(JW) .AND. JBUH(JB) <= BE(JW)) THEN
-              DO K=KT,KB(IU-1)
-                QSS(K,UHS(JB)) = QSS(K,UHS(JB))-VOLUH2(K,JB)/DLT
-              END DO
-            ELSE
-              CALL UPSTREAM_FLOW
-            END IF
-          END IF
-        END IF
-        IF (DH_INTERNAL(JB)) THEN
-          IF (DHS(JB) /= US(JBDH(JB)) .OR. UHS(JBDH(JB)) /= DS(JB)) THEN
-            IF (JBDH(JB) >= BS(JW) .AND. JBDH(JB) <= BE(JW)) THEN
-              DO K=KT,KB(ID+1)
-                QSS(K,CDHS(JB)) = QSS(K,CDHS(JB))+VOLDH2(K,JB)/DLT
-              END DO
-            ELSE
-              CALL DOWNSTREAM_FLOW
-            END IF
-          END IF
-        END IF
-      END DO
-    END DO
-
-!** Compute tributary contribution to cross-shear
-
-    IF (TRIBUTARIES) THEN
-      DO JW=1,NWB
-        DO JB=BS(JW),BE(JW)
-          DO JT=1,JTT
-            IF (JB == JBTR(JT)) THEN
-              I = MAX(CUS(JB),ITR(JT))
-              DO K=KTWB(JW),KBMIN(I)
-                UYBR(K,I) = UYBR(K,I)+ABS(QTR(JT))*QTRF(K,JT)
-              END DO
-            END IF
-          END DO
-        END DO
-      END DO
-    END IF
-
-    return
-    end subroutine hydroinout
+                                 do while (EL(KTTR(jt), i)>ELTRT(jt) .AND.     &
+                                   & EL(KTTR(jt) + 1, i)>ELTRT(jt))                            ! SW 10/3/13
+                                     KTTR(jt) = KTTR(jt) + 1
+                                 enddo
+                                 KBTR(jt) = kmx - 1
+                                 do while (EL(KBTR(jt), i)<ELTRB(jt))
+                                     KBTR(jt) = KBTR(jt) - 1
+                                 enddo
+                             else
+                                 KTTR(jt) = kt
+                                 KBTR(jt) = KB(i)
+                             endif
+                             KTTR(jt) = MAX(kt, KTTR(jt))
+                             KBTR(jt) = MIN(KB(i), KBTR(jt))
+                             if(KBTR(jt)<KTTR(jt))KBTR(jt) = KTTR(jt)
+                             bhsum = 0.0
+                             do k = KTTR(jt), KBTR(jt)
+                                 bhsum = bhsum + BH2(k, i)
+                             enddo
+                             do k = KTTR(jt), KBTR(jt)
+                                 qtrf(k, jt) = BH2(k, i)/bhsum
+                             enddo
+                         endif
+                         do k = KTTR(jt), KBTR(jt)
+                             QSS(k, i) = QSS(k, i) + qtr(jt)*qtrf(k, jt)
+                         enddo
+                     endif
+                 enddo
+             endif
+             if(DIST_TRIBS(jb))then
+                 akbr = 0.0
+                 do i = iu, id
+                     akbr = akbr + BI(kt, i)*DLX(i)
+                 enddo
+                 do i = iu, id
+                     QDT(i) = QDTR(jb)*BI(kt, i)*DLX(i)/akbr
+                     QSS(kt, i) = QSS(kt, i) + QDT(i)
+                 enddo
+             endif
+             if(withdrawals)then
+                 do jwd = 1, nwd
+                     if(jb==JBWD(jwd))then
+                         i = MAX(CUS(JBWD(jwd)), IWD(jwd))
+                         call LATERAL_WITHDRAWAL
+                                         !(JWD)
+                         do k = KTW(jwd), KBW(jwd)
+                             QSS(k, i) = QSS(k, i) - QSW(k, jwd)
+                         enddo
+                     endif
+                 enddo
+             endif
+             if(UH_INTERNAL(jb))then
+                 if(UHS(jb)/=DS(JBUH(jb)) .OR. DHS(JBUH(jb))/=US(jb))then
+                     if(JBUH(jb)>=BS(jw) .AND. JBUH(jb)<=BE(jw))then
+                         do k = kt, KB(iu - 1)
+                             QSS(k, UHS(jb)) = QSS(k, UHS(jb)) - VOLUH2(k, jb) &
+                               & /dlt
+                         enddo
+                     else
+                         call UPSTREAM_FLOW
+                     endif
+                 endif
+             endif
+             if(DH_INTERNAL(jb))then
+                 if(DHS(jb)/=US(JBDH(jb)) .OR. UHS(JBDH(jb))/=DS(jb))then
+                     if(JBDH(jb)>=BS(jw) .AND. JBDH(jb)<=BE(jw))then
+                         do k = kt, KB(id + 1)
+                             QSS(k, CDHS(jb)) = QSS(k, CDHS(jb))               &
+                               & + VOLDH2(k, jb)/dlt
+                         enddo
+                     else
+                         call DOWNSTREAM_FLOW
+                     endif
+                 endif
+             endif
+         enddo
+     enddo
+ 
+!**  Compute tributary contribution to cross-shear
+ 
+     if(tributaries)then
+         do jw = 1, nwb
+             do jb = BS(jw), BE(jw)
+                 do jt = 1, jtt
+                     if(jb==JBTR(jt))then
+                         i = MAX(CUS(jb), ITR(jt))
+                         do k = KTWB(jw), KBMIN(i)
+                             uybr(k, i) = uybr(k, i) + ABS(qtr(jt))*qtrf(k, jt)
+                         enddo
+                     endif
+                 enddo
+             enddo
+         enddo
+     endif
+ 
+     end subroutine HYDROINOUT

@@ -1,116 +1,149 @@
-
-  SUBROUTINE AERATE
-  USE GLOBAL;USE MAIN; USE KINETIC; USE TRANS; USE SCREENC
-  IMPLICIT NONE
-  REAL, ALLOCATABLE, DIMENSION (:) ::  DZMULTA,SMASS,ATIMON,ATIMOFF,CUMDOMASS
-  REAL, ALLOCATABLE, DIMENSION (:,:) ::  DZMULT
-  INTEGER, ALLOCATABLE, DIMENSION (:) ::   IASEG,KTOPA,KBOTA,IPRB,KPRB
-  REAL, ALLOCATABLE, DIMENSION (:) :: DOOFF,DOON
-  REAL, ALLOCATABLE, DIMENSION (:) :: ACTUAL_MASS
-  LOGICAL, ALLOCATABLE, DIMENSION (:) :: AERATEO2
-  INTEGER NAER, NLAYERS, KTOP,KBOT
-  CHARACTER(16) :: CONAER
-  SAVE
-  
-  ALLOCATE(DZMULT(KMX,IMX))
-   DZMULT=1.0
-   OPEN(AERATEFN,FILE='W2_AERATE.NPT',STATUS='OLD')
-   READ (AERATEFN,'(//I8,A16)')NAER,CONAER
-
-     IF(NAER.EQ.0)NAER=1    
-     ALLOCATE(DZMULTA(NAER),IASEG(NAER),KTOPA(NAER),KBOTA(NAER),SMASS(NAER),ATIMON(NAER),ATIMOFF(NAER),DOOFF(NAER),DOON(NAER),IPRB(NAER),KPRB(NAER),ACTUAL_MASS(NAER),AERATEO2(NAER),CUMDOMASS(NAER))
-     DZMULTA=0.0; ACTUAL_MASS=0.0; CUMDOMASS=0.0
-     READ(AERATEFN,1013)
-1013 FORMAT(/)
-      DO I=1,NAER
-        READ(AERATEFN,'(I8,I8,I8,F8.0,F8.0,F8.0,3F8.0,2I8)')IASEG(I),KTOPA(I),KBOTA(I),SMASS(I),ATIMON(I),ATIMOFF(I),DZMULTA(I),DOOFF(I),DOON(I),IPRB(I),KPRB(I)
-      END DO
-
-	CLOSE(AERATEFN)
-
-IF(RESTART_IN)THEN
-  OPEN(AERATEFN,FILE=CONAER,POSITION='APPEND')
-        JDAY1=0.0
-        REWIND (AERATEFN)
-        READ   (AERATEFN,'(//)')
-        DO WHILE (JDAY1 < JDAY)
-          READ (AERATEFN,'(F9.0)',END=106) JDAY1
-        END DO
-        BACKSPACE (AERATEFN)
-        106     JDAY1=0.0
-ELSE
-  OPEN(AERATEFN,FILE=CONAER,STATUS='UNKNOWN')
-  WRITE(AERATEFN,'(A,I3,A)')'OUTPUT FILE FOR AERATION INPUT WITH',NAER,' INPUT(S).'
-  WRITE(AERATEFN,'(A114)')'JDAY,INSTMASSRATE#1(KGO2/D),CUMMASS#1(KGO2),DOPROBE#1(MG/L),INSTMASSRATE#2(KGO2/D),CUMMASS#2(KGO2),DOPROBE#2(MG/L)'
-ENDIF
-  DZMULT=1.0  ! ALWAYS RESET MIXING COEFFICIENT FOR AERATION SW IPC 2/01/01
- RETURN
+!*==aerate.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
  
- ENTRY DZAERATE   ! FROM W2_ MAIN CODE
-    DO I=1,NAER
-    DZ(KTOPA(I):KBOTA(I),IASEG(I))=DZ(KTOPA(I):KBOTA(I),IASEG(I))*DZMULT(KTOPA(I):KBOTA(I),IASEG(I))
-    ENDDO   
- RETURN
-    
- ENTRY AERATEMASS   ! FROM WQ_CONSTITUENTS
-
-! SECTION FOR HYPOLIMNETIC AERATION 
- DZMULT=1.0   ! ALWAYS RESET TO 1.0 IN CASE NO AERATION
-              DO II=1,NAER
-                IF(JDAY.GE.ATIMON(II).AND.JDAY.LE.ATIMOFF(II))THEN
-
+     subroutine AERATE
+     use GLOBAL
+     use MAIN
+     use KINETIC
+     use TRANS
+     use SCREENC
+     implicit none
+!
+!*** Start of declarations rewritten by SPAG
+!
+! Local variables
+!
+     real, allocatable, dimension(:), save :: actual_mass, atimoff, atimon,    &
+       & cumdomass, dooff, doon, dzmulta, smass
+     logical, allocatable, dimension(:), save :: aerateo2
+     character(16), save :: conaer
+     real, allocatable, dimension(:, :), save :: dzmult
+     integer, allocatable, dimension(:), save :: iaseg, iprb, kbota, kprb,     &
+          & ktopa
+     integer, save :: kbot, ktop, naer, nlayers
+!
+!*** End of declarations rewritten by SPAG
+!
+ 
+     allocate(dzmult(kmx, imx))
+     dzmult = 1.0
+     open(aeratefn, file = 'W2_AERATE.NPT', status = 'OLD')
+     read(aeratefn, '(//I8,A16)')naer, conaer
+ 
+     if(naer==0)naer = 1
+     allocate(dzmulta(naer), iaseg(naer), ktopa(naer), kbota(naer), smass(naer)&
+            & , atimon(naer), atimoff(naer), dooff(naer), doon(naer),          &
+            & iprb(naer), kprb(naer), actual_mass(naer), aerateo2(naer),       &
+            & cumdomass(naer))
+     dzmulta = 0.0
+     actual_mass = 0.0
+     cumdomass = 0.0
+     read(aeratefn, 9001)
+9001  format(/)
+     do i = 1, naer
+         read(aeratefn, '(I8,I8,I8,F8.0,F8.0,F8.0,3F8.0,2I8)')iaseg(i),        &
+            & ktopa(i), kbota(i), smass(i), atimon(i), atimoff(i), dzmulta(i), &
+            & dooff(i), doon(i), iprb(i), kprb(i)
+     enddo
+ 
+     close(aeratefn)
+ 
+     if(restart_in)then
+         open(aeratefn, file = conaer, position = 'APPEND')
+         jday1 = 0.0
+         rewind(aeratefn)
+         read(aeratefn, '(//)')
+         do while (jday1<jday)
+             read(aeratefn, '(F9.0)', end = 50)jday1
+         enddo
+         backspace(aeratefn)
+50       jday1 = 0.0
+     else
+         open(aeratefn, file = conaer, status = 'UNKNOWN')
+         write(aeratefn, '(A,I3,A)')'OUTPUT FILE FOR AERATION INPUT WITH',     &
+                                  & naer, ' INPUT(S).'
+         write(aeratefn, '(A114)')                                             &
+     &'JDAY,INSTMASSRATE#1(KGO2/D),CUMMASS#1(KGO2),DOPROBE#1(MG/L),INSTMASSRATE&
+     &#2(KGO2/D),CUMMASS#2(KGO2),DOPROBE#2(MG/L)'
+     endif
+     dzmult = 1.0
+              ! ALWAYS RESET MIXING COEFFICIENT FOR AERATION SW IPC 2/01/01
+     return
+ 
+     entry DZAERATE
+                  ! FROM W2_ MAIN CODE
+     do i = 1, naer
+         dz(ktopa(i):kbota(i), iaseg(i)) = dz(ktopa(i):kbota(i), iaseg(i))     &
+           & *dzmult(ktopa(i):kbota(i), iaseg(i))
+     enddo
+     return
+ 
+     entry AERATEMASS
+                    ! FROM WQ_CONSTITUENTS
+ 
+!    SECTION FOR HYPOLIMNETIC AERATION
+     dzmult = 1.0
+              ! ALWAYS RESET TO 1.0 IN CASE NO AERATION
+     do ii = 1, naer
+         if(jday>=atimon(ii) .AND. jday<=atimoff(ii))then
+ 
            ! FIND BRANCH AND WATERBODY FOR ISEG
-                  DO JJB=1,NBR
-                    IF(BR_INACTIVE(JJB))CYCLE  ! SW 6/12/2017
-                    IF(IASEG(II).GE.US(JJB).AND.IASEG(II).LE.DS(JJB))THEN
-                      EXIT
-                    END IF
-                  END DO
-
-                  IF(JJB.EQ.JB)THEN   ! IF THIS BRANCH DOESN'T HAVE AERATION SKIP IT
-
-                    KTOP=MAX(KTWB(JW),KTOPA(II))
-                    KBOT=MIN(KB(IASEG(II)),KBOTA(II))
-
-                    NLAYERS=KBOT-KTOP+1
-
-                    AERATEO2(II)=.TRUE.
-
-                    IF(O2(KPRB(II),IPRB(II)).GT.DOON(II).AND.O2(KPRB(II),IPRB(II)).GT.DOOFF(II))THEN
-                      AERATEO2(II)=.FALSE.
-                      ACTUAL_MASS(II)=0.0
-                    END IF
-
-                    IF(AERATEO2(II))THEN
-                      ACTUAL_MASS(II)=SMASS(II)  ! SW 12/28/01
-                      CUMDOMASS(II)=CUMDOMASS(II)+SMASS(II)*DLT/86400.
-                      DO K=KTOP,KBOT
-            
-                        DZMULT(K,IASEG(II))=DZMULTA(II)   ! THIS MEANS THE INCREASE IN DZ IS LAGGED ONE TIME STEP
-                        CSSB(K,IASEG(II),NDO)=CSSB(K,IASEG(II),NDO)+SMASS(II)/(86.4*REAL(NLAYERS))
-! UNITS OF SMASS ARE IN KG/DAY
-! TYPICAL UNITS OF CSSB: (MG/L)*(M3/S) TO OONVERT MULTIPLY BY (1KG/10^6MG)*(1000L/1M3)*(86400S/DAY)==86.4
-                        
-                      END DO          
-                    END IF
-                  END IF
-                ELSE
-                AERATEO2(II)=.FALSE.
-                ACTUAL_MASS(II)=0.0
-                END IF
-                
-              END DO
-
-RETURN
-
-ENTRY AERATEOUTPUT     ! FROM W2_MAIN CODE
-
-        WRITE(AERATEFN,'(F9.3,<NAER>(1X,E12.3,1X,E12.3,1X,F8.3))')JDAY,(ACTUAL_MASS(II),CUMDOMASS(II),O2(KPRB(II),IPRB(II)),II=1,NAER)
-
-RETURN
-ENTRY DEALLOCATE_AERATE
-DEALLOCATE(DZMULTA,IASEG,KTOPA,KBOTA,SMASS,ATIMON,ATIMOFF,DOOFF,DOON,IPRB,KPRB,ACTUAL_MASS,AERATEO2,CUMDOMASS)
-DEALLOCATE(DZMULT)
-CLOSE(AERATEFN)
-RETURN
-END
+             do jjb = 1, nbr
+                 if(BR_INACTIVE(jjb))cycle     ! SW 6/12/2017
+                 if(iaseg(ii)>=US(jjb) .AND. iaseg(ii)<=DS(jjb))exit
+             enddo
+ 
+             if(jjb==jb)then          ! IF THIS BRANCH DOESN'T HAVE AERATION SKIP IT
+ 
+                 ktop = MAX(KTWB(jw), ktopa(ii))
+                 kbot = MIN(KB(iaseg(ii)), kbota(ii))
+ 
+                 nlayers = kbot - ktop + 1
+ 
+                 aerateo2(ii) = .TRUE.
+ 
+                 if(O2(kprb(ii), iprb(ii))>doon(ii) .AND.                      &
+                  & O2(kprb(ii), iprb(ii))>dooff(ii))then
+                     aerateo2(ii) = .FALSE.
+                     actual_mass(ii) = 0.0
+                 endif
+ 
+                 if(aerateo2(ii))then
+                     actual_mass(ii) = smass(ii) ! SW 12/28/01
+                     cumdomass(ii) = cumdomass(ii) + smass(ii)*dlt/86400.
+                     do k = ktop, kbot
+ 
+                         dzmult(k, iaseg(ii)) = dzmulta(ii)
+                                                          ! THIS MEANS THE INCREASE IN DZ IS LAGGED ONE TIME STEP
+                         CSSB(k, iaseg(ii), ndo) = CSSB(k, iaseg(ii), ndo)     &
+                           & + smass(ii)/(86.4*REAL(nlayers))
+!                        UNITS OF SMASS ARE IN KG/DAY
+!                        TYPICAL UNITS OF CSSB: (MG/L)*(M3/S) TO OONVERT
+ 
+!                        MULTIPLY BY
+!                        (1KG/10^6MG)*(1000L/1M3)*(86400S/DAY)==86.4
+                     enddo
+                 endif
+             endif
+         else
+             aerateo2(ii) = .FALSE.
+             actual_mass(ii) = 0.0
+         endif
+ 
+     enddo
+ 
+     return
+ 
+     entry AERATEOUTPUT
+                       ! FROM W2_MAIN CODE
+ 
+     write(aeratefn, '(F9.3,<NAER>(1X,E12.3,1X,E12.3,1X,F8.3))')jday,          &
+         & (actual_mass(ii), cumdomass(ii), O2(kprb(ii), iprb(ii)), ii = 1,    &
+         & naer)
+ 
+     return
+     entry DEALLOCATE_AERATE
+     deallocate(dzmulta, iaseg, ktopa, kbota, smass, atimon, atimoff, dooff,   &
+              & doon, iprb, kprb, actual_mass, aerateo2, cumdomass)
+     deallocate(dzmult)
+     close(aeratefn)
+     end subroutine AERATE

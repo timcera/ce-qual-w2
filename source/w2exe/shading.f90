@@ -1,134 +1,154 @@
-
+!*==shading.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
+ 
+ 
 !***********************************************************************************************************************************
 !**                                                S U B R O U T I N E   S H A D I N G                                            **
 !***********************************************************************************************************************************
-
-SUBROUTINE SHADING
-  USE SHADEC; USE GLOBAL; USE GDAYC; USE SURFHE; USE GEOMC; USE SCREENC; USE LOGICC
-  IMPLICIT NONE
-  CHARACTER(1) :: BANK
-  REAL         :: LOCAL,STANDARD,HOUR,TAUD,SINAL,A02,AZ00,A0,AX,ANG1,ANG2,TOPOANG,SFACT,HT,CLINE,SRED,STLEN,EDGE,EDAZ,SN,AZT
-  INTEGER      :: IDAY,J
-
-! Calculate solar altitude, declination, and local hour angle when short-wave solar radiation is provided as input
-
-  IF (READ_RADIATION(JW)) THEN
-    LOCAL    =  LONGIT(JW)
-    STANDARD =  15.0*INT(LONGIT(JW)/15.0)
-    HOUR     = (JDAY-INT(JDAY))*24.0
-    IDAY     =  JDAY-((INT(JDAY/365))*365)
-    IDAY     =  IDAY+INT(INT(JDAY/365)/4)
-    TAUD     = (2*PI*(IDAY-1))/365
-    EQTNEW   =  0.170*SIN(4*PI*(IDAY-80)/373)-0.129*SIN(2*PI*(IDAY-8)/355)
-    HH(JW)   =  0.261799*(HOUR-(LOCAL-STANDARD)*0.0666667+EQTNEW-12.0)
-    DECL(JW) =  0.006918-0.399912*COS(TAUD)+0.070257*SIN(TAUD)-0.006758*COS(2*TAUD)+0.000907*SIN(2*TAUD)-0.002697*COS(3*TAUD)      &
-                +0.001480*SIN(3*TAUD)
-    SINAL    =  SIN(LAT(JW)*.0174533)*SIN(DECL(JW))+COS(LAT(JW)*.0174533)*COS(DECL(JW))*COS(HH(JW))
-    A00(JW)  =  57.2957795*ASIN(SINAL)
-  END IF
-
-! If the sun is below the horizon, set SHADE(I) to 0
-
-  IF (A00(JW) < 0.0) THEN
-    SHADE(I) = 0.0
-  ELSE
-
-!** Calculate solar azimuth angle
-
-    A02 = A00(JW)/57.2957795
-    AX  = (SIN(DECL(JW))*COS(LAT(JW)*0.017453)-COS(DECL(JW))*COS(HH(JW))*SIN(LAT(JW)*0.017453))/COS(A02)
-    IF (AX >  1.0) AX =  1.0
-    IF (AX < -1.0) AX = -1.0
-    AZT = ACOS(AX)
-    IF (HH(JW) < 0.0) THEN
-     AZ00 = AZT
-    ELSE
-     AZ00 = 2.0*PI-AZT
-    END IF
-    A0 = A02
-
-!** Interpolate the topographic shade angle
-
-    DO J=1,IANG-1
-      IF (AZ00 > ANG(J) .AND. AZ00 <= ANG(J+1)) THEN
-        ANG1    =  AZ00-ANG(J)
-        ANG2    = (TOPO(I,J+1)-TOPO(I,J))/GAMA                 ! SW 10/17/05
-        TOPOANG =  TOPO(I,J)+ANG2*ANG1
-      END IF
-    END DO
-    IF (AZ00 > ANG(IANG) .AND. AZ00 <= 2*PI) THEN
-      ANG1    =  AZ00-ANG(IANG)
-      ANG2    = (TOPO(I,1)-TOPO(I,IANG))/GAMA                  ! SW 10/17/05
-      TOPOANG =  TOPO(I,IANG)+ANG2*ANG1
-    END IF
-
-!** Complete topographic shading if solar altitude less than topo angle
-
-    IF (A0 <= TOPOANG) THEN
-      SFACT = 0.90
-      GO TO 100
-    END IF
-
-!** No vegetative shading if azimuth angle is oriented parallel to stream
-
-    IF (AZ00 == PHI0(I) .OR. AZ00 == PHI0(I)+PI .OR. AZ00+PI == PHI0(I)) THEN
-      SFACT = 0.0
-      GO TO 100
-    END IF
-
-!** Bank with the controlling vegetation
-
-    IF (PHI0(I) > 0.0 .AND. PHI0(I) <= PI) THEN
-      IF (AZ00 > PHI0(I)     .AND. AZ00 <= PHI0(I)+PI) BANK = 'L'
-      IF (AZ00 > 0.0         .AND. AZ00 <= PHI0(I))    BANK = 'R'
-      IF (AZ00 > PHI0(I)+PI  .AND. AZ00 <  2.0*PI)     BANK = 'R'
-    ELSE IF (PHI0(I) > PI .AND. PHI0(I) <= 2.0*PI) THEN
-      IF (AZ00 >= PHI0(I)    .AND. AZ00 < 2.0*PI)      BANK = 'L'
-      IF (AZ00 >= 0.0        .AND. AZ00 < PHI0(I)-PI)  BANK = 'L'
-      IF (AZ00 >= PHI0(I)-PI .AND. AZ00 < PHI0(I))     BANK = 'R'
-    END IF
-
-!** No topographic shading
-
-    IF (BANK == 'L') THEN
-      IF (TTLB(I) < ELWS(I)) THEN
-        SFACT = 0.0
-        GO TO 100
-      ELSE
-        HT    = TTLB(I)-ELWS(I)
-        CLINE = CLLB(I)
-        SRED  = SRLB2(I)
-        IF (JDAYG > SRFJD1(I) .AND. JDAYG <= SRFJD2(I)) SRED = SRLB1(I)
-      END IF
-    ELSE
-      IF (TTRB(I) < ELWS(I)) THEN
-        SFACT = 0.0
-        GO TO 100
-      ELSE
-        HT    = TTRB(I)-ELWS(I)
-        CLINE = CLRB(I)
-        SRED  = SRRB2(I)
-        IF (JDAYG > SRFJD1(I) .AND. JDAYG <= SRFJD2(I)) SRED = SRRB1(I)
-      END IF
-    END IF
-    STLEN = HT/TAN (A0)
-    EDGE  = MAX (0.0,CLINE-BI(KT,I)/2.0)
-
-!** Distance from vegetation to water edge on line parallel to azimuth
-
-    EDAZ = EDGE/ABS(SIN(PHI0(I)-AZ00))
-    IF (STLEN <= EDAZ) THEN
-      SFACT = 0.0
-      GO TO 100
-    END IF
-
-!** Distance shadow extends over water (perpendicular to segment orientation)
-
-    SN    = MIN (HT*ABS (SIN (ABS (PHI0(I)-AZ00)))/TAN (A0)-EDGE,BI(KT,I))
-    SFACT = SRED*SN/BI(KT,I)
-100 CONTINUE
-    SHADE(I) = MAX (0.0,1-SFACT)
-    SHADE(I) = MIN(ABS(SHADEI(I)),SHADE(I))              ! SW 10/2/2017 Allows for fixed canopy cover over top of channel - only used if shade is less than shadei only valid for -0.99 and 0.0
-  END IF
-  RETURN
-END SUBROUTINE SHADING
+ 
+     subroutine SHADING
+     use SHADEC
+     use GLOBAL
+     use GDAYC
+     use SURFHE
+     use GEOMC
+     use SCREENC
+     use LOGICC
+     implicit none
+!
+!*** Start of declarations rewritten by SPAG
+!
+! Local variables
+!
+     real :: a0, a02, ang1, ang2, ax, az00, azt, cline, edaz, edge, hour, ht,  &
+           & local, sfact, sinal, sn, sred, standard, stlen, taud, topoang
+     character(1) :: bank
+     integer :: iday, j
+!
+!*** End of declarations rewritten by SPAG
+!
+ 
+!    Calculate solar altitude, declination, and local hour angle when
+ 
+!    short-wave solar radiation is provided as input
+     if(READ_RADIATION(jw))then
+         local = LONGIT(jw)
+         standard = 15.0*INT(LONGIT(jw)/15.0)
+         hour = (jday - INT(jday))*24.0
+         iday = jday - ((INT(jday/365))*365)
+         iday = iday + INT(INT(jday/365)/4)
+         taud = (2*pi*(iday - 1))/365
+         eqtnew = 0.170*SIN(4*pi*(iday - 80)/373)                              &
+                & - 0.129*SIN(2*pi*(iday - 8)/355)
+         HH(jw) = 0.261799*(hour - (local - standard)*0.0666667 + eqtnew -     &
+                & 12.0)
+         DECL(jw) = 0.006918 - 0.399912*COS(taud) + 0.070257*SIN(taud)         &
+                  & - 0.006758*COS(2*taud) + 0.000907*SIN(2*taud)              &
+                  & - 0.002697*COS(3*taud) + 0.001480*SIN(3*taud)
+         sinal = SIN(LAT(jw)*.0174533)*SIN(DECL(jw)) + COS(LAT(jw)*.0174533)   &
+               & *COS(DECL(jw))*COS(HH(jw))
+         A00(jw) = 57.2957795*ASIN(sinal)
+     endif
+ 
+!    If the sun is below the horizon, set SHADE(I) to 0
+ 
+     if(A00(jw)<0.0)then
+         SHADE(i) = 0.0
+     else
+ 
+!**      Calculate solar azimuth angle
+ 
+         a02 = A00(jw)/57.2957795
+         ax = (SIN(DECL(jw))*COS(LAT(jw)*0.017453) - COS(DECL(jw))*COS(HH(jw)) &
+            & *SIN(LAT(jw)*0.017453))/COS(a02)
+         if(ax>1.0)ax = 1.0
+         if(ax< - 1.0)ax = -1.0
+         azt = ACOS(ax)
+         if(HH(jw)<0.0)then
+             az00 = azt
+         else
+             az00 = 2.0*pi - azt
+         endif
+         a0 = a02
+ 
+!**      Interpolate the topographic shade angle
+ 
+         do j = 1, iang - 1
+             if(az00>ANG(j) .AND. az00<=ANG(j + 1))then
+                 ang1 = az00 - ANG(j)
+                 ang2 = (TOPO(i, j + 1) - TOPO(i, j))/gama     ! SW 10/17/05
+                 topoang = TOPO(i, j) + ang2*ang1
+             endif
+         enddo
+         if(az00>ANG(iang) .AND. az00<=2*pi)then
+             ang1 = az00 - ANG(iang)
+             ang2 = (TOPO(i, 1) - TOPO(i, iang))/gama          ! SW 10/17/05
+             topoang = TOPO(i, iang) + ang2*ang1
+         endif
+ 
+!**      Complete topographic shading if solar altitude less than topo angle
+ 
+         if(a0<=topoang)then
+             sfact = 0.90
+             goto 50
+         endif
+ 
+!**      No vegetative shading if azimuth angle is oriented parallel to stream
+ 
+         if(az00==PHI0(i) .OR. az00==PHI0(i) + pi .OR. az00 + pi==PHI0(i))then
+             sfact = 0.0
+             goto 50
+         endif
+ 
+!**      Bank with the controlling vegetation
+ 
+         if(PHI0(i)>0.0 .AND. PHI0(i)<=pi)then
+             if(az00>PHI0(i) .AND. az00<=PHI0(i) + pi)bank = 'L'
+             if(az00>0.0 .AND. az00<=PHI0(i))bank = 'R'
+             if(az00>PHI0(i) + pi .AND. az00<2.0*pi)bank = 'R'
+         elseif(PHI0(i)>pi .AND. PHI0(i)<=2.0*pi)then
+             if(az00>=PHI0(i) .AND. az00<2.0*pi)bank = 'L'
+             if(az00>=0.0 .AND. az00<PHI0(i) - pi)bank = 'L'
+             if(az00>=PHI0(i) - pi .AND. az00<PHI0(i))bank = 'R'
+         endif
+ 
+!**      No topographic shading
+ 
+         if(bank=='L')then
+             if(TTLB(i)<ELWS(i))then
+                 sfact = 0.0
+                 goto 50
+             else
+                 ht = TTLB(i) - ELWS(i)
+                 cline = CLLB(i)
+                 sred = SRLB2(i)
+                 if(jdayg>SRFJD1(i) .AND. jdayg<=SRFJD2(i))sred = SRLB1(i)
+             endif
+         elseif(TTRB(i)<ELWS(i))then
+             sfact = 0.0
+             goto 50
+         else
+             ht = TTRB(i) - ELWS(i)
+             cline = CLRB(i)
+             sred = SRRB2(i)
+             if(jdayg>SRFJD1(i) .AND. jdayg<=SRFJD2(i))sred = SRRB1(i)
+         endif
+         stlen = ht/TAN(a0)
+         edge = MAX(0.0, cline - BI(kt, i)/2.0)
+ 
+!**      Distance from vegetation to water edge on line parallel to azimuth
+ 
+         edaz = edge/ABS(SIN(PHI0(i) - az00))
+         if(stlen<=edaz)then
+             sfact = 0.0
+             goto 50
+         endif
+ 
+!**      Distance shadow extends over water (perpendicular to segment
+ 
+!        orientation)
+         sn = MIN(ht*ABS(SIN(ABS(PHI0(i)-az00)))/TAN(a0) - edge, BI(kt, i))
+         sfact = sred*sn/BI(kt, i)
+50       SHADE(i) = MAX(0.0, 1 - sfact)
+         SHADE(i) = MIN(ABS(SHADEI(i)), SHADE(i))        ! SW 10/2/2017 Allows for fixed canopy cover over top of channel - only used if shade is less than shadei only valid for -0.99 and 0.0
+     endif
+     end subroutine SHADING

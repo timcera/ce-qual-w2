@@ -1,19 +1,48 @@
-SUBROUTINE ENDSIMULATION
-
-USE MAIN
-USE GLOBAL;     USE NAMESC; USE GEOMC;  USE LOGICC; USE PREC;  USE SURFHE;  USE KINETIC; USE SHADEC; USE EDDY
-  USE STRUCTURES; USE TRANS;  USE TVDC;   USE SELWC;  USE GDAYC; USE SCREENC; USE TDGAS;   USE RSTART
-  USE MACROPHYTEC; USE POROSITYC; USE ZOOPLANKTONC; USE INITIALVELOCITY; USE BIOENERGETICS; USE TRIDIAG_V
+!*==endsimulation.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
+     subroutine ENDSIMULATION
+ 
   ! CEMA testing start
-  use CEMAVars
   ! CEMA testing end
-  IMPLICIT NONE
-  EXTERNAL RESTART_OUTPUT
-  INTEGER IFILE 
+     use MAIN
+     use GLOBAL
+     use NAMESC
+     use GEOMC
+     use LOGICC
+     use PREC
+     use SURFHE
+     use KINETIC
+     use SHADEC
+     use EDDY
+     use STRUCTURES
+     use TRANS
+     use TVDC
+     use SELWC
+     use GDAYC
+     use SCREENC
+     use TDGAS
+     use RSTART
+     use MACROPHYTEC
+     use POROSITYC
+     use ZOOPLANKTONC
+     use INITIALVELOCITY
+     use BIOENERGETICS
+     use TRIDIAG_V
+     use CEMAVARS
+     implicit none
+!
+!*** Start of declarations rewritten by SPAG
+!
+! Local variables
+!
+     integer :: ifile
+     external RESTART_OUTPUT
+!
+!*** End of declarations rewritten by SPAG
+!
 !***********************************************************************************************************************************
-!*                                                    Task 3: End Simulation                                                      **
+!*   Task 3: End Simulation                                                   
 !***********************************************************************************************************************************
-
+ 
  ! CEMA testing start
    !real jcs
    !!jcs=jcinzz*2.67/1000.0  ! converting C flux to DO flux, assuming 2.67 gO/gC
@@ -21,356 +50,433 @@ USE GLOBAL;     USE NAMESC; USE GEOMC;  USE LOGICC; USE PREC;  USE SURFHE;  USE 
    ! !write(1081,'(5g12.5)')xjnh4,Jcinzz/1000.0,Jcs,MFTSedFlxVars(2,26)
    ! write(1081,'(5g12.5)')xjnh4,SD_Jctest,Jcs,MFTSedFlxVars(2,26)
  ! CEMA testing end
-
-  CALL DATE_AND_TIME (CDATE,CCTIME)
-  IF (.NOT. ERROR_OPEN) TEXT = 'Normal termination at '//CCTIME(1:2)//':'//CCTIME(3:4)//':'//CCTIME(5:6)//' on '//CDATE(5:6)//'/'     &
-                                                       //CDATE(7:8)//'/'//CDATE(3:4)
-  TEXT = ADJUSTL (TRIM(TEXT))
-  CALL CPU_TIME (CURRENT)
-  DO JW=1,NWB
-    IF (SNAPSHOT(JW)) THEN
-      WRITE (SNP(JW),'(/A/)')            ADJUSTL(TRIM(TEXT))
-      WRITE (SNP(JW),'(A)')             'Runtime statistics'
-      WRITE (SNP(JW),'(2(A,I0))')       '  Grid                 = ', IMX,' x ',KMX
-      WRITE (SNP(JW),'(A,I0)')          '  Maximum active cells = ', NTACMX,'  Minimum active cells = ',NTACMN
-      WRITE (SNP(JW),'(3(A,F0.1))')     '  Segment lengths, m   = ', DLXMIN,'-',DLXMAX
-      WRITE (SNP(JW),'(3(A,F0.1))')     '  Layer heights, m     = ', HMIN,  '-',HMAX
-      WRITE (SNP(JW),'(A)')             '  Timestep'
-      WRITE (SNP(JW),'(A,I0)')          '    Total iterations   = ', NIT
-      WRITE (SNP(JW),'(A,I0)')          '    # of violations    = ', NV
-      WRITE (SNP(JW),'(A,F0.2)')        '    % violations       = ', FLOAT(NV)/FLOAT(NIT)*100.0
-      WRITE (SNP(JW),'(A,I0,A)')        '    Average timestep   = ', INT(DLTAV),' sec'
-      WRITE (SNP(JW),'(A,I0,A,F0.2,A)') '  Simulation time      = ', INT(ELTMJD),' days ',(ELTMJD-INT(ELTMJD))*24.0,' hours'
-      WRITE (SNP(JW),'(A,F0.2,A)')      '  Total CPU runtime    = ',(CURRENT-START)/60.0,' min'
-      CLOSE (SNP(JW))
-    END IF
-    !IF (VECTOR(JW))      CLOSE (VPL(JW))
-    IF (PROFILE(JW))     CLOSE (PRF(JW))
-    IF (SPREADSHEET(JW)) CLOSE (SPR(JW))
-    IF (CONTOUR(JW))     CLOSE (CPL(JW))
-  END DO
-  
-  ! *** DSI W2_TOOL LINKAGE
-  IF(VECTOR(1))CLOSE(VPL(1))
-  
-  IF (TIME_SERIES) THEN
-    DO J=1,NIKTSR
-      CLOSE (TSR(J))
-    END DO
-    close(WLFN)   ! WL output file  ! SW 9/25/13
-  END IF
-  IF (WARNING_OPEN) THEN
-    CLOSE (WRN)
-  ELSE
-    CLOSE (WRN,STATUS='DELETE')
-  END IF
-  IF (ERROR_OPEN) THEN
-    CLOSE (W2ERR)
-  ELSE
-    CLOSE (W2ERR,STATUS='DELETE')
-  END IF
-  DO J=40,NOPEN
-   CLOSE (J)
-  END DO
-  do jw=1,nwb
-      if(volume_balance(jw).AND.CONTOUR(JW))then    ! SW 2/19/16
-      CLOSE(FLOWBFN)   ! flowbal file
-          exit
-      endif
-  enddo
-   do jw=1,nwb
-      if(MASS_balance(jw).AND.DERIVED_CALC.AND.CONTOUR(JW))then   ! SW 2/19/16
-      CLOSE(MASSBFN)   ! MASS BALANCE file
-          exit
-      endif
-  enddo
-    
-  IF(SELECTC == '      ON')then          ! SW 9/25/13 New Section on closing files
-  ifile=1949
-  do jb=1,nbr
-      if(nstr(jb) > 0)then
-          ifile=ifile+1
-          close(ifile)
-      endif
-  enddo
-  if(nwd > 0)then
-      ifile=ifile+1
-      close(ifile)
-  endif
-  do jw=1,nwb   ! sw 4/20/15
-      ifile=ifile+1
-      close(ifile)
-  enddo
-
-  endif
-  
-      IF (DOWNSTREAM_OUTFLOW) THEN  
-      JFILE=0  
-      DO JWD=1,NIWDO  
-        CLOSE(WDO(JWD,1))
-        CLOSE(WDO(JWD,2))
-        IF (CONSTITUENTS) THEN  
-          CLOSE (WDO(JWD,3))
-        END IF  
-        IF (DERIVED_CALC) THEN  
-          CLOSE(WDO(JWD,4))
-        END IF  
-          
-        ! Determine the # of withdrawals at the WITH SEG  
-        DO JB=1,NBR  ! structures
-          IF(IWDO(JWD)==DS(JB) .AND. NSTR(JB) /= 0)THEN  
-            DO JS=1,NSTR(JB)  
-              JFILE=JFILE+1  
-              CLOSE(WDO2(JFILE,1))  
-              CLOSE(WDO2(JFILE,2))
-              IF (CONSTITUENTS) THEN  
-                CLOSE(WDO2(JFILE,3))
-              ENDIF   
-              IF (DERIVED_CALC) THEN  
-                CLOSE(WDO2(JFILE,4))
-              ENDIF  
-            ENDDO  
-          ENDIF  
-        ENDDO  
-          
-        DO JS=1,NWD  ! withdrawals
-          IF(IWDO(JWD) == IWD(JS))THEN  
-            JFILE=JFILE+1  
-            CLOSE(WDO2(JFILE,1))
-            CLOSE(WDO2(JFILE,2))
-            IF (CONSTITUENTS) THEN  
-                CLOSE(WDO2(JFILE,3)) 
-            ENDIF  
-            IF (DERIVED_CALC) THEN  
-             CLOSE(WDO2(JFILE,4))
-            ENDIF  
-          ENDIF  
-        ENDDO  
-          
-        DO JS=1,NSP  ! spillways
-          IF(IWDO(JWD) == IUSP(JS))THEN  
-            JFILE=JFILE+1  
-            CLOSE(WDO2(JFILE,1))
-            CLOSE(WDO2(JFILE,2))
-            IF (CONSTITUENTS) THEN  
-                CLOSE(WDO2(JFILE,3))
-            ENDIF  
-            IF (DERIVED_CALC) THEN  
-               CLOSE(WDO2(JFILE,4))
-            ENDIF  
-          ENDIF  
-        ENDDO  
-          
-        DO JS=1,NPU  ! pumps
-          IF(IWDO(JWD) == IUPU(JS))THEN  
-            JFILE=JFILE+1  
-            CLOSE(WDO2(JFILE,1))
-            CLOSE(WDO2(JFILE,2))
-            IF (CONSTITUENTS) THEN  
-                CLOSE(WDO2(JFILE,3))
-            ENDIF  
-            IF (DERIVED_CALC) THEN  
-                CLOSE(WDO2(JFILE,4))
-            ENDIF  
-          ENDIF  
-        ENDDO  
-           
-        DO JS=1,NPI  ! pipes
-          IF(IWDO(JWD) == IUPI(JS))THEN  
-            JFILE=JFILE+1  
-            CLOSE(WDO2(JFILE,1))
-            CLOSE(WDO2(JFILE,2))
-            IF (CONSTITUENTS) THEN  
-                CLOSE(WDO2(JFILE,3))
-            ENDIF  
-            IF (DERIVED_CALC) THEN  
-                CLOSE(WDO2(JFILE,4))
-            ENDIF  
-          ENDIF  
-        ENDDO  
-          
-        DO JS=1,NGT  ! gates
-          IF(IWDO(JWD) == IUGT(JS))THEN  
-            JFILE=JFILE+1  
-            CLOSE(WDO2(JFILE,1))
-            CLOSE(WDO2(JFILE,2))
-            IF (CONSTITUENTS) THEN  
-                CLOSE(WDO2(JFILE,3))
-            ENDIF  
-            IF (DERIVED_CALC) THEN  
-                CLOSE(WDO2(JFILE,4))
-            ENDIF  
-          ENDIF  
-        ENDDO  
-          
-      END DO  
-    END IF  
-  
  
-  
-  IF(ERROR_OPEN)THEN
-  OPEN(W2ERR,FILE='W2Errordump.opt',status='unknown')
-  WRITE(w2err,*)'JDAY',jday,'SZ',sz,'Z',z,'H2KT',h2(kt,1:imx),'H1KT',h1(kt,1:imx),'BHR1',bhr1(kt,1:imx),'BHR2',bhr2(kt,1:imx),'WSE',elws,'Q',q,'QC',qc,'QERR',qerr,'T1',t1(kt,1:imx),'T2',t2(kt,1:imx),'SUKT',su(kt,1:imx),&
-                          'UKT',u(kt,1:imx),'QIN',qin,'QTR',qtr,'QWD',qwd
-  close(w2err)
-  ENDIF
-
-  DEALLOCATE (LAYERCHANGE,TECPLOT,X1, HAB)
-  DEALLOCATE (TSR,    WDO,    WDO2, ETSR,   IWDO,   ITSR,   TITLE,  CDAC,   WSC,    ESTR,   WSTR,   QSTR,   KTSW,   KBSW,   SINKC)
-  DEALLOCATE (EBC,    MBC,    PQC,    EVC,    PRC,    WINDC,  QINC,   QOUTC,  HEATC,  SLHTC,  QINIC,  DTRIC,  TRIC,   WDIC)
-  DEALLOCATE (EXC,    EXIC,   VBC,    METIC,  SLTRC,  THETA,  FRICC,  NAF,    ELTMF,  ZMIN,   IZMIN,  C2CH,   CDCH,   EPCH, KFCH, APCH, ANCH, ALCH)
-  DEALLOCATE (CPLTC,  HPLTC,  CMIN,   CMAX,   HYMIN,  HYMAX,  CDMIN,  CDMAX,  JBDAM,  ILAT,   CDPLTC, QINSUM, TINSUM, TIND)
-  DEALLOCATE (QOLD,   DTP,    DTPS,   QOLDS,  QIND,   JSS,    HDIC,   QNEW,   YSS,    VSS,    YS,     VS,     VSTS,   NSPRF)
-  DEALLOCATE (LATGTC, LATSPC, LATPIC, DYNPIPE,LATPUC, DYNGTC, OPT,    CIND,   CINSUM, CDWBC,  KFWBC,  CPRWBC, CINBRC, CTRTRC, CDTBRC, DYNPUMP)   ! SW 5/10/10
-  DEALLOCATE (YSTS,   YST,    VST,    ALLIM,  APLIM,  ANLIM,  ASLIM,  ELLIM,  EPLIM,  ENLIM,  ESLIM,  CSSK,   C1,     C2, Z0)
-  DEALLOCATE (KFS,    AF,     EF,     HYD,    KF,     AZSLC,  STRIC,  CPRBRC, CD,     KBMAX,  ELKT,   WIND2,  VISC,   CELC, DLTADD)
-  DEALLOCATE (QOAVR,  QIMXR,  QOMXR,  REAERC, LAT,    LONGIT, ELBOT,  BTH,    VPR,    LPR,    NISNP,  NIPRF,  NISPR,  DECL)
-  DEALLOCATE (A00,    HH,     T2I,    KTWB,   KBR,    IBPR,   DLVR,   ESR,    ETR,    NBL,    LPRFN,  EXTFN,  BTHFN,  METFN)
-  DEALLOCATE (SNPFN,  PRFFN,  SPRFN,  CPLFN,  VPLFN,  FLXFN,  FLXFN2, VPRFN,  AFW,    BFW,    CFW,    WINDH,  RHEVC,  FETCHC, JBDN)
-  DEALLOCATE (KBI, MACCH, GRIDC, GMA, BTA, QTOT, SEDCIP, SEDCIN, SEDCIC,SEDCIS)            ! SW 9/27/2007
-  DEALLOCATE (SDK,    FSOD,   FSED,   SEDCI,  SEDCC,   SEDPRC, ICEC,   SLICEC, ICETHI, ALBEDO, HWI,    BETAI,  GAMMAI,ICEMIN)
-  DEALLOCATE (SEDS,   SEDB)    !CB 11/28/06
-  DEALLOCATE (EXH2O,  BETA,   EXOM,   EXSS,   DXI,    CBHE,   TSED,   TSEDF,  FI,     ICET2,  AZC,    AZMAX)     ! QINT,   QOUTT
-  DEALLOCATE (AX,     WTYPEC, TAIR,   TDEW,   WIND,   PHI,    CLOUD,  CSHE,   SRON,   RANLW,    RB,     RC,     RE,     SHADE)
-  DEALLOCATE (ET,     RS,     RN,     SNPC,   SCRC,   PRFC,   SPRC,   CPLC,   VPLC,   FLXC,   NXTMCP, NXTMVP, NXTMFL, GAMMA)
-  DEALLOCATE (NXTMSN, NXTMSC, NXTMPR, NXTMSP, SNPDP,  SCRDP,  PRFDP,  SPRDP,  CPLDP,  VPLDP,  FLXDP,  NCPL,   NVPL,   NFLX)
-  DEALLOCATE (NSNP,   NSCR,   NPRF,   NSPR,   NEQN,   PO4R,   PARTP,  NH4DK,  NH4R,   NO3DK,  NO3S,   FER,    FES,    CDSUM)
-  DEALLOCATE (CO2R,   SROC,   O2ER,   O2EG,   CAQ10,  CADK,   CAS,    BODP,   BODN,   BODC,   KBOD,   TBOD,   RBOD,   DTRC)
-  DEALLOCATE (LDOMDK, RDOMDK, LRDDK,  OMT1,   OMT2,   OMK1,   OMK2,   LPOMDK, RPOMDK, LRPDK,  POMS,   ORGP,   ORGN,   ORGC)
-  DEALLOCATE (RCOEF1, RCOEF2, RCOEF3, RCOEF4, ORGSI,  NH4T1,  NH4T2,  NH4K1,  NH4K2,  NO3T1,  NO3T2,  NO3K1,  NO3K2,  NSTR)
-  DEALLOCATE (DSIR,   PSIS,   PSIDK,  PARTSI, SODT1,  SODT2,  SODK1,  SODK2,  O2NH4,  O2OM,   O2AR,   O2AG,   CG1DK,  CGS)
-  DEALLOCATE (CGQ10,  CG0DK,  CGLDK, CGKLF,CGCS,CUNIT,  CUNIT1, CUNIT2, CAC,    INCAC,  TRCAC,  DTCAC,  PRCAC,  CNAME,  CNAME1, CNAME2, CMULT) !LCJ 2/26/15
-  DEALLOCATE (CN,     INCN,   DTCN,   PRCN,   CSUM,   DLTMAX, QWDO,   TWDO,   SSS,    SEDRC,  TAUCR,  XBR, FNO3SED, DYNSTRUC)
-!  DEALLOCATE (SSFLOC, FLOCEQN)                                                 
-  !DEALLOCATE (SEDCC1,SEDCC2, ICEQSS,SDK1,sdk2,SEDCI1,SEDCI2,SEDPRC1,SEDPRC2,SEDVP1,SEDVP2,SED1,SED2) 
+!    **
+     call DATE_AND_TIME(cdate, cctime)
+     if(.NOT.error_open)text = 'Normal termination at ' // cctime(1:2)         &
+                             & // ':' // cctime(3:4) // ':' // cctime(5:6)     &
+                              & // ' on ' // cdate(5:6) // '/' // cdate(7:8)   &
+                              & // '/' // cdate(3:4)
+     text = ADJUSTL(TRIM(text))
+     call CPU_TIME(current)
+     do jw = 1, nwb
+         if(SNAPSHOT(jw))then
+             write(SNP(jw), '(/A/)')ADJUSTL(TRIM(text))
+             write(SNP(jw), '(A)')'Runtime statistics'
+             write(SNP(jw), '(2(A,I0))')'  Grid                 = ', imx,      &
+                                      & ' x ', kmx
+             write(SNP(jw), '(A,I0)')'  Maximum active cells = ', ntacmx,      &
+                                    &'  Minimum active cells = ', ntacmn
+             write(SNP(jw), '(3(A,F0.1))')'  Segment lengths, m   = ', dlxmin, &
+                  &'-', dlxmax
+             write(SNP(jw), '(3(A,F0.1))')'  Layer heights, m     = ', hmin,   &
+                  &'-', hmax
+             write(SNP(jw), '(A)')'  Timestep'
+             write(SNP(jw), '(A,I0)')'    Total iterations   = ', nit
+             write(SNP(jw), '(A,I0)')'    # of violations    = ', nv
+             write(SNP(jw), '(A,F0.2)')'    % violations       = ', FLOAT(nv)  &
+                                     & /FLOAT(nit)*100.0
+             write(SNP(jw), '(A,I0,A)')'    Average timestep   = ', INT(dltav),&
+                                      &' sec'
+             write(SNP(jw), '(A,I0,A,F0.2,A)')'  Simulation time      = ',     &
+                 & INT(eltmjd), ' days ', (eltmjd - INT(eltmjd))*24.0, ' hours'
+             write(SNP(jw), '(A,F0.2,A)')'  Total CPU runtime    = ',          &
+                 & (current - start)/60.0, ' min'
+             close(SNP(jw))
+         endif
+    !IF (VECTOR(JW))      CLOSE (VPL(JW))
+         if(PROFILE(jw))close(PRF(jw))
+         if(SPREADSHEET(jw))close(SPR(jw))
+         if(CONTOUR(jw))close(CPL(jw))
+     enddo
+ 
+  ! *** DSI W2_TOOL LINKAGE
+     if(VECTOR(1))close(VPL(1))
+ 
+     if(time_series)then
+         do j = 1, niktsr
+             close(TSR(j))
+         enddo
+         close(wlfn)
+                  ! WL output file  ! SW 9/25/13
+     endif
+     if(warning_open)then
+         close(wrn)
+     else
+         close(wrn, status = 'DELETE')
+     endif
+     if(error_open)then
+         close(w2err)
+     else
+         close(w2err, status = 'DELETE')
+     endif
+     do j = 40, nopen
+         close(j)
+     enddo
+     do jw = 1, nwb
+         if(VOLUME_BALANCE(jw) .AND. CONTOUR(jw))then
+                                                    ! SW 2/19/16
+             close(flowbfn)
+                       ! flowbal file
+             exit
+         endif
+     enddo
+     do jw = 1, nwb
+         if(MASS_BALANCE(jw) .AND. derived_calc .AND. CONTOUR(jw))then
+                                                                  ! SW 2/19/16
+             close(massbfn)
+                       ! MASS BALANCE file
+             exit
+         endif
+     enddo
+ 
+     if(selectc=='      ON')then         ! SW 9/25/13 New Section on closing files
+         ifile = 1949
+         do jb = 1, nbr
+             if(NSTR(jb)>0)then
+                 ifile = ifile + 1
+                 close(ifile)
+             endif
+         enddo
+         if(nwd>0)then
+             ifile = ifile + 1
+             close(ifile)
+         endif
+         do jw = 1, nwb
+                ! sw 4/20/15
+             ifile = ifile + 1
+             close(ifile)
+         enddo
+ 
+     endif
+ 
+     if(downstream_outflow)then
+         jfile = 0
+         do jwd = 1, niwdo
+             close(WDO(jwd, 1))
+             close(WDO(jwd, 2))
+             if(constituents)close(WDO(jwd, 3))
+             if(derived_calc)close(WDO(jwd, 4))
+ 
+        ! Determine the # of withdrawals at the WITH SEG
+             do jb = 1, nbr
+                     ! structures
+                 if(IWDO(jwd)==DS(jb) .AND. NSTR(jb)/=0)then
+                     do js = 1, NSTR(jb)
+                         jfile = jfile + 1
+                         close(WDO2(jfile, 1))
+                         close(WDO2(jfile, 2))
+                         if(constituents)close(WDO2(jfile, 3))
+                         if(derived_calc)close(WDO2(jfile, 4))
+                     enddo
+                 endif
+             enddo
+ 
+             do js = 1, nwd
+                     ! withdrawals
+                 if(IWDO(jwd)==IWD(js))then
+                     jfile = jfile + 1
+                     close(WDO2(jfile, 1))
+                     close(WDO2(jfile, 2))
+                     if(constituents)close(WDO2(jfile, 3))
+                     if(derived_calc)close(WDO2(jfile, 4))
+                 endif
+             enddo
+ 
+             do js = 1, nsp
+                     ! spillways
+                 if(IWDO(jwd)==IUSP(js))then
+                     jfile = jfile + 1
+                     close(WDO2(jfile, 1))
+                     close(WDO2(jfile, 2))
+                     if(constituents)close(WDO2(jfile, 3))
+                     if(derived_calc)close(WDO2(jfile, 4))
+                 endif
+             enddo
+ 
+             do js = 1, npu
+                     ! pumps
+                 if(IWDO(jwd)==IUPU(js))then
+                     jfile = jfile + 1
+                     close(WDO2(jfile, 1))
+                     close(WDO2(jfile, 2))
+                     if(constituents)close(WDO2(jfile, 3))
+                     if(derived_calc)close(WDO2(jfile, 4))
+                 endif
+             enddo
+ 
+             do js = 1, npi
+                     ! pipes
+                 if(IWDO(jwd)==IUPI(js))then
+                     jfile = jfile + 1
+                     close(WDO2(jfile, 1))
+                     close(WDO2(jfile, 2))
+                     if(constituents)close(WDO2(jfile, 3))
+                     if(derived_calc)close(WDO2(jfile, 4))
+                 endif
+             enddo
+ 
+             do js = 1, ngt
+                     ! gates
+                 if(IWDO(jwd)==IUGT(js))then
+                     jfile = jfile + 1
+                     close(WDO2(jfile, 1))
+                     close(WDO2(jfile, 2))
+                     if(constituents)close(WDO2(jfile, 3))
+                     if(derived_calc)close(WDO2(jfile, 4))
+                 endif
+             enddo
+ 
+         enddo
+     endif
+ 
+ 
+ 
+     if(error_open)then
+         open(w2err, file = 'W2Errordump.opt', status = 'unknown')
+         write(w2err, *)'JDAY', jday, 'SZ', sz, 'Z', z, 'H2KT', h2(kt, 1:imx), &
+                       &'H1KT', h1(kt, 1:imx), 'BHR1', bhr1(kt, 1:imx), 'BHR2',&
+                      & bhr2(kt, 1:imx), 'WSE', elws, 'Q', q, 'QC', qc, 'QERR',&
+                      & qerr, 'T1', t1(kt, 1:imx), 'T2', t2(kt, 1:imx), 'SUKT',&
+                      & su(kt, 1:imx), 'UKT', u(kt, 1:imx), 'QIN', qin, 'QTR', &
+                      & qtr, 'QWD', qwd
+         close(w2err)
+     endif
+ 
+     deallocate(layerchange, tecplot, x1, hab)
+     deallocate(TSR, WDO, WDO2, etsr, IWDO, itsr, title, cdac, wsc, estr, wstr,&
+              & qstr, ktsw, kbsw, sinkc)
+     deallocate(ebc, mbc, pqc, evc, prc, windc, qinc, qoutc, heatc, slhtc,     &
+              & qinic, dtric, tric, wdic)
+     deallocate(exc, exic, vbc, metic, sltrc, theta, fricc, naf, eltmf, zmin,  &
+              & izmin, c2ch, cdch, epch, kfch, apch, anch, alch)
+     deallocate(cpltc, hpltc, cmin, cmax, hymin, hymax, cdmin, cdmax, jbdam,   &
+              & ilat, cdpltc, qinsum, tinsum, tind)
+     deallocate(qold, dtp, dtps, qolds, qind, jss, hdic, qnew, yss, vss, ys,   &
+              & vs, vsts, nsprf)
+     deallocate(latgtc, latspc, latpic, dynpipe, latpuc, dyngtc, opt, cind,    &
+              & cinsum, cdwbc, kfwbc, cprwbc, cinbrc, ctrtrc, cdtbrc, dynpump)                                                                   ! SW 5/10/10
+     deallocate(ysts, yst, vst, allim, aplim, anlim, aslim, ellim, eplim,      &
+              & enlim, eslim, cssk, c1, c2, z0)
+     deallocate(kfs, af, ef, hyd, kf, azslc, stric, cprbrc, cd, kbmax, elkt,   &
+              & wind2, visc, celc, dltadd)
+     deallocate(qoavr, qimxr, qomxr, reaerc, lat, longit, elbot, bth, vpr, lpr,&
+              & nisnp, niprf, nispr, decl)
+     deallocate(a00, hh, t2i, ktwb, kbr, ibpr, dlvr, esr, etr, nbl, lprfn,     &
+              & extfn, bthfn, metfn)
+     deallocate(snpfn, prffn, sprfn, cplfn, vplfn, flxfn, flxfn2, vprfn, afw,  &
+              & bfw, cfw, windh, rhevc, fetchc, jbdn)
+     deallocate(kbi, macch, gridc, gma, bta, qtot, sedcip, sedcin, sedcic,     &
+              & sedcis)                                                                    ! SW 9/27/2007
+     deallocate(sdk, fsod, fsed, sedci, sedcc, sedprc, icec, slicec, icethi,   &
+              & albedo, hwi, betai, gammai, icemin)
+     deallocate(seds, sedb)    !CB 11/28/06
+     deallocate(exh2o, beta, exom, exss, dxi, cbhe, tsed, tsedf, fi, icet2,    &
+              & azc, azmax)                                                                                      ! QINT,   QOUTT
+     deallocate(ax, wtypec, tair, tdew, wind, phi, cloud, cshe, sron, ranlw,   &
+              & rb, rc, re, shade)
+     deallocate(et, rs, rn, snpc, scrc, prfc, sprc, cplc, vplc, flxc, nxtmcp,  &
+              & nxtmvp, nxtmfl, gamma)
+     deallocate(nxtmsn, nxtmsc, nxtmpr, nxtmsp, snpdp, scrdp, prfdp, sprdp,    &
+              & cpldp, vpldp, flxdp, ncpl, nvpl, nflx)
+     deallocate(nsnp, nscr, nprf, nspr, neqn, po4r, partp, nh4dk, nh4r, no3dk, &
+              & no3s, fer, fes, cdsum)
+     deallocate(co2r, sroc, o2er, o2eg, caq10, cadk, cas, bodp, bodn, bodc,    &
+              & kbod, tbod, rbod, dtrc)
+     deallocate(ldomdk, rdomdk, lrddk, omt1, omt2, omk1, omk2, lpomdk, rpomdk, &
+              & lrpdk, poms, orgp, orgn, orgc)
+     deallocate(rcoef1, rcoef2, rcoef3, rcoef4, orgsi, nh4t1, nh4t2, nh4k1,    &
+              & nh4k2, no3t1, no3t2, no3k1, no3k2, NSTR)
+     deallocate(dsir, psis, psidk, partsi, sodt1, sodt2, sodk1, sodk2, o2nh4,  &
+              & o2om, o2ar, o2ag, cg1dk, cgs)
+     deallocate(cgq10, cg0dk, cgldk, cgklf, cgcs, cunit, cunit1, cunit2, cac,  &
+              & incac, trcac, dtcac, prcac, cname, cname1, cname2, cmult)                                                                      !LCJ 2/26/15
+     deallocate(cn, incn, dtcn, prcn, csum, dltmax, qwdo, twdo, sss, sedrc,    &
+              & taucr, xbr, fno3sed, dynstruc)
+!    DEALLOCATE (SSFLOC, FLOCEQN)
+  !DEALLOCATE (SEDCC1,SEDCC2, ICEQSS,SDK1,sdk2,SEDCI1,SEDCI2,SEDPRC1,SEDPRC2,SEDVP1,SEDVP2,SED1,SED2)
   !DEALLOCATE (SEDCC1,SEDCC2, ICEQSS,SDK1,sdk2,SEDCI1,SEDCI2,SEDPRC1,SEDPRC2,SEDVP1,SEDVP2,SED1,SED2,fsedc1,fsedc2,pbiom,nbiom,cbiom)   ! Amaila, cb 6/7/17
-  DEALLOCATE (SEDCC1,SEDCC2, ICEQSS,SDK1,sdk2,SEDCI1,SEDCI2,SEDPRC1,SEDPRC2,SEDVP1,SEDVP2,SED1,SED2,fsedc1,fsedc2,pbiom,nbiom,cbiom,sed1ic,sed2ic,sdfirstadd)   ! cb 9/3/17
-  DEALLOCATE (ISO_SEDIMENT1, VERT_SEDIMENT1,LONG_SEDIMENT1,ISO_SEDIMENT2,VERT_SEDIMENT2,LONG_SEDIMENT2,PRINT_SEDIMENT1,PRINT_SEDIMENT2) 
-  DEALLOCATE (SEDIMENT_CALC1,SEDIMENT_CALC2)
-  DEALLOCATE (QTAVB,  QTMXB,  BS,     BE,     JBUH,   JBDH,   TSSS,   TSSB,   TSSICE, ESBR,   ETBR,   EBRI,   QDTR,   EVBR)
-  DEALLOCATE (QIN,    PR,     QPRBR,  TIN,    TOUT,   TPR,    TDTR,   TPB,    NACPR,  NACIN,  NACDT,  NACTR,  NACD,   ELDH)
-  DEALLOCATE (QSUM,   NOUT,   KTQIN,  KBQIN,  ELUH,   NL,     NPOINT, SLOPE,  SLOPEC, ALPHA,  COSA,   SINA,   SINAC,  TDHFN,  QOTFN,  PREFN)
-  DEALLOCATE (CPRFN,  EUHFN,  TUHFN,  CUHFN,  EDHFN,  QINFN,  TINFN,  CINFN,  CDHFN,  QDTFN,  TDTFN,  CDTFN,  TPRFN,  VOLEV)
-  DEALLOCATE (VOLWD,  VOLSBR, VOLTBR, DLVOL,  VOLG,   VOLSR,  VOLTR,  VOLB,   VOLPR,  VOLTRB, VOLDT,  VOLUH,  VOLDH,  VOLIN, VOLICE, ICEBANK)
-  DEALLOCATE (US,     DS,     CUS,    UHS,    DHS,    UQB,    DQB,    CDHS,   VOLOUT, TSSWD,  TSSUH,  TSSDH,  TSSIN,  TSSOUT)
-  DEALLOCATE (TSSEV,  TSSPR,  TSSTR,  TSSDT,  SOD,    ELWS,   BKT,    REAER,  ICETH,  ICE,    ICESW,  Q,      QC,     QERR)
-  DEALLOCATE (KTI,    SROSH,  SEG,    DLXRHO, QSSUM,  DLX,    DLXR,   QUH1,   QDH1,   BI,     JWUH,   JWDH)
-  DEALLOCATE (A,      C,      D,      F,      V,      SKTI,   KBMIN,  EV,     QDT,    QPR,    SBKT,   BHRHO)
-  DEALLOCATE (SZ,     WSHX,   WSHY,   WIND10, CZ,     FETCH,  PHI0,   FRIC,   ADZ,    HMULT,  FMTC,   FMTCD,  CNAME3, CDNAME3)
-  DEALLOCATE (Z,      KB,     VNORM,  ANPR,   ANEQN,  APOM,   ACHLA,  AHSP,   AHSN,   AHSSI)
-  DEALLOCATE (AC,     ASI,    AT1,    AT2,    AT3,    AT4,    AK1,    AK2,    AK3,    AK4,    EXA,    ASAT,   AP,     AN)
-  DEALLOCATE (AG,     AR,     AE,     AM,     AS,     ENPR,   ENEQN,  EG,     ER,     EE,     EM,     EB,     ESAT,   EP)
-  DEALLOCATE (EC,     ESI,    ECHLA,  EHSP,   EHSN,   EHSSI,  EPOM,   EHS,    EN,     ET4,    EK1,    EK2,    EK3,    EK4)
-  DEALLOCATE (ET1,    ET2,    ET3,    HNAME,  FMTH,    KFAC,  KFNAME, KFNAME2,KFCN,   C2I,    TRCN,   CDN,    CDNAME, CDNAME2,CDMULT)
-  DEALLOCATE (CMBRS,  CMBRT,  FETCHU, FETCHD, IPRF,   ISNP,   ISPR,   BL,     LFPR,   DO3,    SED,    TKE,    PALT)
-  DEALLOCATE (ADX,    DO1,    DO2,    B,      CONV,   CONV1,  EL,     DZ,     DZQ,    DX,     SAZ,    T1,TSS,QSS,BNEW, ILAYER)   ! SW 1/23/06
-  DEALLOCATE (P,      SU,     SW,     BB,     BR,     BH,     BHR,    VOL,    HSEG,   DECAY,  FPFE,   FRICBR, UXBR,   UYBR)
-  DEALLOCATE (DEPTHB, DEPTHM, FPSS,   TUH,    TDH,    TSSUH1, TSSUH2, TSSDH1, TSSDH2, SEDVP,  H,      EPC)
-  DEALLOCATE (TVP,    QINF,   QOUT,   KOUT,   VOLUH2, VOLDH2, CWDO,   CDWDO,  CWDOC,  CDWDOC, CDTOT,  CPR,    CPB,    COUT)
-  DEALLOCATE (CIN,    CDTR,   RSOD,   RSOF,   DLTD,   DLTF,   TSRD,   TSRF,   WDOD,   WDOF,   SNPD,   SNPF,   SPRD,   SPRF)
-  DEALLOCATE (SCRD,   SCRF,   PRFD,   PRFF,   CPLD,   CPLF,   VPLD,   VPLF,   FLXD,   FLXF,   EPIC,   EPICI,  EPIPRC, EPIVP)
-  DEALLOCATE (CUH,    CDH,    EPM,    EPD,    C1S,    CSSB,   CVP,    CSSUH1, CSSUH2, CSSDH2, CSSDH1, LNAME,  IWR,    KTWR, EKTWR, EKBWR)
-  DEALLOCATE (JWUSP,  JWDSP,  QSP,    KBWR,   KTWD,   KBWD,   JBWD,   GTA1,   GTB1,   GTA2,   GTB2,   BGT,    IUGT,   IDGT)
-  DEALLOCATE (QTR,    TTR,    KTTR,   KBTR,   EGT,    EGT2,   AGASGT, BGASGT, CGASGT, GASGTC, PUGTC,  ETUGT,  EBUGT,  KTUGT,  KBUGT)
-  DEALLOCATE (PDGTC,  ETDGT,  EBDGT,  KTDGT,  KBDGT,  A1GT,   B1GT,   G1GT,   A2GT,   B2GT,   G2GT,   JWUGT,  JWDGT,  QGT)
-  DEALLOCATE (EQGT,   JBUGT,  JBDGT,  JBUPI,  JBDPI,  JWUPI,  JWDPI,  QPI,    IUPI,   IDPI,   EUPI,   EDPI,   WPI,    DLXPI, BP)   ! SW 5/5/10
-  DEALLOCATE (ETUPI,  EBUPI,  KTUPI,  KBUPI,  PDPIC,  ETDPI,  EBDPI,  KTDPI,  KBDPI,  FPI,    FMINPI, PUPIC,  ETDSP,  EBDSP)
-  DEALLOCATE (PUSPC,  ETUSP,  EBUSP,  KTUSP,  KBUSP,  PDSPC,  KTDSP,  KBDSP,  IUSP,   IDSP,   ESP,    A1SP,   B1SP,   A2SP)
-  DEALLOCATE (B2SP,   AGASSP, BGASSP, CGASSP, EQSP,   GASSPC, JBUSP,  JBDSP,  STRTPU, ENDPU,  EONPU,  EOFFPU, QPU,    PPUC)
-  DEALLOCATE (IUPU,   IDPU,   EPU,    ETPU,   EBPU,   KTPU,   KBPU,   JWUPU,  JWDPU,  JBUPU,  JBDPU,  PUMPON, KTW,    KBW)
-  DEALLOCATE (IWD,    KWD,    QWD,    EWD,    ITR,    QTRFN,  TTRFN,  CTRFN,  ELTRT,  ELTRB,  TRC,    JBTR,   QTRF,   CLRB)
-  DEALLOCATE (TTLB,   TTRB,   CLLB,   SRLB1,  SRRB1,  SRLB2,  SRRB2,  SRFJD1, SHADEI, SRFJD2, TOPO,   QSW,    CTR)    ! SW 10/17/05
-  DEALLOCATE (H1,     H2,     BH1,    BH2,    BHR1,   BHR2,   AVH1,   AVH2,   SAVH2,  AVHR,   SAVHR,  CBODD)
-  DEALLOCATE (POINT_SINK,         HPRWBC,   READ_EXTINCTION, READ_RADIATION)
-  DEALLOCATE (DIST_TRIBS,     UPWIND,               ULTIMATE,           FRESH_WATER,      SALT_WATER,      LIMITING_FACTOR)
-  DEALLOCATE (UH_EXTERNAL,    DH_EXTERNAL,          UH_INTERNAL,        DH_INTERNAL,      UQ_INTERNAL,     DQ_INTERNAL)
-  DEALLOCATE (UQ_EXTERNAL,    DQ_EXTERNAL,          UP_FLOW,            DN_FLOW,          UP_HEAD,         DN_HEAD)
-  DEALLOCATE (INTERNAL_FLOW,  DAM_INFLOW,           DAM_OUTFLOW,        HEAD_FLOW,        HEAD_BOUNDARY)      !TC 08/03/04
-  DEALLOCATE (ISO_CONC,             VERT_CONC,          LONG_CONC,        VERT_SEDIMENT,   LONG_SEDIMENT)
-  DEALLOCATE (ISO_SEDIMENT,   VISCOSITY_LIMIT,      CELERITY_LIMIT,     IMPLICIT_AZ,      ONE_LAYER,       IMPLICIT_VISC)
-  DEALLOCATE (FETCH_CALC,     LIMITING_DLT,         TERM_BY_TERM,       MANNINGS_N,       PLACE_QTR,       SPECIFY_QTR)
-  DEALLOCATE (PLACE_QIN,      PRINT_CONST,          PRINT_HYDRO,        PRINT_SEDIMENT,   ENERGY_BALANCE,  MASS_BALANCE)
-  DEALLOCATE (VOLUME_BALANCE, DETAILED_ICE,         ICE_CALC,                ALLOW_ICE,       PH_CALC, BR_INACTIVE)     ! ICE_IN,       RC/SW 4/28/11
-  DEALLOCATE (BOD_CALCP, BOD_CALCN) 
-  DEALLOCATE (EVAPORATION,    PRECIPITATION,        RH_EVAP,            NO_INFLOW,        NO_OUTFLOW,      NO_HEAT)
-  DEALLOCATE (ISO_TEMP,       VERT_TEMP,            LONG_TEMP,          VERT_PROFILE,     LONG_PROFILE,    NO_WIND)
-  DEALLOCATE (SNAPSHOT,       PROFILE,              VECTOR,             CONTOUR,          SPREADSHEET,     INTERNAL_WEIR)
-  DEALLOCATE (SCREEN_OUTPUT,  FLUX,                 DYNAMIC_SHADE,      TRAPEZOIDAL, BOD_CALC, ALG_CALC)
-  DEALLOCATE (SEDIMENT_CALC,  EPIPHYTON_CALC,       PRINT_DERIVED,      PRINT_EPIPHYTON,  TDG_SPILLWAY,    TDG_GATE, DYNSEDK)
-  DEALLOCATE (ISO_EPIPHYTON,  VERT_EPIPHYTON,       LONG_EPIPHYTON,     LATERAL_SPILLWAY, LATERAL_GATE,    LATERAL_PUMP)
-  DEALLOCATE (iso_macrophyte,  vert_macrophyte,       long_macrophyte, macrcvp,   macrclp)  ! cb 8/21/15
-  DEALLOCATE (INTERP_HEAD,    INTERP_WITHDRAWAL,    INTERP_EXTINCTION,  INTERP_DTRIBS,    LATERAL_PIPE,    INTERP_TRIBS)
-  DEALLOCATE (INTERP_OUTFLOW, INTERP_INFLOW,        INTERP_METEOROLOGY, CONSTITUENT_PLOT, DERIVED_PLOT,    ZERO_SLOPE)
-  DEALLOCATE (HYDRO_PLOT,     SEDIMENT_RESUSPENSION)
-  DEALLOCATE (ORGPLD, ORGPRD, ORGPLP, ORGPRP, ORGNLD, ORGNRD, ORGNLP)
-  DEALLOCATE (ICPL,TAVG,TAVGW,CAVG,CAVGW,CDAVG,CDAVGW) 
-  DEALLOCATE (ORGNRP)
-  DEALLOCATE  (PRINT_MACROPHYTE, MACROPHYTE_CALC,MACWBC,CONV2)
-  DEALLOCATE  (MAC, MACRC,MACT, MACRM, MACSS)
-  DEALLOCATE  (MGR,MMR, MRR)
-  DEALLOCATE  (SMACRC, SMACRM)
-  DEALLOCATE  (SMACT, SMAC)
-  DEALLOCATE  (MT1,MT2,MT3,MT4,MK1,MK2,MK3,MK4,MG,MR,MM)
-  DEALLOCATE  (MP, MN, MC,PSED,NSED,MHSP,MHSN,MHSC,MSAT)
-  DEALLOCATE  (CDDRAG,KTICOL,ARMAC,MACWBCI, ANORM, DWV, DWSA)
-  DEALLOCATE  (MBMP,MMAX,MPOM,LRPMAC,O2MR,O2MG)
-  DEALLOCATE  (MACMBRS, MACMBRT,SSMACMB)
-  DEALLOCATE  (CW, BIC)
-  DEALLOCATE  (MACTRMR, MACTRMF,MACTRM)
-  DEALLOCATE  (MLFPR)
-  DEALLOCATE  (MLLIM, MPLIM,MCLIM,MNLIM)
-  DEALLOCATE  (GAMMAJ)
-  DEALLOCATE (POR,VOLKTI,VOLI,VSTEM,VSTEMKT,SAREA)
-  DEALLOCATE (IWIND) ! MLM 08/12/05
-  DEALLOCATE (ZG,ZM,ZEFF,PREFP,ZR,ZOOMIN,ZS2P,EXZ,ZT1,ZT2,ZT3,ZT4,ZK1,ZK2)
-  DEALLOCATE (LDOMPMP,LDOMNMP,LPOMPMP,LPOMNMP,RPOMPMP,RPOMNMP,O2ZR) ! MLM 06/10/06
-  DEALLOCATE (MPRWBC)                                               ! MLM 06/10/06
-  DEALLOCATE (EXM)                                                  ! MLM 06/10/06
-  DEALLOCATE (USTARBTKE,E,EROUGH, ARODI, STRICK, TKELATPRDCONST,AZT,DZT)
-  DEALLOCATE(FIRSTI, LASTI, TKELATPRD, STRICKON, WALLPNT, IMPTKE, TKEBC)
-  DEALLOCATE (ZK3,ZK4,ZP,ZN,ZC,PREFA,ZMU,TGRAZE,ZRT,ZMT,ZOORM,ZOORMR,ZOORMF) ! POINTERS ,ZOO,ZOOSS,
-  DEALLOCATE (LPZOOOUT,LPZOOIN,PO4ZR,NH4ZR,DOZR,TICZR,AGZ,AGZT)
-  DEALLOCATE (GTIC,BGTO,EGTO)   ! CB 8/13/2010
-  DEALLOCATE (INTERP_GATE)                     ! CB 8/13/2010  
-  DEALLOCATE (ZGZ,PREFZ) !OMNIVOROUS ZOOPLANKTON
-  DEALLOCATE (LPZOOINP,LPZOOINN,LPZOOOUTP,LPZOOOUTN)
-  DEALLOCATE (SEDC, SEDN, SEDP,SEDNINFLUX, SEDPINFLUX, PFLUXIN,NFLUXIN)
-  DEALLOCATE (SEDVPC, SEDVPP, SEDVPN)
-  DEALLOCATE (SDKV,SEDDKTOT)
-  DEALLOCATE (CBODS,KFJW)
-  DEALLOCATE(BSAVE, GMA1,BTA1)
-  DEALLOCATE(TN_SEDSOD_NH4,TP_SEDSOD_PO4,TPOUT,TPTRIB,TPDTRIB,TPWD,TPPR,TPIN,TNOUT,TNTRIB,TNDTRIB,TNWD,TNPR,TNIN)   ! TP_SEDBURIAL,TN_SEDBURIAL,
-  IF(NBOD > 0)DEALLOCATE(NBODC,NBODN,NBODP)
-
-IF(FISHBIO)THEN
-    DEALLOCATE (BIOEXPFN,WEIGHTNUM,C2ZOO,VOLROOS,C2W,IBIO)
-    DEALLOCATE (BIOD, BIOF,BIODP)
-ENDIF
-
-  CALL DEALLOCATE_TIME_VARYING_DATA
-  CALL DEALLOCATE_TRANSPORT
-  CALL DEALLOCATE_KINETICS
-  CALL DEALLOCATE_WATERBODY
-  CALL DEALLOCATE_PIPE_FLOW
-  CALL DEALLOCATE_OPEN_CHANNEL
-  IF(AERATEC  == '      ON')CALL DEALLOCATE_AERATE
-  IF(SELECTC == '      ON')CALL DEALLOCATE_SELECTIVE
-  IF(SELECTC == '    USGS')CALL DEALLOCATE_SELECTIVEUSGS
-  
-  IF(CONSTITUENTS .AND. PHBUFF_EXIST)THEN
-      DEALLOCATE(SDENI,PKI,PKSD)
-    IF (OM_BUFFERING) THEN
-     IF (OMTYPE == '    DIST') THEN
-       DEALLOCATE (SDEN,PK,FRACT)
-     ELSE
-       DEALLOCATE (SDEN,PK)
-     ENDIF
-    ENDIF
-  ENDIF
-  If(CEMARelatedCode) Then         
-        CALL DEALLOCATE_CEMA
-	End If
-    
-  RETURN
-  
-  END SUBROUTINE ENDSIMULATION
+     deallocate(sedcc1, sedcc2, iceqss, sdk1, sdk2, sedci1, sedci2, sedprc1,   &
+              & sedprc2, sedvp1, sedvp2, sed1, sed2, fsedc1, fsedc2, pbiom,    &
+              & nbiom, cbiom, sed1ic, sed2ic, sdfirstadd)                                                                                                       ! cb 9/3/17
+     deallocate(iso_sediment1, vert_sediment1, long_sediment1, iso_sediment2,  &
+              & vert_sediment2, long_sediment2, print_sediment1,               &
+              & print_sediment2)
+     deallocate(sediment_calc1, sediment_calc2)
+     deallocate(qtavb, qtmxb, bs, be, jbuh, jbdh, tsss, tssb, tssice, esbr,    &
+              & etbr, ebri, qdtr, evbr)
+     deallocate(qin, pr, qprbr, tin, tout, tpr, tdtr, tpb, nacpr, nacin, nacdt,&
+              & nactr, nacd, eldh)
+     deallocate(qsum, nout, ktqin, kbqin, eluh, nl, npoint, slope, slopec,     &
+              & alpha, cosa, sina, sinac, tdhfn, qotfn, prefn)
+     deallocate(cprfn, euhfn, tuhfn, cuhfn, edhfn, qinfn, tinfn, cinfn, cdhfn, &
+              & qdtfn, tdtfn, cdtfn, tprfn, volev)
+     deallocate(volwd, volsbr, voltbr, dlvol, volg, volsr, voltr, volb, volpr, &
+              & voltrb, voldt, voluh, voldh, volin, volice, icebank)
+     deallocate(us, DS, cus, uhs, dhs, uqb, dqb, cdhs, volout, tsswd, tssuh,   &
+              & tssdh, tssin, tssout)
+     deallocate(tssev, tsspr, tsstr, tssdt, sod, elws, bkt, reaer, iceth, ice, &
+              & icesw, q, qc, qerr)
+     deallocate(kti, srosh, seg, dlxrho, qssum, dlx, dlxr, quh1, qdh1, bi,     &
+              & jwuh, jwdh)
+     deallocate(a, c, d, f, v, skti, kbmin, ev, qdt, qpr, sbkt, bhrho)
+     deallocate(sz, wshx, wshy, wind10, cz, fetch, phi0, fric, adz, hmult,     &
+              & fmtc, fmtcd, cname3, cdname3)
+     deallocate(z, kb, vnorm, anpr, aneqn, apom, achla, ahsp, ahsn, ahssi)
+     deallocate(ac, asi, at1, at2, at3, at4, ak1, ak2, ak3, ak4, exa, asat, ap,&
+              & an)
+     deallocate(ag, ar, ae, am, as, enpr, eneqn, eg, er, ee, em, eb, esat, ep)
+     deallocate(ec, esi, echla, ehsp, ehsn, ehssi, epom, ehs, en, et4, ek1,    &
+              & ek2, ek3, ek4)
+     deallocate(et1, et2, et3, hname, fmth, kfac, kfname, kfname2, kfcn, c2i,  &
+              & trcn, cdn, cdname, cdname2, cdmult)
+     deallocate(cmbrs, cmbrt, fetchu, fetchd, iprf, isnp, ispr, bl, lfpr, do3, &
+              & sed, tke, palt)
+     deallocate(adx, do1, do2, b, conv, conv1, el, dz, dzq, dx, saz, t1, tss,  &
+              & qss, bnew, ilayer)                                                                                               ! SW 1/23/06
+     deallocate(p, su, sw, bb, br, bh, bhr, vol, hseg, decay, fpfe, fricbr,    &
+              & uxbr, uybr)
+     deallocate(depthb, depthm, fpss, tuh, tdh, tssuh1, tssuh2, tssdh1, tssdh2,&
+              & sedvp, h, epc)
+     deallocate(tvp, qinf, qout, kout, voluh2, voldh2, cwdo, cdwdo, cwdoc,     &
+              & cdwdoc, cdtot, cpr, cpb, cout)
+     deallocate(cin, cdtr, rsod, rsof, dltd, dltf, tsrd, tsrf, wdod, wdof,     &
+              & snpd, snpf, sprd, sprf)
+     deallocate(scrd, scrf, prfd, prff, cpld, cplf, vpld, vplf, flxd, flxf,    &
+              & epic, epici, epiprc, epivp)
+     deallocate(cuh, cdh, epm, epd, c1s, cssb, cvp, cssuh1, cssuh2, cssdh2,    &
+              & cssdh1, lname, iwr, ktwr, ektwr, ekbwr)
+     deallocate(jwusp, jwdsp, qsp, kbwr, ktwd, kbwd, jbwd, gta1, gtb1, gta2,   &
+              & gtb2, bgt, IUGT, idgt)
+     deallocate(qtr, ttr, kttr, kbtr, egt, egt2, agasgt, bgasgt, cgasgt,       &
+              & gasgtc, pugtc, etugt, ebugt, ktugt, kbugt)
+     deallocate(pdgtc, etdgt, ebdgt, ktdgt, kbdgt, a1gt, b1gt, g1gt, a2gt,     &
+              & b2gt, g2gt, jwugt, jwdgt, qgt)
+     deallocate(eqgt, jbugt, jbdgt, jbupi, jbdpi, jwupi, jwdpi, qpi, IUPI,     &
+              & idpi, eupi, edpi, wpi, dlxpi, bp)                                                                                  ! SW 5/5/10
+     deallocate(etupi, ebupi, ktupi, kbupi, pdpic, etdpi, ebdpi, ktdpi, kbdpi, &
+              & fpi, fminpi, pupic, etdsp, ebdsp)
+     deallocate(puspc, etusp, ebusp, ktusp, kbusp, pdspc, ktdsp, kbdsp, IUSP,  &
+              & idsp, esp, a1sp, b1sp, a2sp)
+     deallocate(b2sp, agassp, bgassp, cgassp, eqsp, gasspc, jbusp, jbdsp,      &
+              & strtpu, endpu, eonpu, eoffpu, qpu, ppuc)
+     deallocate(IUPU, idpu, epu, etpu, ebpu, ktpu, kbpu, jwupu, jwdpu, jbupu,  &
+              & jbdpu, pumpon, ktw, kbw)
+     deallocate(IWD, kwd, qwd, ewd, itr, qtrfn, ttrfn, ctrfn, eltrt, eltrb,    &
+              & trc, jbtr, qtrf, clrb)
+     deallocate(ttlb, ttrb, cllb, srlb1, srrb1, srlb2, srrb2, srfjd1, shadei,  &
+              & srfjd2, topo, qsw, ctr)                                                                               ! SW 10/17/05
+     deallocate(h1, h2, bh1, bh2, bhr1, bhr2, avh1, avh2, savh2, avhr, savhr,  &
+              & cbodd)
+     deallocate(point_sink, hprwbc, read_extinction, read_radiation)
+     deallocate(dist_tribs, upwind, ultimate, fresh_water, salt_water,         &
+              & limiting_factor)
+     deallocate(uh_external, dh_external, uh_internal, dh_internal,            &
+              & uq_internal, dq_internal)
+     deallocate(uq_external, dq_external, up_flow, dn_flow, up_head, dn_head)
+     deallocate(internal_flow, dam_inflow, dam_outflow, head_flow,             &
+              & head_boundary)                                                                                !TC 08/03/04
+     deallocate(iso_conc, vert_conc, long_conc, vert_sediment, long_sediment)
+     deallocate(iso_sediment, viscosity_limit, celerity_limit, implicit_az,    &
+              & one_layer, implicit_visc)
+     deallocate(fetch_calc, limiting_dlt, term_by_term, mannings_n, place_qtr, &
+              & specify_qtr)
+     deallocate(place_qin, print_const, print_hydro, print_sediment,           &
+              & energy_balance, MASS_BALANCE)
+     deallocate(VOLUME_BALANCE, detailed_ice, ice_calc, allow_ice, ph_calc,    &
+              & br_inactive)                                                                                            ! ICE_IN,       RC/SW 4/28/11
+     deallocate(bod_calcp, bod_calcn)
+     deallocate(evaporation, precipitation, rh_evap, no_inflow, no_outflow,    &
+              & no_heat)
+     deallocate(iso_temp, vert_temp, long_temp, vert_profile, long_profile,    &
+              & no_wind)
+     deallocate(SNAPSHOT, PROFILE, VECTOR, CONTOUR, SPREADSHEET, internal_weir)
+     deallocate(screen_output, flux, dynamic_shade, trapezoidal, bod_calc,     &
+              & alg_calc)
+     deallocate(sediment_calc, epiphyton_calc, print_derived, print_epiphyton, &
+              & tdg_spillway, tdg_gate, dynsedk)
+     deallocate(iso_epiphyton, vert_epiphyton, long_epiphyton,                 &
+              & lateral_spillway, lateral_gate, lateral_pump)
+     deallocate(iso_macrophyte, vert_macrophyte, long_macrophyte, macrcvp,     &
+              & macrclp)                                                                    ! cb 8/21/15
+     deallocate(interp_head, interp_withdrawal, interp_extinction,             &
+              & interp_dtribs, lateral_pipe, interp_tribs)
+     deallocate(interp_outflow, interp_inflow, interp_meteorology,             &
+              & constituent_plot, derived_plot, zero_slope)
+     deallocate(hydro_plot, sediment_resuspension)
+     deallocate(orgpld, orgprd, orgplp, orgprp, orgnld, orgnrd, orgnlp)
+     deallocate(icpl, tavg, tavgw, cavg, cavgw, cdavg, cdavgw)
+     deallocate(orgnrp)
+     deallocate(print_macrophyte, macrophyte_calc, macwbc, conv2)
+     deallocate(mac, macrc, mact, macrm, macss)
+     deallocate(mgr, mmr, mrr)
+     deallocate(smacrc, smacrm)
+     deallocate(smact, smac)
+     deallocate(mt1, mt2, mt3, mt4, mk1, mk2, mk3, mk4, mg, mr, mm)
+     deallocate(mp, mn, mc, psed, nsed, mhsp, mhsn, mhsc, msat)
+     deallocate(cddrag, kticol, armac, macwbci, anorm, dwv, dwsa)
+     deallocate(mbmp, mmax, mpom, lrpmac, o2mr, o2mg)
+     deallocate(macmbrs, macmbrt, ssmacmb)
+     deallocate(cw, bic)
+     deallocate(mactrmr, mactrmf, mactrm)
+     deallocate(mlfpr)
+     deallocate(mllim, mplim, mclim, mnlim)
+     deallocate(gammaj)
+     deallocate(por, volkti, voli, vstem, vstemkt, sarea)
+     deallocate(iwind)
+                     ! MLM 08/12/05
+     deallocate(zg, zm, zeff, prefp, zr, zoomin, zs2p, exz, zt1, zt2, zt3, zt4,&
+              & zk1, zk2)
+     deallocate(ldompmp, ldomnmp, lpompmp, lpomnmp, rpompmp, rpomnmp, o2zr)
+                                                                    ! MLM 06/10/06
+     deallocate(mprwbc)                                             ! MLM 06/10/06
+     deallocate(exm)                                                ! MLM 06/10/06
+     deallocate(ustarbtke, e, erough, arodi, strick, tkelatprdconst, azt, dzt)
+     deallocate(firsti, lasti, tkelatprd, strickon, wallpnt, imptke, tkebc)
+     deallocate(zk3, zk4, zp, zn, zc, prefa, zmu, tgraze, zrt, zmt, zoorm,     &
+              & zoormr, zoormf)                                              ! POINTERS ,ZOO,ZOOSS,
+     deallocate(lpzooout, lpzooin, po4zr, nh4zr, dozr, ticzr, agz, agzt)
+     deallocate(gtic, bgto, egto)
+                                ! CB 8/13/2010
+     deallocate(interp_gate)                   ! CB 8/13/2010
+     deallocate(zgz, prefz)
+                         !OMNIVOROUS ZOOPLANKTON
+     deallocate(lpzooinp, lpzooinn, lpzoooutp, lpzoooutn)
+     deallocate(sedc, sedn, sedp, sedninflux, sedpinflux, pfluxin, nfluxin)
+     deallocate(sedvpc, sedvpp, sedvpn)
+     deallocate(sdkv, seddktot)
+     deallocate(cbods, kfjw)
+     deallocate(bsave, gma1, bta1)
+     deallocate(tn_sedsod_nh4, tp_sedsod_po4, tpout, tptrib, tpdtrib, tpwd,    &
+              & tppr, tpin, tnout, tntrib, tndtrib, tnwd, tnpr, tnin)                                               ! TP_SEDBURIAL,TN_SEDBURIAL,
+     if(nbod>0)deallocate(nbodc, nbodn, nbodp)
+ 
+     if(fishbio)then
+         deallocate(bioexpfn, weightnum, c2zoo, volroos, c2w, ibio)
+         deallocate(biod, biof, biodp)
+     endif
+ 
+     call DEALLOCATE_TIME_VARYING_DATA
+     call DEALLOCATE_TRANSPORT
+     call DEALLOCATE_KINETICS
+     call DEALLOCATE_WATERBODY
+     call DEALLOCATE_PIPE_FLOW
+     call DEALLOCATE_OPEN_CHANNEL
+     if(aeratec=='      ON')call DEALLOCATE_AERATE
+     if(selectc=='      ON')call DEALLOCATE_SELECTIVE
+     if(selectc=='    USGS')call DEALLOCATE_SELECTIVEUSGS
+ 
+     if(constituents .AND. phbuff_exist)then
+         deallocate(sdeni, pki, pksd)
+         if(om_buffering)then
+             if(omtype=='    DIST')then
+                 deallocate(sden, pk, fract)
+             else
+                 deallocate(sden, pk)
+             endif
+         endif
+     endif
+     if(cemarelatedcode)call DEALLOCATE_CEMA
+ 
+ 
+     end subroutine ENDSIMULATION

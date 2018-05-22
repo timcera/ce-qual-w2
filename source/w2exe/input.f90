@@ -1,403 +1,559 @@
-SUBROUTINE INPUT
-
-USE MAIN
-USE GLOBAL; USE NAMESC; USE GEOMC;  USE LOGICC; USE PREC;  USE SURFHE;  USE KINETIC; USE SHADEC; USE EDDY
-  USE STRUCTURES; USE TRANS;  USE TVDC;   USE SELWC;  USE GDAYC; USE SCREENC; USE TDGAS;   USE RSTART
-  USE MACROPHYTEC; USE POROSITYC; USE ZOOPLANKTONC; USE INITIALVELOCITY; USE BIOENERGETICS; USE TRIDIAG_V; USE MSCLIB, ONLY: RESTART_PUSHED
-  IMPLICIT NONE
-  EXTERNAL RESTART_OUTPUT
-  
-  real sum ! enhanced pH buffering
-  INTEGER NPROC,NNDC                                                             ! SW 7/13/09
-  CHARACTER*1 CHAR1
-  CHARACTER*8 AID
-
-! Title and array dimensions
-
-  ALLOCATE (TITLE(11))
-  READ (CON,'(///(8X,A72))') (TITLE(J),J=1,10)
-  READ (CON,'(//8X,5I8,2A8)') NWB, NBR, IMX, KMX, NPROC, CLOSEC                     ! SW 7/31/09
-  READ (CON,'(//8X,8I8)')     NTR, NST, NIW, NWD, NGT, NSP, NPI, NPU
-  READ (CON,'(//8X,7I8,a8)')  NGC, NSS, NAL, NEP, NBOD, nmc, nzp  
-  READ (CON,'(//8X,I8,5A8)')  NOD,SELECTC,HABTATC,ENVIRPC,AERATEC,inituwl
+!*==input.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
+     subroutine INPUT
+ 
+     use MAIN
+     use GLOBAL
+     use NAMESC
+     use GEOMC
+     use LOGICC
+     use PREC
+     use SURFHE
+     use KINETIC
+     use SHADEC
+     use EDDY
+     use STRUCTURES
+     use TRANS
+     use TVDC
+     use SELWC
+     use GDAYC
+     use SCREENC
+     use TDGAS
+     use RSTART
+     use MACROPHYTEC
+     use POROSITYC
+     use ZOOPLANKTONC
+     use INITIALVELOCITY
+     use BIOENERGETICS
+     use TRIDIAG_V
+     use MSCLIB, ONLY:restart_pushed
+     implicit none
+!
+!*** Start of declarations rewritten by SPAG
+!
+! Local variables
+!
+     character(8) :: aid
+     character(1) :: char1
+     integer :: nndc, nproc
+     real :: sum
+     external RESTART_OUTPUT
+!
+!*** End of declarations rewritten by SPAG
+!
+ 
+           ! enhanced pH buffering
+ 
+!    Title and array dimensions
+ 
+     allocate(title(11))                                                         ! SW 7/13/09
+     read(con, '(///(8X,A72))')(title(j), j = 1, 10)
+     read(con, '(//8X,5I8,2A8)')nwb, nbr, imx, kmx, nproc, closec                   ! SW 7/31/09
+     read(con, '(//8X,8I8)')ntr, nst, niw, nwd, ngt, nsp, npi, npu
+     read(con, '(//8X,7I8,a8)')ngc, nss, nal, nep, nbod, nmc, nzp
+     read(con, '(//8X,I8,5A8)')nod, selectc, habtatc, envirpc, aeratec, inituwl
   !READ (CON,'(//8X,I8,7A8)')  NOD,SELECTC,HABTATC,ENVIRPC,AERATEC,inituwl,PHBUFC,NCALKC  ! cb 10/25/13
-
-  if(NPROC == 0)NPROC=1                                                                 ! SW 7/31/09
-!  call omp_set_num_threads(NPROC)   ! set # of processors to NPROC  Moved to INPUT subroutine  TOGGLE FOR DEBUG
-  if(SELECTC=='        ')then
-     SELECTC='     OFF'
-  endif
-  
-
-! Constituent numbers
-
-  NTDS  = 1
-  NGCS  = 2
-  NGCE  = NGCS+NGC-1
-  NSSS  = NGCE+1
-  NSSE  = NSSS+NSS-1
-  NPO4  = NSSE+1
-  NNH4  = NPO4+1
-  NNO3  = NNH4+1
-  NDSI  = NNO3+1
-  NPSI  = NDSI+1
-  NFE   = NPSI+1
-  NLDOM = NFE+1
-  NRDOM = NLDOM+1
-  NLPOM = NRDOM+1
-  NRPOM = NLPOM+1
-  NBODS = NRPOM+1
-IF(NBOD.GT.0)THEN    ! VARIABLE STOICHIOMETRY FOR CBOD    ! CB 6/6/10
- ALLOCATE (NBODC(NBOD), NBODP(NBOD), NBODN(NBOD))
-  IBOD=NBODS
-  NBODCS=IBOD  
-  DO JCB=1,NBOD
-     NBODC(JCB)=IBOD
-     IBOD=IBOD+1    
-  END DO
-  NBODCE=IBOD-1
-  NBODPS=IBOD
-  DO JCB=1,NBOD
-    NBODP(JCB)=IBOD
-    IBOD=IBOD+1
-  END DO
-  NBODPE=IBOD-1
-  NBODNS=IBOD
-  DO JCB=1,NBOD
-    NBODN(JCB)=IBOD
-    IBOD=IBOD+1
-  END DO
-  NBODNE=IBOD-1
-ELSE
-    NBODNS=1;NBODNE=1;NBODPS=1;NBODPE=1;NBODCS=1;NBODCE=1
-  
-END IF
-  NBODE = NBODS+NBOD*3-1     ! each BOD group has C, N and P groups
-  NAS   = NBODE+1
-  NAE   = NAS+NAL-1
-  NDO   = NAE+1
-  NTIC  = NDO+1
-  NALK  = NTIC+1
-  NZOOS = NALK + 1
-  NZOOE = NZOOS + NZP - 1
-  NLDOMP=NZOOE+1
-  NRDOMP=NLDOMP+1
-  NLPOMP=NRDOMP+1
-  NRPOMP=NLPOMP+1
-  NLDOMN=NRPOMP+1
-  NRDOMN=NLDOMN+1
-  NLPOMN=NRDOMN+1
-  NRPOMN=NLPOMN+1
-  NCT=NRPOMN
-
-! Constituent, tributary, and widthdrawal totals
-
-  NTRT = NTR+NGT+NSP+NPI+NPU+(NBR-1)     ! ADDING NBR FOR RESERVOIR FILLING    SW 6/12/2017
-  NWDT = NWD+NGT+NSP+NPI+NPU
-  NEPT = MAX(NEP,1)
-  NMCT = MAX(NMC,1)
-  NZPT=MAX(NZP,1)
-  IF(RESTART_PUSHED)NDC=23   ! SW 4/14/2017
+ 
+     if(nproc==0)nproc = 1                                                              ! SW 7/31/09
+!    call omp_set_num_threads(NPROC)   ! set # of processors to NPROC  Moved
+!    to INPUT subroutine  TOGGLE FOR DEBUG
+     if(selectc=='        ')selectc = '     OFF'
+ 
+ 
+!    Constituent numbers
+ 
+     ntds = 1
+     ngcs = 2
+     ngce = ngcs + ngc - 1
+     nsss = ngce + 1
+     nsse = nsss + nss - 1
+     npo4 = nsse + 1
+     nnh4 = npo4 + 1
+     nno3 = nnh4 + 1
+     ndsi = nno3 + 1
+     npsi = ndsi + 1
+     nfe = npsi + 1
+     nldom = nfe + 1
+     nrdom = nldom + 1
+     nlpom = nrdom + 1
+     nrpom = nlpom + 1
+     nbods = nrpom + 1
+     if(nbod>0)then  ! VARIABLE STOICHIOMETRY FOR CBOD    ! CB 6/6/10
+         allocate(nbodc(nbod), nbodp(nbod), nbodn(nbod))
+         ibod = nbods
+         nbodcs = ibod
+         do jcb = 1, nbod
+             nbodc(jcb) = ibod
+             ibod = ibod + 1
+         enddo
+         nbodce = ibod - 1
+         nbodps = ibod
+         do jcb = 1, nbod
+             nbodp(jcb) = ibod
+             ibod = ibod + 1
+         enddo
+         nbodpe = ibod - 1
+         nbodns = ibod
+         do jcb = 1, nbod
+             nbodn(jcb) = ibod
+             ibod = ibod + 1
+         enddo
+         nbodne = ibod - 1
+     else
+         nbodns = 1
+         nbodne = 1
+         nbodps = 1
+         nbodpe = 1
+         nbodcs = 1
+         nbodce = 1
+ 
+     endif
+     nbode = nbods + nbod*3 - 1
+                             ! each BOD group has C, N and P groups
+     nas = nbode + 1
+     nae = nas + nal - 1
+     ndo = nae + 1
+     ntic = ndo + 1
+     nalk = ntic + 1
+     nzoos = nalk + 1
+     nzooe = nzoos + nzp - 1
+     nldomp = nzooe + 1
+     nrdomp = nldomp + 1
+     nlpomp = nrdomp + 1
+     nrpomp = nlpomp + 1
+     nldomn = nrpomp + 1
+     nrdomn = nldomn + 1
+     nlpomn = nrdomn + 1
+     nrpomn = nlpomn + 1
+     nct = nrpomn
+ 
+!    Constituent, tributary, and widthdrawal totals
+ 
+     ntrt = ntr + ngt + nsp + npi + npu + (nbr - 1)
+                                         ! ADDING NBR FOR RESERVOIR FILLING    SW 6/12/2017
+     nwdt = nwd + ngt + nsp + npi + npu
+     nept = MAX(nep, 1)
+     nmct = MAX(nmc, 1)
+     nzpt = MAX(nzp, 1)
+     if(restart_pushed)ndc = 23
+                             ! SW 4/14/2017
   !IF(.NOT.RESTART_PUSHED)NDC=NDC+1   ! SW 10/20/15 THIS ALLOWS FOR THE POSSIBILITY OF TDG AS AN ADDED DERIVED VARIABLE - THIS WILL BE REDUCED IF TDG IS NOT PRESENT
-  NDC=NDC+1     ! SW 4/14/17  ADDING TDG 
-  ALLOCATE (CDAC(NDC), X1(IMX), TECPLOT(NWB))
-  ALLOCATE (BTA1(KMX),GMA1(KMX))
-  ALLOCATE (WSC(IMX),    KBI(IMX))
-  ALLOCATE (VBC(NWB),    EBC(NWB),    MBC(NWB),    PQC(NWB),    EVC(NWB),    PRC(NWB))
-  ALLOCATE (WINDC(NWB),  QINC(NWB),   QOUTC(NWB),  HEATC(NWB),  SLHTC(NWB))
-  ALLOCATE (QINIC(NBR),  DTRIC(NBR),  TRIC(NTR),   WDIC(NWD),   HDIC(NBR),   METIC(NWB))
-  ALLOCATE (EXC(NWB),    EXIC(NWB))
-  ALLOCATE (SLTRC(NWB),  THETA(NWB),  FRICC(NWB),  NAF(NWB),    ELTMF(NWB), Z0(NWB))
-  ALLOCATE (ZMIN(NWB),   IZMIN(NWB))
-  ALLOCATE (C2CH(NCT),   CDCH(NDC),   EPCH(NEPT),  macch(nmct), KFCH(NFL), APCH(NAL), ANCH(NAL), ALCH(NAL))
-  ALLOCATE (CPLTC(NCT),  HPLTC(NHY),  CDPLTC(NDC))
-  ALLOCATE (CMIN(NCT),   CMAX(NCT),   HYMIN(NHY),  HYMAX(NHY),  CDMIN(NDC),  CDMAX(NDC))
-  ALLOCATE (JBDAM(NBR),  ILAT(NWDT))
-  ALLOCATE (QINSUM(NBR), TINSUM(NBR), TIND(NBR),   JSS(NBR),    QIND(NBR))
-  ALLOCATE (QOLD(NPI),   DTP(NPI),    DTPS(NPI),   QOLDS(NPI))
-  ALLOCATE (LATGTC(NGT), LATSPC(NSP), LATPIC(NPI), DYNPIPE(NPI),DYNPUMP(NPU),LATPUC(NPU), DYNGTC(NGT))
-  ALLOCATE (GTIC(NGT),BGTO(NGT),   EGTO(NGT) )                                              ! cb 8/13/2010
-  ALLOCATE (INTERP_GATE(NGT))                                                               ! cb 8/13/2010  
-  ALLOCATE (OPT(NWB,7),         CIND(NCT,NBR),         CINSUM(NCT,NBR))
-  ALLOCATE (CDWBC(NDC,NWB),     KFWBC(NFL,NWB),        CPRWBC(NCT,NWB),    CINBRC(NCT,NBR),     CTRTRC(NCT,NTR))
-  ALLOCATE (CDTBRC(NCT,NBR),    CPRBRC(NCT,NBR))
-  ALLOCATE (YSS(NNPIPE,NPI),    VSS(NNPIPE,NPI),       YS(NNPIPE,NPI),     VS(NNPIPE,NPI),      VSTS(NNPIPE,NPI))
-  ALLOCATE (YSTS(NNPIPE,NPI),   YST(NNPIPE,NPI),       VST(NNPIPE,NPI))
-  ALLOCATE (CBODD(KMX,IMX,NBOD))
-  ALLOCATE (ALLIM(KMX,IMX,NAL), APLIM(KMX,IMX,NAL),    ANLIM(KMX,IMX,NAL), ASLIM(KMX,IMX,NAL))
-  ALLOCATE (ELLIM(KMX,IMX,NEP), EPLIM(KMX,IMX,NEP),    ENLIM(KMX,IMX,NEP), ESLIM(KMX,IMX,NEP))
-  ALLOCATE (CSSK(KMX,IMX,NCT),  C1(KMX,IMX,NCT),       C2(KMX,IMX,NCT),    CD(KMX,IMX,NDC),     KF(KMX,IMX,NFL))
-  ALLOCATE (KFS(KMX,IMX,NFL),   AF(KMX,IMX,NAL,5),     EF(KMX,IMX,NEP,5),  HYD(KMX,IMX,NHY), KFJW(NWB,NFL))
-  ALLOCATE (TKE(KMX,IMX,3), AZT(KMX,IMX),DZT(KMX,IMX))
-  ALLOCATE (USTARBTKE(IMX),E(IMX),EROUGH(NWB), ARODI(NWB), STRICK(NWB), TKELATPRDCONST(NWB))
-  ALLOCATE (FIRSTI(NWB), LASTI(NWB), TKELATPRD(NWB), STRICKON(NWB), WALLPNT(NWB), IMPTKE(NWB), TKEBC(NWB))
-  ALLOCATE (HYDRO_PLOT(NHY),    CONSTITUENT_PLOT(NCT), DERIVED_PLOT(NDC))
-  ALLOCATE (ZERO_SLOPE(NWB),    DYNAMIC_SHADE(IMX))
-  ALLOCATE (AZSLC(NWB))
-  ALLOCATE (NSPRF(NWB))
-  ALLOCATE (KBMAX(NWB),  ELKT(NWB),   WIND2(IMX))
-  ALLOCATE (VISC(NWB),   CELC(NWB),   DLTADD(NWB), REAERC(NWB))
-  ALLOCATE (QOAVR(NWB),  QIMXR(NWB),  QOMXR(NWB))
-  ALLOCATE (LAT(NWB),    LONGIT(NWB), ELBOT(NWB))
-  ALLOCATE (BTH(NWB),    VPR(NWB),    LPR(NWB))
-  ALLOCATE (NISNP(NWB),  NIPRF(NWB),  NISPR(NWB))
-  ALLOCATE (ICPL(NWB))                                 
-  ALLOCATE (TN_SEDSOD_NH4(NWB),TP_SEDSOD_PO4(NWB),TPOUT(NWB),TPTRIB(NWB),TPDTRIB(NWB),TPWD(NWB),TPPR(NWB),TPIN(NWB),TNOUT(NWB),TNTRIB(NWB),TNDTRIB(NWB),TNWD(NWB),TNPR(NWB),TNIN(NWB))  ! TP_SEDBURIAL(NWB),TN_SEDBURIAL(NWB),
-  ALLOCATE (A00(NWB),    HH(NWB),     DECL(NWB))
-  ALLOCATE (T2I(NWB),    KTWB(NWB),   KBR(NWB),    IBPR(NWB))
-  ALLOCATE (DLVR(NWB),   ESR(NWB),    ETR(NWB),    NBL(NWB))
-  ALLOCATE (LPRFN(NWB),  EXTFN(NWB),  BTHFN(NWB),  METFN(NWB),  VPRFN(NWB))
-  ALLOCATE (SNPFN(NWB),  PRFFN(NWB),  SPRFN(NWB),  CPLFN(NWB),  VPLFN(NWB),  FLXFN(NWB),FLXFN2(NWB))
-  ALLOCATE (AFW(NWB),    BFW(NWB),    CFW(NWB),    WINDH(NWB),  RHEVC(NWB),  FETCHC(NWB))
-  ALLOCATE (SDK(NWB),    FSOD(NWB),   FSED(NWB),   SEDCI(NWB),  SEDCC(NWB),   SEDPRC(NWB), SEDS(NWB), SEDB(NWB), DYNSEDK(NWB))  !cb 11/28/06
+     ndc = ndc + 1
+                ! SW 4/14/17  ADDING TDG
+     allocate(cdac(ndc), x1(imx), tecplot(nwb))
+     allocate(bta1(kmx), gma1(kmx))
+     allocate(wsc(imx), kbi(imx))
+     allocate(vbc(nwb), ebc(nwb), mbc(nwb), pqc(nwb), evc(nwb), prc(nwb))
+     allocate(windc(nwb), qinc(nwb), qoutc(nwb), heatc(nwb), slhtc(nwb))
+     allocate(qinic(nbr), dtric(nbr), tric(ntr), wdic(nwd), hdic(nbr),         &
+            & metic(nwb))
+     allocate(exc(nwb), exic(nwb))
+     allocate(sltrc(nwb), theta(nwb), fricc(nwb), naf(nwb), eltmf(nwb), z0(nwb)&
+            & )
+     allocate(zmin(nwb), izmin(nwb))
+     allocate(c2ch(nct), cdch(ndc), epch(nept), macch(nmct), kfch(nfl),        &
+            & apch(nal), anch(nal), alch(nal))
+     allocate(cpltc(nct), hpltc(nhy), cdpltc(ndc))
+     allocate(cmin(nct), cmax(nct), hymin(nhy), hymax(nhy), cdmin(ndc),        &
+            & cdmax(ndc))
+     allocate(jbdam(nbr), ilat(nwdt))
+     allocate(qinsum(nbr), tinsum(nbr), tind(nbr), jss(nbr), qind(nbr))
+     allocate(qold(npi), dtp(npi), dtps(npi), qolds(npi))
+     allocate(latgtc(ngt), latspc(nsp), latpic(npi), dynpipe(npi), dynpump(npu)&
+            & , latpuc(npu), dyngtc(ngt))
+     allocate(gtic(ngt), bgto(ngt), egto(ngt))                                              ! cb 8/13/2010
+     allocate(interp_gate(ngt))                                                             ! cb 8/13/2010
+     allocate(opt(nwb, 7), cind(nct, nbr), cinsum(nct, nbr))
+     allocate(cdwbc(ndc, nwb), kfwbc(nfl, nwb), cprwbc(nct, nwb),              &
+            & cinbrc(nct, nbr), ctrtrc(nct, ntr))
+     allocate(cdtbrc(nct, nbr), cprbrc(nct, nbr))
+     allocate(yss(nnpipe, npi), vss(nnpipe, npi), ys(nnpipe, npi),             &
+            & vs(nnpipe, npi), vsts(nnpipe, npi))
+     allocate(ysts(nnpipe, npi), yst(nnpipe, npi), vst(nnpipe, npi))
+     allocate(cbodd(kmx, imx, nbod))
+     allocate(allim(kmx, imx, nal), aplim(kmx, imx, nal), anlim(kmx, imx, nal),&
+            & aslim(kmx, imx, nal))
+     allocate(ellim(kmx, imx, nep), eplim(kmx, imx, nep), enlim(kmx, imx, nep),&
+            & eslim(kmx, imx, nep))
+     allocate(cssk(kmx, imx, nct), c1(kmx, imx, nct), c2(kmx, imx, nct),       &
+            & cd(kmx, imx, ndc), kf(kmx, imx, nfl))
+     allocate(kfs(kmx, imx, nfl), af(kmx, imx, nal, 5), ef(kmx, imx, nep, 5),  &
+            & hyd(kmx, imx, nhy), kfjw(nwb, nfl))
+     allocate(tke(kmx, imx, 3), azt(kmx, imx), dzt(kmx, imx))
+     allocate(ustarbtke(imx), e(imx), erough(nwb), arodi(nwb), strick(nwb),    &
+            & tkelatprdconst(nwb))
+     allocate(firsti(nwb), lasti(nwb), tkelatprd(nwb), strickon(nwb),          &
+            & wallpnt(nwb), imptke(nwb), tkebc(nwb))
+     allocate(hydro_plot(nhy), constituent_plot(nct), derived_plot(ndc))
+     allocate(zero_slope(nwb), dynamic_shade(imx))
+     allocate(azslc(nwb))
+     allocate(nsprf(nwb))
+     allocate(kbmax(nwb), elkt(nwb), wind2(imx))
+     allocate(visc(nwb), celc(nwb), dltadd(nwb), reaerc(nwb))
+     allocate(qoavr(nwb), qimxr(nwb), qomxr(nwb))
+     allocate(lat(nwb), longit(nwb), elbot(nwb))
+     allocate(bth(nwb), vpr(nwb), lpr(nwb))
+     allocate(nisnp(nwb), niprf(nwb), nispr(nwb))
+     allocate(icpl(nwb))
+     allocate(tn_sedsod_nh4(nwb), tp_sedsod_po4(nwb), tpout(nwb), tptrib(nwb), &
+            & tpdtrib(nwb), tpwd(nwb), tppr(nwb), tpin(nwb), tnout(nwb),       &
+            & tntrib(nwb), tndtrib(nwb), tnwd(nwb), tnpr(nwb), tnin(nwb))                                                                                                               ! TP_SEDBURIAL(NWB),TN_SEDBURIAL(NWB),
+     allocate(a00(nwb), hh(nwb), decl(nwb))
+     allocate(t2i(nwb), ktwb(nwb), kbr(nwb), ibpr(nwb))
+     allocate(dlvr(nwb), esr(nwb), etr(nwb), nbl(nwb))
+     allocate(lprfn(nwb), extfn(nwb), bthfn(nwb), metfn(nwb), vprfn(nwb))
+     allocate(snpfn(nwb), prffn(nwb), sprfn(nwb), cplfn(nwb), vplfn(nwb),      &
+            & flxfn(nwb), flxfn2(nwb))
+     allocate(afw(nwb), bfw(nwb), cfw(nwb), windh(nwb), rhevc(nwb), fetchc(nwb)&
+            & )
+     allocate(sdk(nwb), fsod(nwb), fsed(nwb), sedci(nwb), sedcc(nwb),          &
+            & sedprc(nwb), seds(nwb), sedb(nwb), dynsedk(nwb))                                                                  !cb 11/28/06
   !ALLOCATE (SDK1(NWB),sdk2(nwb),SEDCI1(NWB),SEDCI2(NWB),SEDPRC1(NWB),SEDPRC2(NWB),SEDCC1(NWB),SEDCC2(NWB),fsedc1(nwb),fsedc2(nwb))   ! Amaila, cb 6/8/17
-  ALLOCATE (SDK1(NWB),sdk2(nwb),SEDCI1(NWB),SEDCI2(NWB),SEDPRC1(NWB),SEDPRC2(NWB),SEDCC1(NWB),SEDCC2(NWB),fsedc1(nwb),fsedc2(nwb))   ! cb 6/17/17
-  ALLOCATE (ICEC(NWB),   SLICEC(NWB), ICETHI(NWB), ALBEDO(NWB), HWI(NWB),    BETAI(NWB),  GAMMAI(NWB), ICEMIN(NWB), ICET2(NWB))
-  ALLOCATE (EXH2O(NWB),  BETA(NWB),   EXOM(NWB),   EXSS(NWB),   DXI(NWB),    CBHE(NWB),   TSED(NWB),   TSEDF(NWB),  FI(NWB))
-  ALLOCATE (AX(NWB),     WTYPEC(NWB), JBDN(NWB),   AZC(NWB),    AZMAX(NWB), GRIDC(NWB))     !SW 07/14/04    !  QINT(NWB),   QOUTT(NWB),  
-  ALLOCATE (TAIR(NWB),   TDEW(NWB),   WIND(NWB),   PHI(NWB),    CLOUD(NWB),  CSHE(IMX),   SRON(NWB),   RANLW(NWB))
-  ALLOCATE (SNPC(NWB),   SCRC(NWB),   PRFC(NWB),   SPRC(NWB),   CPLC(NWB),   VPLC(NWB),   FLXC(NWB))
-  ALLOCATE (NXTMSN(NWB), NXTMSC(NWB), NXTMPR(NWB), NXTMSP(NWB), NXTMCP(NWB), NXTMVP(NWB), NXTMFL(NWB))
-  ALLOCATE (SNPDP(NWB),  SCRDP(NWB),  PRFDP(NWB),  SPRDP(NWB),  CPLDP(NWB),  VPLDP(NWB),  FLXDP(NWB))
-  ALLOCATE (NSNP(NWB),   NSCR(NWB),   NPRF(NWB),   NSPR(NWB),   NCPL(NWB),   NVPL(NWB),   NFLX(NWB))
-  ALLOCATE (NEQN(NWB),   PO4R(NWB),   PARTP(NWB))
-  ALLOCATE (NH4DK(NWB),  NH4R(NWB))
-  ALLOCATE (NO3DK(NWB),  NO3S(NWB), FNO3SED(NWB))
-  ALLOCATE (FER(NWB),    FES(NWB))
-  ALLOCATE (CO2R(NWB),   SROC(NWB))
-  ALLOCATE (O2ER(NEPT),  O2EG(NEPT))
-  ALLOCATE (CAQ10(NWB),  CADK(NWB),   CAS(NWB))
-  ALLOCATE (BODP(NBOD),  BODN(NBOD),  BODC(NBOD))
-  ALLOCATE (KBOD(NBOD),  TBOD(NBOD),  RBOD(NBOD))
-  ALLOCATE (LDOMDK(NWB), RDOMDK(NWB), LRDDK(NWB))
-  ALLOCATE (OMT1(NWB),   OMT2(NWB),   OMK1(NWB),   OMK2(NWB))
-  ALLOCATE (LPOMDK(NWB), RPOMDK(NWB), LRPDK(NWB),  POMS(NWB))
-  ALLOCATE (ORGP(NWB),   ORGN(NWB),   ORGC(NWB),   ORGSI(NWB))
-  allocate (Pbiom(NWB),  Nbiom(NWB),   Cbiom(NWB))   ! Amaila, cb 6/8/17
-  ALLOCATE (RCOEF1(NWB), RCOEF2(NWB), RCOEF3(NWB), RCOEF4(NWB))
-  ALLOCATE (NH4T1(NWB),  NH4T2(NWB),  NH4K1(NWB),  NH4K2(NWB))
-  ALLOCATE (NO3T1(NWB),  NO3T2(NWB),  NO3K1(NWB),  NO3K2(NWB))
-  ALLOCATE (DSIR(NWB),   PSIS(NWB),   PSIDK(NWB),  PARTSI(NWB))
-  ALLOCATE (SODT1(NWB),  SODT2(NWB),  SODK1(NWB),  SODK2(NWB))
-  ALLOCATE (O2NH4(NWB),  O2OM(NWB))
-  ALLOCATE (O2AR(NAL),   O2AG(NAL))
-  ALLOCATE (CGQ10(NGC),  CG0DK(NGC),  CG1DK(NGC),  CGS(NGC), CGLDK(NGC),CGKLF(NGC),CGCS(NGC))  !LCJ 2/26/15
-  ALLOCATE (CUNIT(NCT),  CUNIT1(NCT), CUNIT2(NCT))
-  ALLOCATE (CAC(NCT),    INCAC(NCT),  TRCAC(NCT),  DTCAC(NCT),  PRCAC(NCT))
-  ALLOCATE (CNAME(NCT),  CNAME1(NCT), CNAME2(NCT), CNAME3(NCT), CMULT(NCT),  CSUM(NCT))
-  ALLOCATE (CN(NCT))
-  ALLOCATE (SSS(NSS),    TAUCR(NSS),  SEDRC(NSS))   !,  SSFLOC(NSS), FLOCEQN(NSS))                                           !SR 04/21/13
-  ALLOCATE (CDSUM(NDC))
-  ALLOCATE (DTRC(NBR))
-  ALLOCATE (NSTR(NBR),   XBR(NBR), DYNSTRUC(NBR))
-  ALLOCATE (QTAVB(NBR),  QTMXB(NBR))
-  ALLOCATE (BS(NWB),     BE(NWB),     JBUH(NBR),   JBDH(NBR),   JWUH(NBR),   JWDH(NBR))
-  ALLOCATE (TSSS(NBR),   TSSB(NBR),   TSSICE(NBR))
-  ALLOCATE (ESBR(NBR),   ETBR(NBR),   EBRI(NBR))
-  ALLOCATE (QIN(NBR),    PR(NBR),     QPRBR(NBR),  QDTR(NBR),   EVBR(NBR))
-  ALLOCATE (TIN(NBR),    TOUT(NBR),   TPR(NBR),    TDTR(NBR),   TPB(NBR))
-  ALLOCATE (NACPR(NBR),  NACIN(NBR),  NACDT(NBR),  NACTR(NTR),  NACD(NWB))
-  ALLOCATE (QSUM(NBR),   NOUT(NBR),   KTQIN(NBR),  KBQIN(NBR),  ELUH(NBR),   ELDH(NBR))
-  ALLOCATE (NL(NBR),     NPOINT(NBR), SLOPE(NBR),  SLOPEC(NBR), ALPHA(NBR),  COSA(NBR),   SINA(NBR),   SINAC(NBR), ilayer(imx))   
-  ALLOCATE (CPRFN(NBR),  EUHFN(NBR),  TUHFN(NBR),  CUHFN(NBR),  EDHFN(NBR),  TDHFN(NBR),  QOTFN(NBR),  PREFN(NBR))
-  ALLOCATE (QINFN(NBR),  TINFN(NBR),  CINFN(NBR),  CDHFN(NBR),  QDTFN(NBR),  TDTFN(NBR),  CDTFN(NBR),  TPRFN(NBR))
-  ALLOCATE (VOLWD(NBR),  VOLSBR(NBR), VOLTBR(NBR), DLVOL(NBR),  VOLG(NWB),   VOLSR(NWB),  VOLTR(NWB),  VOLEV(NBR), VOLICE(NBR), ICEBANK(IMX))
-  ALLOCATE (VOLB(NBR),   VOLPR(NBR),  VOLTRB(NBR), VOLDT(NBR),  VOLUH(NBR),  VOLDH(NBR),  VOLIN(NBR),  VOLOUT(NBR))
-  ALLOCATE (US(NBR),     DS(NBR),     CUS(NBR),    UHS(NBR),    DHS(NBR),    UQB(NBR),    DQB(NBR),    CDHS(NBR))
-  ALLOCATE (TSSEV(NBR),  TSSPR(NBR),  TSSTR(NBR),  TSSDT(NBR),  TSSWD(NBR),  TSSUH(NBR),  TSSDH(NBR),  TSSIN(NBR),  TSSOUT(NBR))
-  ALLOCATE (ET(IMX),     RS(IMX),     RN(IMX),     RB(IMX),     RC(IMX),     RE(IMX),     SHADE(IMX))
-  ALLOCATE (DLTMAX(NOD), QWDO(IMX),   TWDO(IMX))                                                                        ! SW 1/24/05
-  ALLOCATE (SOD(IMX),    ELWS(IMX),   BKT(IMX),    REAER(IMX))
-  ALLOCATE (ICETH(IMX),  ICE(IMX),    ICESW(IMX))
-  ALLOCATE (Q(IMX),      QC(IMX),     QERR(IMX),   QSSUM(IMX))
-  ALLOCATE (KTI(IMX),    SKTI(IMX),   SROSH(IMX),  SEG(IMX),    DLXRHO(IMX))
-  ALLOCATE (DLX(IMX),    DLXR(IMX))
-  ALLOCATE (A(IMX),      C(IMX),      D(IMX),      F(IMX),      V(IMX),      BTA(IMX),    GMA(IMX))
-  ALLOCATE (KBMIN(IMX),  EV(IMX),     QDT(IMX),    QPR(IMX),    SBKT(IMX),   BHRHO(IMX))
-  ALLOCATE (SZ(IMX),     WSHX(IMX),   WSHY(IMX),   WIND10(IMX), CZ(IMX),     FETCH(IMX),  PHI0(IMX),   FRIC(IMX))
-  ALLOCATE (Z(IMX),      KB(IMX),     PALT(IMX))
-  ALLOCATE (VNORM(KMX))
-  ALLOCATE (ANPR(NAL),   ANEQN(NAL),  APOM(NAL))
-  ALLOCATE (AC(NAL),     ASI(NAL),    ACHLA(NAL),  AHSP(NAL),   AHSN(NAL),   AHSSI(NAL))
-  ALLOCATE (AT1(NAL),    AT2(NAL),    AT3(NAL),    AT4(NAL),    AK1(NAL),    AK2(NAL),    AK3(NAL),    AK4(NAL))
-  ALLOCATE (AG(NAL),     AR(NAL),     AE(NAL),     AM(NAL),     AS(NAL),     EXA(NAL),    ASAT(NAL),   AP(NAL),   AN(NAL))
-  ALLOCATE (ENPR(NEPT),  ENEQN(NEPT))
-  ALLOCATE (EG(NEPT),    ER(NEPT),    EE(NEPT),    EM(NEPT),    EB(NEPT),    ESAT(NEPT),  EP(NEPT),    EN(NEPT))
-  ALLOCATE (EC(NEPT),    ESI(NEPT),   ECHLA(NEPT), EHSP(NEPT),  EHSN(NEPT),  EHSSI(NEPT), EPOM(NEPT),  EHS(NEPT))
-  ALLOCATE (ET1(NEPT),   ET2(NEPT),   ET3(NEPT),   ET4(NEPT),   EK1(NEPT),   EK2(NEPT),   EK3(NEPT),   EK4(NEPT))
-  ALLOCATE (HNAME(NHY),  FMTH(NHY),   HMULT(NHY),  FMTC(NCT),   FMTCD(NDC))
-  ALLOCATE (KFAC(NFL),   KFNAME(NFL), KFNAME2(NFL),KFCN(NFL,NWB))
-  ALLOCATE (C2I(NCT,NWB),    TRCN(NCT,NTR))
-  ALLOCATE (CDN(NDC,NWB),    CDNAME(NDC),     CDNAME2(NDC),    CDNAME3(NDC),    CDMULT(NDC))
-  ALLOCATE (CMBRS(NCT,NBR),  CMBRT(NCT,NBR),  INCN(NCT,NBR),   DTCN(NCT,NBR),   PRCN(NCT,NBR))
-  ALLOCATE (FETCHU(IMX,NBR), FETCHD(IMX,NBR))
-  ALLOCATE (IPRF(IMX,NWB),   ISNP(IMX,NWB),   ISPR(IMX,NWB),   BL(IMX,NWB))
-  ALLOCATE (H1(KMX,IMX),     H2(KMX,IMX),     BH1(KMX,IMX),    BH2(KMX,IMX),    BHR1(KMX,IMX),   BHR2(KMX,IMX),   QTOT(KMX,IMX))
-  ALLOCATE (SAVH2(KMX,IMX),  AVH1(KMX,IMX),   AVH2(KMX,IMX),   AVHR(KMX,IMX),   SAVHR(KMX,IMX))
-  ALLOCATE (LFPR(KMX,IMX),   BI(KMX,IMX), BNEW(KMX,IMX))        ! SW 1/23/06
-  ALLOCATE (ADX(KMX,IMX),    ADZ(KMX,IMX),    DO1(KMX,IMX),    DO2(KMX,IMX),    DO3(KMX,IMX),    SED(KMX,IMX))
-  ALLOCATE (B(KMX,IMX),      CONV(KMX,IMX),   CONV1(KMX,IMX),  EL(KMX,IMX),     DZ(KMX,IMX),     DZQ(KMX,IMX),    DX(KMX,IMX))
-  ALLOCATE (P(KMX,IMX),      SU(KMX,IMX),     SW(KMX,IMX),     SAZ(KMX,IMX),    T1(KMX,IMX),     TSS(KMX,IMX),    QSS(KMX,IMX))
-  ALLOCATE (BB(KMX,IMX),     BR(KMX,IMX),     BH(KMX,IMX),     BHR(KMX,IMX),    VOL(KMX,IMX),    HSEG(KMX,IMX),   DECAY(KMX,IMX))
-  ALLOCATE (DEPTHB(KMX,IMX), DEPTHM(KMX,IMX), FPSS(KMX,IMX),   FPFE(KMX,IMX),   FRICBR(KMX,IMX), UXBR(KMX,IMX),   UYBR(KMX,IMX))
-  ALLOCATE (QUH1(KMX,NBR),   QDH1(KMX,NBR),   VOLUH2(KMX,NBR), VOLDH2(KMX,NBR), TUH(KMX,NBR),    TDH(KMX,NBR))
-  ALLOCATE (TSSUH1(KMX,NBR), TSSUH2(KMX,NBR), TSSDH1(KMX,NBR), TSSDH2(KMX,NBR))
-  ALLOCATE (TVP(KMX,NWB),    SEDVP(KMX,NWB),  H(KMX,NWB))
+     allocate(sdk1(nwb), sdk2(nwb), sedci1(nwb), sedci2(nwb), sedprc1(nwb),    &
+            & sedprc2(nwb), sedcc1(nwb), sedcc2(nwb), fsedc1(nwb), fsedc2(nwb))                                                      ! cb 6/17/17
+     allocate(icec(nwb), slicec(nwb), icethi(nwb), albedo(nwb), hwi(nwb),      &
+            & betai(nwb), gammai(nwb), icemin(nwb), icet2(nwb))
+     allocate(exh2o(nwb), beta(nwb), exom(nwb), exss(nwb), dxi(nwb), cbhe(nwb),&
+            & tsed(nwb), tsedf(nwb), fi(nwb))
+     allocate(ax(nwb), wtypec(nwb), jbdn(nwb), azc(nwb), azmax(nwb), gridc(nwb)&
+            & )                                                                             !SW 07/14/04    !  QINT(NWB),   QOUTT(NWB),
+     allocate(tair(nwb), tdew(nwb), wind(nwb), phi(nwb), cloud(nwb), cshe(imx),&
+            & sron(nwb), ranlw(nwb))
+     allocate(snpc(nwb), scrc(nwb), prfc(nwb), sprc(nwb), cplc(nwb), vplc(nwb),&
+            & flxc(nwb))
+     allocate(nxtmsn(nwb), nxtmsc(nwb), nxtmpr(nwb), nxtmsp(nwb), nxtmcp(nwb), &
+            & nxtmvp(nwb), nxtmfl(nwb))
+     allocate(snpdp(nwb), scrdp(nwb), prfdp(nwb), sprdp(nwb), cpldp(nwb),      &
+            & vpldp(nwb), flxdp(nwb))
+     allocate(nsnp(nwb), nscr(nwb), nprf(nwb), nspr(nwb), ncpl(nwb), nvpl(nwb),&
+            & nflx(nwb))
+     allocate(neqn(nwb), po4r(nwb), partp(nwb))
+     allocate(nh4dk(nwb), nh4r(nwb))
+     allocate(no3dk(nwb), no3s(nwb), fno3sed(nwb))
+     allocate(fer(nwb), fes(nwb))
+     allocate(co2r(nwb), sroc(nwb))
+     allocate(o2er(nept), o2eg(nept))
+     allocate(caq10(nwb), cadk(nwb), cas(nwb))
+     allocate(bodp(nbod), bodn(nbod), bodc(nbod))
+     allocate(kbod(nbod), tbod(nbod), rbod(nbod))
+     allocate(ldomdk(nwb), rdomdk(nwb), lrddk(nwb))
+     allocate(omt1(nwb), omt2(nwb), omk1(nwb), omk2(nwb))
+     allocate(lpomdk(nwb), rpomdk(nwb), lrpdk(nwb), poms(nwb))
+     allocate(orgp(nwb), orgn(nwb), orgc(nwb), orgsi(nwb))
+     allocate(pbiom(nwb), nbiom(nwb), cbiom(nwb))    ! Amaila, cb 6/8/17
+     allocate(rcoef1(nwb), rcoef2(nwb), rcoef3(nwb), rcoef4(nwb))
+     allocate(nh4t1(nwb), nh4t2(nwb), nh4k1(nwb), nh4k2(nwb))
+     allocate(no3t1(nwb), no3t2(nwb), no3k1(nwb), no3k2(nwb))
+     allocate(dsir(nwb), psis(nwb), psidk(nwb), partsi(nwb))
+     allocate(sodt1(nwb), sodt2(nwb), sodk1(nwb), sodk2(nwb))
+     allocate(o2nh4(nwb), o2om(nwb))
+     allocate(o2ar(nal), o2ag(nal))
+     allocate(cgq10(ngc), cg0dk(ngc), cg1dk(ngc), cgs(ngc), cgldk(ngc),        &
+            & cgklf(ngc), cgcs(ngc))                                                           !LCJ 2/26/15
+     allocate(cunit(nct), cunit1(nct), cunit2(nct))
+     allocate(cac(nct), incac(nct), trcac(nct), dtcac(nct), prcac(nct))
+     allocate(cname(nct), cname1(nct), cname2(nct), cname3(nct), cmult(nct),   &
+            & csum(nct))
+     allocate(cn(nct))
+     allocate(sss(nss), taucr(nss), sedrc(nss))     !,  SSFLOC(NSS), FLOCEQN(NSS))                                           !SR 04/21/13
+     allocate(cdsum(ndc))
+     allocate(dtrc(nbr))
+     allocate(nstr(nbr), xbr(nbr), dynstruc(nbr))
+     allocate(qtavb(nbr), qtmxb(nbr))
+     allocate(bs(nwb), be(nwb), jbuh(nbr), jbdh(nbr), jwuh(nbr), jwdh(nbr))
+     allocate(tsss(nbr), tssb(nbr), tssice(nbr))
+     allocate(esbr(nbr), etbr(nbr), ebri(nbr))
+     allocate(qin(nbr), pr(nbr), qprbr(nbr), qdtr(nbr), evbr(nbr))
+     allocate(tin(nbr), tout(nbr), tpr(nbr), tdtr(nbr), tpb(nbr))
+     allocate(nacpr(nbr), nacin(nbr), nacdt(nbr), nactr(ntr), nacd(nwb))
+     allocate(qsum(nbr), nout(nbr), ktqin(nbr), kbqin(nbr), eluh(nbr),         &
+            & eldh(nbr))
+     allocate(nl(nbr), npoint(nbr), slope(nbr), slopec(nbr), alpha(nbr),       &
+            & cosa(nbr), sina(nbr), sinac(nbr), ilayer(imx))
+     allocate(cprfn(nbr), euhfn(nbr), tuhfn(nbr), cuhfn(nbr), edhfn(nbr),      &
+            & tdhfn(nbr), qotfn(nbr), prefn(nbr))
+     allocate(qinfn(nbr), tinfn(nbr), cinfn(nbr), cdhfn(nbr), qdtfn(nbr),      &
+            & tdtfn(nbr), cdtfn(nbr), tprfn(nbr))
+     allocate(volwd(nbr), volsbr(nbr), voltbr(nbr), dlvol(nbr), volg(nwb),     &
+            & volsr(nwb), voltr(nwb), volev(nbr), volice(nbr), icebank(imx))
+     allocate(volb(nbr), volpr(nbr), voltrb(nbr), voldt(nbr), voluh(nbr),      &
+            & voldh(nbr), volin(nbr), volout(nbr))
+     allocate(us(nbr), ds(nbr), cus(nbr), uhs(nbr), dhs(nbr), uqb(nbr),        &
+            & dqb(nbr), cdhs(nbr))
+     allocate(tssev(nbr), tsspr(nbr), tsstr(nbr), tssdt(nbr), tsswd(nbr),      &
+            & tssuh(nbr), tssdh(nbr), tssin(nbr), tssout(nbr))
+     allocate(et(imx), rs(imx), rn(imx), rb(imx), rc(imx), re(imx), shade(imx))
+     allocate(dltmax(nod), qwdo(imx), twdo(imx))                                                                        ! SW 1/24/05
+     allocate(sod(imx), elws(imx), bkt(imx), reaer(imx))
+     allocate(iceth(imx), ice(imx), icesw(imx))
+     allocate(q(imx), qc(imx), qerr(imx), qssum(imx))
+     allocate(kti(imx), skti(imx), srosh(imx), seg(imx), dlxrho(imx))
+     allocate(dlx(imx), dlxr(imx))
+     allocate(a(imx), c(imx), d(imx), f(imx), v(imx), bta(imx), gma(imx))
+     allocate(kbmin(imx), ev(imx), qdt(imx), qpr(imx), sbkt(imx), bhrho(imx))
+     allocate(sz(imx), wshx(imx), wshy(imx), wind10(imx), cz(imx), fetch(imx), &
+            & phi0(imx), fric(imx))
+     allocate(z(imx), kb(imx), palt(imx))
+     allocate(vnorm(kmx))
+     allocate(anpr(nal), aneqn(nal), apom(nal))
+     allocate(ac(nal), asi(nal), achla(nal), ahsp(nal), ahsn(nal), ahssi(nal))
+     allocate(at1(nal), at2(nal), at3(nal), at4(nal), ak1(nal), ak2(nal),      &
+            & ak3(nal), ak4(nal))
+     allocate(ag(nal), ar(nal), ae(nal), am(nal), as(nal), exa(nal), asat(nal),&
+            & ap(nal), an(nal))
+     allocate(enpr(nept), eneqn(nept))
+     allocate(eg(nept), er(nept), ee(nept), em(nept), eb(nept), esat(nept),    &
+            & ep(nept), en(nept))
+     allocate(ec(nept), esi(nept), echla(nept), ehsp(nept), ehsn(nept),        &
+            & ehssi(nept), epom(nept), ehs(nept))
+     allocate(et1(nept), et2(nept), et3(nept), et4(nept), ek1(nept), ek2(nept),&
+            & ek3(nept), ek4(nept))
+     allocate(hname(nhy), fmth(nhy), hmult(nhy), fmtc(nct), fmtcd(ndc))
+     allocate(kfac(nfl), kfname(nfl), kfname2(nfl), kfcn(nfl, nwb))
+     allocate(c2i(nct, nwb), trcn(nct, ntr))
+     allocate(cdn(ndc, nwb), cdname(ndc), cdname2(ndc), cdname3(ndc),          &
+            & cdmult(ndc))
+     allocate(cmbrs(nct, nbr), cmbrt(nct, nbr), incn(nct, nbr), dtcn(nct, nbr),&
+            & prcn(nct, nbr))
+     allocate(fetchu(imx, nbr), fetchd(imx, nbr))
+     allocate(iprf(imx, nwb), isnp(imx, nwb), ispr(imx, nwb), bl(imx, nwb))
+     allocate(h1(kmx, imx), h2(kmx, imx), bh1(kmx, imx), bh2(kmx, imx),        &
+            & bhr1(kmx, imx), bhr2(kmx, imx), qtot(kmx, imx))
+     allocate(savh2(kmx, imx), avh1(kmx, imx), avh2(kmx, imx), avhr(kmx, imx), &
+            & savhr(kmx, imx))
+     allocate(lfpr(kmx, imx), bi(kmx, imx), bnew(kmx, imx))     ! SW 1/23/06
+     allocate(adx(kmx, imx), adz(kmx, imx), do1(kmx, imx), do2(kmx, imx),      &
+            & do3(kmx, imx), sed(kmx, imx))
+     allocate(b(kmx, imx), conv(kmx, imx), conv1(kmx, imx), el(kmx, imx),      &
+            & dz(kmx, imx), dzq(kmx, imx), dx(kmx, imx))
+     allocate(p(kmx, imx), su(kmx, imx), sw(kmx, imx), saz(kmx, imx),          &
+            & t1(kmx, imx), tss(kmx, imx), qss(kmx, imx))
+     allocate(bb(kmx, imx), br(kmx, imx), bh(kmx, imx), bhr(kmx, imx),         &
+            & vol(kmx, imx), hseg(kmx, imx), decay(kmx, imx))
+     allocate(depthb(kmx, imx), depthm(kmx, imx), fpss(kmx, imx),              &
+            & fpfe(kmx, imx), fricbr(kmx, imx), uxbr(kmx, imx), uybr(kmx, imx))
+     allocate(quh1(kmx, nbr), qdh1(kmx, nbr), voluh2(kmx, nbr),                &
+            & voldh2(kmx, nbr), tuh(kmx, nbr), tdh(kmx, nbr))
+     allocate(tssuh1(kmx, nbr), tssuh2(kmx, nbr), tssdh1(kmx, nbr),            &
+            & tssdh2(kmx, nbr))
+     allocate(tvp(kmx, nwb), sedvp(kmx, nwb), h(kmx, nwb))
   !ALLOCATE (SEDVP1(KMX,NWB),  SEDVP2(KMX,NWB),SED1(KMX,IMX),SED2(KMX,IMX))   ! Amaila
-  ALLOCATE (SEDVP1(KMX,NWB),  SEDVP2(KMX,NWB),SED1(KMX,IMX),SED2(KMX,IMX),sed1ic(kmx,imx),sed2ic(kmx,imx),sdfirstadd(kmx,imx))   !  cb 9/3/17
-  ALLOCATE (QINF(KMX,NBR),   QOUT(KMX,NBR),   KOUT(KMX,NBR))
-  ALLOCATE (CT(KMX,IMX),     AT(KMX,IMX),     VT(KMX,IMX),     DT(KMX,IMX),     GAMMA(KMX,IMX))
-  ALLOCATE (CWDO(NCT,NOD),   CDWDO(NDC,NOD),  CWDOC(NCT),      CDWDOC(NDC),     CDTOT(NDC))
-  ALLOCATE (CIN(NCT,NBR),    CDTR(NCT,NBR),   CPR(NCT,NBR),    CPB(NCT,NBR),    COUT(NCT,NBR))
-  ALLOCATE (RSOD(NOD),       RSOF(NOD),       DLTD(NOD),       DLTF(NOD))
-  ALLOCATE (TSRD(NOD),       TSRF(NOD),       WDOD(NOD),       WDOF(NOD))
-  ALLOCATE (SNPD(NOD,NWB),   SNPF(NOD,NWB),   SPRD(NOD,NWB),   SPRF(NOD,NWB))
-  ALLOCATE (SCRD(NOD,NWB),   SCRF(NOD,NWB),   PRFD(NOD,NWB),   PRFF(NOD,NWB))
-  ALLOCATE (CPLD(NOD,NWB),   CPLF(NOD,NWB),   VPLD(NOD,NWB),   VPLF(NOD,NWB),   FLXD(NOD,NWB),   FLXF(NOD,NWB))
-  ALLOCATE (EPIC(NWB,NEPT),  EPICI(NWB,NEPT), EPIPRC(NWB,NEPT))
-  ALLOCATE (EPIVP(KMX,NWB,NEP), macrcvp(KMX,NWB,nmc),macrclp(KMX,imx,nmc))   ! cb 8/21/15
-  ALLOCATE (CUH(KMX,NCT,NBR),     CDH(KMX,NCT,NBR))
-  ALLOCATE (EPM(KMX,IMX,NEPT),    EPD(KMX,IMX,NEPT),    EPC(KMX,IMX,NEPT))
-  ALLOCATE (C1S(KMX,IMX,NCT),     CSSB(KMX,IMX,NCT),    CVP(KMX,NCT,NWB))
-  ALLOCATE (CSSUH1(KMX,NCT,NBR),  CSSUH2(KMX,NCT,NBR),  CSSDH2(KMX,NCT,NBR), CSSDH1(KMX,NCT,NBR))
-  ALLOCATE (READ_EXTINCTION(NWB), READ_RADIATION(NWB))
-  ALLOCATE (DIST_TRIBS(NBR),      LIMITING_FACTOR(NAL))
-  ALLOCATE (UPWIND(NWB),          ULTIMATE(NWB))
-  ALLOCATE (STRIC(NST,NBR), ESTRT(NST,NBR), WSTRT(NST,NBR), KTSWT(NST,NBR), KBSWT(NST,NBR),SINKCT(NST,NBR))
-  ALLOCATE (FRESH_WATER(NWB),     SALT_WATER(NWB),      TRAPEZOIDAL(NWB))                                              !SW 07/16/04
-  ALLOCATE (UH_EXTERNAL(NBR),     DH_EXTERNAL(NBR),     UH_INTERNAL(NBR),    DH_INTERNAL(NBR))
-  ALLOCATE (UQ_EXTERNAL(NBR),     DQ_EXTERNAL(NBR),     UQ_INTERNAL(NBR),    DQ_INTERNAL(NBR))
-  ALLOCATE (UP_FLOW(NBR),         DN_FLOW(NBR),         UP_HEAD(NBR),        DN_HEAD(NBR))
-  ALLOCATE (INTERNAL_FLOW(NBR),   DAM_INFLOW(NBR),      DAM_OUTFLOW(NBR),    HEAD_FLOW(NBR),      HEAD_BOUNDARY(NWB))  !TC 08/03/04
-  ALLOCATE (ISO_CONC(NCT,NWB),    VERT_CONC(NCT,NWB),   LONG_CONC(NCT,NWB))
-  ALLOCATE (ISO_SEDIMENT(NWB),    VERT_SEDIMENT(NWB),   LONG_SEDIMENT(NWB))
-  ALLOCATE (ISO_SEDIMENT1(NWB),    VERT_SEDIMENT1(NWB),   LONG_SEDIMENT1(NWB))  !Amaila
-  ALLOCATE (ISO_SEDIMENT2(NWB),    VERT_SEDIMENT2(NWB),   LONG_SEDIMENT2(NWB))  !Amaila
-  ALLOCATE (VISCOSITY_LIMIT(NWB), CELERITY_LIMIT(NWB),  IMPLICIT_AZ(NWB))
-  ALLOCATE (FETCH_CALC(NWB),      ONE_LAYER(IMX),       IMPLICIT_VISC(NWB))
-  ALLOCATE (LIMITING_DLT(NWB),    TERM_BY_TERM(NWB),    MANNINGS_N(NWB))
-  ALLOCATE (PLACE_QIN(NWB),       PLACE_QTR(NTRT),      SPECIFY_QTR(NTRT))
-  ALLOCATE (PRINT_CONST(NCT,NWB), PRINT_HYDRO(NHY,NWB), PRINT_SEDIMENT(NWB))
-  ALLOCATE (PRINT_SEDIMENT1(NWB),PRINT_SEDIMENT2(NWB))    ! Amaila
-  ALLOCATE (VOLUME_BALANCE(NWB),  ENERGY_BALANCE(NWB),  MASS_BALANCE(NWB))
-  ALLOCATE (DETAILED_ICE(NWB),    ICE_CALC(NWB),               ALLOW_ICE(IMX), BR_INACTIVE(NBR))           !   ICE_IN(NBR),    RC/SW 4/28/11
-  ALLOCATE (EVAPORATION(NWB),     PRECIPITATION(NWB),   RH_EVAP(NWB),         PH_CALC(NWB))
-  ALLOCATE (NO_INFLOW(NWB),       NO_OUTFLOW(NWB),      NO_HEAT(NWB),         NO_WIND(NWB))
-  ALLOCATE (ISO_TEMP(NWB),        VERT_TEMP(NWB),       LONG_TEMP(NWB),       VERT_PROFILE(NWB),  LONG_PROFILE(NWB))
-  ALLOCATE (SNAPSHOT(NWB),        PROFILE(NWB),         VECTOR(NWB),          CONTOUR(NWB),       SPREADSHEET(NWB))
-  ALLOCATE (SCREEN_OUTPUT(NWB),   FLUX(NWB))
-  ALLOCATE (PRINT_DERIVED(NDC,NWB),  PRINT_EPIPHYTON(NWB,NEPT))
-  ALLOCATE (SEDIMENT_CALC(NWB),      EPIPHYTON_CALC(NWB,NEPT), SEDIMENT_RESUSPENSION(NSS),BOD_CALC(NBOD),ALG_CALC(NAL))
-  ALLOCATE (SEDIMENT_CALC1(NWB),SEDIMENT_CALC2(NWB))   ! Amaila
-  ALLOCATE (BOD_CALCP(NBOD), BOD_CALCN(NBOD))                                                ! cb 5/19/2011
-  ALLOCATE (TDG_SPILLWAY(NWDT,NSP),  TDG_GATE(NWDT,NGT),       INTERNAL_WEIR(KMX,IMX))
-  ALLOCATE (ISO_EPIPHYTON(NWB,NEPT), VERT_EPIPHYTON(NWB,NEPT), LONG_EPIPHYTON(NWB,NEPT))
-  ALLOCATE (iso_macrophyte(NWB,nmc), vert_macrophyte(NWB,nmc), long_macrophyte(NWB,nmc))     ! cb 8/21/15
-  ALLOCATE (LATERAL_SPILLWAY(NSP),   LATERAL_GATE(NGT),        LATERAL_PUMP(NPU),        LATERAL_PIPE(NPI))
-  ALLOCATE (INTERP_HEAD(NBR),        INTERP_WITHDRAWAL(NWD),   INTERP_EXTINCTION(NWB),   INTERP_DTRIBS(NBR))
-  ALLOCATE (INTERP_OUTFLOW(NST,NBR), INTERP_INFLOW(NBR),       INTERP_METEOROLOGY(NWB),  INTERP_TRIBS(NTR))
-  ALLOCATE (LNAME(NCT+NHY+NDC))
-  ALLOCATE (IWR(NIW),    KTWR(NIW),   KBWR(NIW), EKTWR(NIW), EKBWR(NIW))   ! SW 3/18/16
-  ALLOCATE (JWUSP(NSP),  JWDSP(NSP),  QSP(NSP))
-  ALLOCATE (KTWD(NWDT),  KBWD(NWDT),  JBWD(NWDT))
-  ALLOCATE (GTA1(NGT),   GTB1(NGT),   GTA2(NGT),   GTB2(NGT))
-  ALLOCATE (BGT(NGT),    IUGT(NGT),   IDGT(NGT),   EGT(NGT),    EGT2(NGT))
-  ALLOCATE (QTR(NTRT),   TTR(NTRT),   KTTR(NTRT),  KBTR(NTRT))
-  ALLOCATE (AGASGT(NGT), BGASGT(NGT), CGASGT(NGT), GASGTC(NGT))
-  ALLOCATE (PUGTC(NGT),  ETUGT(NGT),  EBUGT(NGT),  KTUGT(NGT),  KBUGT(NGT))
-  ALLOCATE (PDGTC(NGT),  ETDGT(NGT),  EBDGT(NGT),  KTDGT(NGT),  KBDGT(NGT))
-  ALLOCATE (A1GT(NGT),   B1GT(NGT),   G1GT(NGT),   A2GT(NGT),   B2GT(NGT),   G2GT(NGT))
-  ALLOCATE (EQGT(NGT),   JBUGT(NGT),  JBDGT(NGT),  JWUGT(NGT),  JWDGT(NGT),  QGT(NGT))
-  ALLOCATE (JBUPI(NPI),  JBDPI(NPI),  JWUPI(NPI),  JWDPI(NPI),  QPI(NPI), BP(NPI))                              ! SW 5/10/10
-  ALLOCATE (IUPI(NPI),   IDPI(NPI),   EUPI(NPI),   EDPI(NPI),   WPI(NPI),    DLXPI(NPI),  FPI(NPI),    FMINPI(NPI), PUPIC(NPI))
-  ALLOCATE (ETUPI(NPI),  EBUPI(NPI),  KTUPI(NPI),  KBUPI(NPI),  PDPIC(NPI),  ETDPI(NPI),  EBDPI(NPI),  KTDPI(NPI),  KBDPI(NPI))
-  ALLOCATE (PUSPC(NSP),  ETUSP(NSP),  EBUSP(NSP),  KTUSP(NSP),  KBUSP(NSP),  PDSPC(NSP),  ETDSP(NSP),  EBDSP(NSP))
-  ALLOCATE (KTDSP(NSP),  KBDSP(NSP),  IUSP(NSP),   IDSP(NSP),   ESP(NSP),    A1SP(NSP),   B1SP(NSP),   A2SP(NSP))
-  ALLOCATE (B2SP(NSP),   AGASSP(NSP), BGASSP(NSP), CGASSP(NSP), EQSP(NSP),   GASSPC(NSP), JBUSP(NSP),  JBDSP(NSP))
-  ALLOCATE (IUPU(NPU),   IDPU(NPU),   EPU(NPU),    STRTPU(NPU), ENDPU(NPU),  EONPU(NPU),  EOFFPU(NPU), QPU(NPU),   PPUC(NPU))
-  ALLOCATE (ETPU(NPU),   EBPU(NPU),   KTPU(NPU),   KBPU(NPU),   JWUPU(NPU),  JWDPU(NPU),  JBUPU(NPU),  JBDPU(NPU), PUMPON(NPU))
-  ALLOCATE (IWD(NWDT),   KWD(NWDT),   QWD(NWDT),   EWD(NWDT),   KTW(NWDT),   KBW(NWDT))
-  ALLOCATE (ITR(NTRT),   QTRFN(NTR),  TTRFN(NTR),  CTRFN(NTR),  ELTRT(NTRT), ELTRB(NTRT), TRC(NTRT),   JBTR(NTRT), QTRF(KMX,NTRT))
-  ALLOCATE (TTLB(IMX),   TTRB(IMX),   CLLB(IMX),   CLRB(IMX))
-  ALLOCATE (SRLB1(IMX),  SRRB1(IMX),  SRLB2(IMX),  SRRB2(IMX),  SRFJD1(IMX), SHADEI(IMX), SRFJD2(IMX))
-  ALLOCATE (TOPO(IMX,IANG))                                                                                        ! SW 10/17/05
-  ALLOCATE (QSW(KMX,NWDT),  CTR(NCT,NTRT), HPRWBC(NHY,NWB))
-  ALLOCATE (RATZ(KMX,NWB),   CURZ1(KMX,NWB),  CURZ2(KMX,NWB),   CURZ3(KMX,NWB))   ! SW 5/15/06
-  ALLOCATE (ZG(NZPT),ZM(NZPT),ZEFF(NZPT),PREFP(NZPT),ZR(NZPT),ZOOMIN(NZPT),ZS2P(NZPT),EXZ(NZPT),PREFZ(NZPT,NZPT))
-  ALLOCATE (ZT1(NZPT),ZT2(NZPT),ZT3(NZPT),ZT4(NZPT),ZK1(NZPT),ZK2(NZPT),ZK3(NZPT),ZK4(NZPT),O2ZR(NZPT))
-  ALLOCATE (ZP(NZPT),ZN(NZPT),ZC(NZPT))
-  ALLOCATE (PREFA(NAL,NZPT))
-  ALLOCATE (PO4ZR(KMX,IMX),NH4ZR(KMX,IMX))
-  ALLOCATE (ZMU(KMX,IMX,NZP),TGRAZE(KMX,IMX,NZP),ZRT(KMX,IMX,NZP),ZMT(KMX,IMX,NZP)) ! MLM POINTERS:,ZOO(KMX,IMX,NZP),ZOOSS(KMX,IMX,NZP))
-  ALLOCATE (ZOORM(KMX,IMX,NZP),ZOORMR(KMX,IMX,NZP),ZOORMF(KMX,IMX,NZP))
-  ALLOCATE (LPZOOOUT(KMX,IMX),LPZOOIN(KMX,IMX),DOZR(KMX,IMX),TICZR(KMX,IMX))
-  ALLOCATE (AGZ(KMX,IMX,NAL,NZP), ZGZ(KMX,IMX,NZP,NZP),AGZT(KMX,IMX,NAL)) !OMNIVOROUS ZOOPLANKTON
-  ALLOCATE (ORGPLD(KMX,IMX), ORGPRD(KMX,IMX), ORGPLP(KMX,IMX), ORGPRP(KMX,IMX), ORGNLD(KMX,IMX), ORGNRD(KMX,IMX), ORGNLP(KMX,IMX))
-  ALLOCATE (ORGNRP(KMX,IMX))
-  ALLOCATE (LDOMPMP(KMX,IMX),LDOMNMP(KMX,IMX),LPOMPMP(KMX,IMX),LPOMNMP(KMX,IMX),RPOMPMP(KMX,IMX),RPOMNMP(KMX,IMX))
-  ALLOCATE (LPZOOINP(KMX,IMX),LPZOOINN(KMX,IMX),LPZOOOUTP(KMX,IMX),LPZOOOUTN(KMX,IMX))
-  ALLOCATE (SEDVPP(KMX,NWB),SEDVPC(KMX,NWB),SEDVPN(KMX,NWB))
-  ALLOCATE (SEDP(KMX,IMX),SEDN(KMX,IMX),SEDC(KMX,IMX),SEDNINFLUX(KMX,IMX), SEDPINFLUX(KMX,IMX),PFLUXIN(NWB),NFLUXIN(NWB))
-  ALLOCATE (SDKV(KMX,IMX),SEDDKTOT(KMX,IMX))
-  ALLOCATE (SEDCIP(NWB),SEDCIN(NWB),SEDCIC(NWB),SEDCIS(NWB))
-  ALLOCATE (CBODS(NBOD), CBODNS(KMX,IMX), SEDCB(KMX,IMX), SEDCBP(KMX,IMX), SEDCBN(KMX,IMX), SEDCBC(KMX,IMX))
-  ALLOCATE  (PRINT_MACROPHYTE(NWB,NMCT), MACROPHYTE_CALC(NWB,NMCT),MACWBC(NWB,NMCT),CONV2(KMX,KMX),MPRWBC(NWB,NMCT))
-  ALLOCATE  (MAC(KMX,IMX,NMCT), MACRC(KMX,KMX,IMX,NMCT),MACT(KMX,KMX,IMX), MACRM(KMX,KMX,IMX,NMCT), MACSS(KMX,KMX,IMX,NMCT))
-  ALLOCATE  (MGR(KMX,KMX,IMX,NMCT),MMR(KMX,IMX,NMCT), MRR(KMX,IMX,NMCT))
-  ALLOCATE  (SMACRC(KMX,KMX,IMX,NMCT), SMACRM(KMX,KMX,IMX,NMCT))
-  ALLOCATE  (SMACT(KMX,KMX,IMX), SMAC(KMX,IMX,NMCT))
-  ALLOCATE  (MT1(NMCT),MT2(NMCT),MT3(NMCT),MT4(NMCT),MK1(NMCT),MK2(NMCT),MK3(NMCT),MK4(NMCT),MG(NMCT),MR(NMCT),MM(NMCT))
-  ALLOCATE  (MBMP(NMCT), MMAX(NMCT), CDDRAG(NMCT), DWV(NMCT), DWSA(NMCT), ANORM(NMCT))
-  ALLOCATE  (MP(NMCT), MN(NMCT), MC(NMCT),PSED(NMCT),NSED(NMCT),MHSP(NMCT),MHSN(NMCT),MHSC(NMCT),MSAT(NMCT),EXM(NMCT))
-  ALLOCATE  (O2MG(NMCT), O2MR(NMCT),  LRPMAC(NMCT),  MPOM(NMCT))
-  ALLOCATE  (KTICOL(IMX),ARMAC(IMX),MACWBCI(NWB,NMCT))
-  ALLOCATE  (MACMBRS(NBR,NMCT), MACMBRT(NBR,NMCT),SSMACMB(NBR,NMCT))
-  ALLOCATE  (CW(KMX,IMX), BIC(KMX,IMX))
-  ALLOCATE  (MACTRMR(KMX,IMX,NMCT), MACTRMF(KMX,IMX,NMCT),MACTRM(KMX,IMX,NMCT))
-  ALLOCATE  (MLFPR(KMX,KMX,IMX,NMCT))
-  ALLOCATE  (MLLIM(KMX,KMX,IMX,NMCT), MPLIM(KMX,IMX,NMCT),MCLIM(KMX,IMX,NMCT),MNLIM(KMX,IMX,NMCT))
-  ALLOCATE  (GAMMAJ(KMX,KMX,IMX))	
-  ALLOCATE (POR(KMX,IMX),VOLKTI(IMX),VOLI(KMX,IMX),VSTEM(KMX,IMX,NMCT),VSTEMKT(IMX,NMCT),SAREA(NMCT))
-  ALLOCATE (IWIND(NWB))
-  ALLOCATE (LAYERCHANGE(NWB))
-  ALLOCATE (CBODP(KMX,IMX,NBOD), CBODN(KMX,IMX,NBOD))      ! CB 6/6/10
-  ALLOCATE (HAB(KMX,IMX))
-  Allocate(IceQSS(IMX))  ! CEMA
+     allocate(sedvp1(kmx, nwb), sedvp2(kmx, nwb), sed1(kmx, imx),              &
+            & sed2(kmx, imx), sed1ic(kmx, imx), sed2ic(kmx, imx),              &
+            & sdfirstadd(kmx, imx))                                                                                              !  cb 9/3/17
+     allocate(qinf(kmx, nbr), qout(kmx, nbr), kout(kmx, nbr))
+     allocate(ct(kmx, imx), at(kmx, imx), vt(kmx, imx), dt(kmx, imx),          &
+            & gamma(kmx, imx))
+     allocate(cwdo(nct, nod), cdwdo(ndc, nod), cwdoc(nct), cdwdoc(ndc),        &
+            & cdtot(ndc))
+     allocate(cin(nct, nbr), cdtr(nct, nbr), cpr(nct, nbr), cpb(nct, nbr),     &
+            & cout(nct, nbr))
+     allocate(rsod(nod), rsof(nod), dltd(nod), dltf(nod))
+     allocate(tsrd(nod), tsrf(nod), wdod(nod), wdof(nod))
+     allocate(snpd(nod, nwb), snpf(nod, nwb), sprd(nod, nwb), sprf(nod, nwb))
+     allocate(scrd(nod, nwb), scrf(nod, nwb), prfd(nod, nwb), prff(nod, nwb))
+     allocate(cpld(nod, nwb), cplf(nod, nwb), vpld(nod, nwb), vplf(nod, nwb),  &
+            & flxd(nod, nwb), flxf(nod, nwb))
+     allocate(epic(nwb, nept), epici(nwb, nept), epiprc(nwb, nept))
+     allocate(epivp(kmx, nwb, nep), macrcvp(kmx, nwb, nmc),                    &
+            & macrclp(kmx, imx, nmc))                                        ! cb 8/21/15
+     allocate(cuh(kmx, nct, nbr), cdh(kmx, nct, nbr))
+     allocate(epm(kmx, imx, nept), epd(kmx, imx, nept), epc(kmx, imx, nept))
+     allocate(c1s(kmx, imx, nct), cssb(kmx, imx, nct), cvp(kmx, nct, nwb))
+     allocate(cssuh1(kmx, nct, nbr), cssuh2(kmx, nct, nbr),                    &
+            & cssdh2(kmx, nct, nbr), cssdh1(kmx, nct, nbr))
+     allocate(read_extinction(nwb), read_radiation(nwb))
+     allocate(dist_tribs(nbr), limiting_factor(nal))
+     allocate(upwind(nwb), ultimate(nwb))
+     allocate(stric(nst, nbr), estrt(nst, nbr), wstrt(nst, nbr),               &
+            & ktswt(nst, nbr), kbswt(nst, nbr), sinkct(nst, nbr))
+     allocate(fresh_water(nwb), salt_water(nwb), trapezoidal(nwb))                                                     !SW 07/16/04
+     allocate(uh_external(nbr), dh_external(nbr), uh_internal(nbr),            &
+            & dh_internal(nbr))
+     allocate(uq_external(nbr), dq_external(nbr), uq_internal(nbr),            &
+            & dq_internal(nbr))
+     allocate(up_flow(nbr), dn_flow(nbr), up_head(nbr), dn_head(nbr))
+     allocate(internal_flow(nbr), dam_inflow(nbr), dam_outflow(nbr),           &
+            & head_flow(nbr), head_boundary(nwb))                                                                      !TC 08/03/04
+     allocate(iso_conc(nct, nwb), vert_conc(nct, nwb), long_conc(nct, nwb))
+     allocate(iso_sediment(nwb), vert_sediment(nwb), long_sediment(nwb))
+     allocate(iso_sediment1(nwb), vert_sediment1(nwb), long_sediment1(nwb))     !Amaila
+     allocate(iso_sediment2(nwb), vert_sediment2(nwb), long_sediment2(nwb))     !Amaila
+     allocate(viscosity_limit(nwb), celerity_limit(nwb), implicit_az(nwb))
+     allocate(fetch_calc(nwb), one_layer(imx), implicit_visc(nwb))
+     allocate(limiting_dlt(nwb), term_by_term(nwb), mannings_n(nwb))
+     allocate(place_qin(nwb), place_qtr(ntrt), specify_qtr(ntrt))
+     allocate(print_const(nct, nwb), print_hydro(nhy, nwb), print_sediment(nwb)&
+            & )
+     allocate(print_sediment1(nwb), print_sediment2(nwb)) ! Amaila
+     allocate(volume_balance(nwb), energy_balance(nwb), mass_balance(nwb))
+     allocate(detailed_ice(nwb), ice_calc(nwb), allow_ice(imx),                &
+            & br_inactive(nbr))                                                                            !   ICE_IN(NBR),    RC/SW 4/28/11
+     allocate(evaporation(nwb), precipitation(nwb), rh_evap(nwb), ph_calc(nwb))
+     allocate(no_inflow(nwb), no_outflow(nwb), no_heat(nwb), no_wind(nwb))
+     allocate(iso_temp(nwb), vert_temp(nwb), long_temp(nwb), vert_profile(nwb),&
+            & long_profile(nwb))
+     allocate(snapshot(nwb), profile(nwb), vector(nwb), contour(nwb),          &
+            & spreadsheet(nwb))
+     allocate(screen_output(nwb), flux(nwb))
+     allocate(print_derived(ndc, nwb), print_epiphyton(nwb, nept))
+     allocate(sediment_calc(nwb), epiphyton_calc(nwb, nept),                   &
+            & sediment_resuspension(nss), bod_calc(nbod), alg_calc(nal))
+     allocate(sediment_calc1(nwb), sediment_calc2(nwb))
+                                                       ! Amaila
+     allocate(bod_calcp(nbod), bod_calcn(nbod))                                              ! cb 5/19/2011
+     allocate(tdg_spillway(nwdt, nsp), tdg_gate(nwdt, ngt),                    &
+            & internal_weir(kmx, imx))
+     allocate(iso_epiphyton(nwb, nept), vert_epiphyton(nwb, nept),             &
+            & long_epiphyton(nwb, nept))
+     allocate(iso_macrophyte(nwb, nmc), vert_macrophyte(nwb, nmc),             &
+            & long_macrophyte(nwb, nmc))                                                     ! cb 8/21/15
+     allocate(lateral_spillway(nsp), lateral_gate(ngt), lateral_pump(npu),     &
+            & lateral_pipe(npi))
+     allocate(interp_head(nbr), interp_withdrawal(nwd), interp_extinction(nwb),&
+            & interp_dtribs(nbr))
+     allocate(interp_outflow(nst, nbr), interp_inflow(nbr),                    &
+            & interp_meteorology(nwb), interp_tribs(ntr))
+     allocate(lname(nct + nhy + ndc))
+     allocate(iwr(niw), ktwr(niw), kbwr(niw), ektwr(niw), ekbwr(niw))      ! SW 3/18/16
+     allocate(jwusp(nsp), jwdsp(nsp), qsp(nsp))
+     allocate(ktwd(nwdt), kbwd(nwdt), jbwd(nwdt))
+     allocate(gta1(ngt), gtb1(ngt), gta2(ngt), gtb2(ngt))
+     allocate(bgt(ngt), iugt(ngt), idgt(ngt), egt(ngt), egt2(ngt))
+     allocate(qtr(ntrt), ttr(ntrt), kttr(ntrt), kbtr(ntrt))
+     allocate(agasgt(ngt), bgasgt(ngt), cgasgt(ngt), gasgtc(ngt))
+     allocate(pugtc(ngt), etugt(ngt), ebugt(ngt), ktugt(ngt), kbugt(ngt))
+     allocate(pdgtc(ngt), etdgt(ngt), ebdgt(ngt), ktdgt(ngt), kbdgt(ngt))
+     allocate(a1gt(ngt), b1gt(ngt), g1gt(ngt), a2gt(ngt), b2gt(ngt), g2gt(ngt))
+     allocate(eqgt(ngt), jbugt(ngt), jbdgt(ngt), jwugt(ngt), jwdgt(ngt),       &
+            & qgt(ngt))
+     allocate(jbupi(npi), jbdpi(npi), jwupi(npi), jwdpi(npi), qpi(npi), bp(npi)&
+            & )                                                                                                 ! SW 5/10/10
+     allocate(iupi(npi), idpi(npi), eupi(npi), edpi(npi), wpi(npi), dlxpi(npi),&
+            & fpi(npi), fminpi(npi), pupic(npi))
+     allocate(etupi(npi), ebupi(npi), ktupi(npi), kbupi(npi), pdpic(npi),      &
+            & etdpi(npi), ebdpi(npi), ktdpi(npi), kbdpi(npi))
+     allocate(puspc(nsp), etusp(nsp), ebusp(nsp), ktusp(nsp), kbusp(nsp),      &
+            & pdspc(nsp), etdsp(nsp), ebdsp(nsp))
+     allocate(ktdsp(nsp), kbdsp(nsp), iusp(nsp), idsp(nsp), esp(nsp), a1sp(nsp)&
+            & , b1sp(nsp), a2sp(nsp))
+     allocate(b2sp(nsp), agassp(nsp), bgassp(nsp), cgassp(nsp), eqsp(nsp),     &
+            & gasspc(nsp), jbusp(nsp), jbdsp(nsp))
+     allocate(iupu(npu), idpu(npu), epu(npu), strtpu(npu), endpu(npu),         &
+            & eonpu(npu), eoffpu(npu), qpu(npu), ppuc(npu))
+     allocate(etpu(npu), ebpu(npu), ktpu(npu), kbpu(npu), jwupu(npu),          &
+            & jwdpu(npu), jbupu(npu), jbdpu(npu), pumpon(npu))
+     allocate(iwd(nwdt), kwd(nwdt), qwd(nwdt), ewd(nwdt), ktw(nwdt), kbw(nwdt))
+     allocate(itr(ntrt), qtrfn(ntr), ttrfn(ntr), ctrfn(ntr), eltrt(ntrt),      &
+            & eltrb(ntrt), trc(ntrt), jbtr(ntrt), qtrf(kmx, ntrt))
+     allocate(ttlb(imx), ttrb(imx), cllb(imx), clrb(imx))
+     allocate(srlb1(imx), srrb1(imx), srlb2(imx), srrb2(imx), srfjd1(imx),     &
+            & shadei(imx), srfjd2(imx))
+     allocate(topo(imx, iang))                                                                                     ! SW 10/17/05
+     allocate(qsw(kmx, nwdt), ctr(nct, ntrt), hprwbc(nhy, nwb))
+     allocate(ratz(kmx, nwb), curz1(kmx, nwb), curz2(kmx, nwb), curz3(kmx, nwb)&
+            & )                                                                   ! SW 5/15/06
+     allocate(zg(nzpt), zm(nzpt), zeff(nzpt), prefp(nzpt), zr(nzpt),           &
+            & zoomin(nzpt), zs2p(nzpt), exz(nzpt), prefz(nzpt, nzpt))
+     allocate(zt1(nzpt), zt2(nzpt), zt3(nzpt), zt4(nzpt), zk1(nzpt), zk2(nzpt),&
+            & zk3(nzpt), zk4(nzpt), o2zr(nzpt))
+     allocate(zp(nzpt), zn(nzpt), zc(nzpt))
+     allocate(prefa(nal, nzpt))
+     allocate(po4zr(kmx, imx), nh4zr(kmx, imx))
+     allocate(zmu(kmx, imx, nzp), tgraze(kmx, imx, nzp), zrt(kmx, imx, nzp),   &
+            & zmt(kmx, imx, nzp))                                                   ! MLM POINTERS:,ZOO(KMX,IMX,NZP),ZOOSS(KMX,IMX,NZP))
+     allocate(zoorm(kmx, imx, nzp), zoormr(kmx, imx, nzp),                     &
+            & zoormf(kmx, imx, nzp))
+     allocate(lpzooout(kmx, imx), lpzooin(kmx, imx), dozr(kmx, imx),           &
+            & ticzr(kmx, imx))
+     allocate(agz(kmx, imx, nal, nzp), zgz(kmx, imx, nzp, nzp),                &
+            & agzt(kmx, imx, nal))                                        !OMNIVOROUS ZOOPLANKTON
+     allocate(orgpld(kmx, imx), orgprd(kmx, imx), orgplp(kmx, imx),            &
+            & orgprp(kmx, imx), orgnld(kmx, imx), orgnrd(kmx, imx),            &
+            & orgnlp(kmx, imx))
+     allocate(orgnrp(kmx, imx))
+     allocate(ldompmp(kmx, imx), ldomnmp(kmx, imx), lpompmp(kmx, imx),         &
+            & lpomnmp(kmx, imx), rpompmp(kmx, imx), rpomnmp(kmx, imx))
+     allocate(lpzooinp(kmx, imx), lpzooinn(kmx, imx), lpzoooutp(kmx, imx),     &
+            & lpzoooutn(kmx, imx))
+     allocate(sedvpp(kmx, nwb), sedvpc(kmx, nwb), sedvpn(kmx, nwb))
+     allocate(sedp(kmx, imx), sedn(kmx, imx), sedc(kmx, imx),                  &
+            & sedninflux(kmx, imx), sedpinflux(kmx, imx), pfluxin(nwb),        &
+            & nfluxin(nwb))
+     allocate(sdkv(kmx, imx), seddktot(kmx, imx))
+     allocate(sedcip(nwb), sedcin(nwb), sedcic(nwb), sedcis(nwb))
+     allocate(cbods(nbod), cbodns(kmx, imx), sedcb(kmx, imx), sedcbp(kmx, imx),&
+            & sedcbn(kmx, imx), sedcbc(kmx, imx))
+     allocate(print_macrophyte(nwb, nmct), macrophyte_calc(nwb, nmct),         &
+            & macwbc(nwb, nmct), conv2(kmx, kmx), mprwbc(nwb, nmct))
+     allocate(mac(kmx, imx, nmct), macrc(kmx, kmx, imx, nmct),                 &
+            & mact(kmx, kmx, imx), macrm(kmx, kmx, imx, nmct),                 &
+            & macss(kmx, kmx, imx, nmct))
+     allocate(mgr(kmx, kmx, imx, nmct), mmr(kmx, imx, nmct),                   &
+            & mrr(kmx, imx, nmct))
+     allocate(smacrc(kmx, kmx, imx, nmct), smacrm(kmx, kmx, imx, nmct))
+     allocate(smact(kmx, kmx, imx), smac(kmx, imx, nmct))
+     allocate(mt1(nmct), mt2(nmct), mt3(nmct), mt4(nmct), mk1(nmct), mk2(nmct),&
+            & mk3(nmct), mk4(nmct), mg(nmct), mr(nmct), mm(nmct))
+     allocate(mbmp(nmct), mmax(nmct), cddrag(nmct), dwv(nmct), dwsa(nmct),     &
+            & anorm(nmct))
+     allocate(mp(nmct), mn(nmct), mc(nmct), psed(nmct), nsed(nmct), mhsp(nmct),&
+            & mhsn(nmct), mhsc(nmct), msat(nmct), exm(nmct))
+     allocate(o2mg(nmct), o2mr(nmct), lrpmac(nmct), mpom(nmct))
+     allocate(kticol(imx), armac(imx), macwbci(nwb, nmct))
+     allocate(macmbrs(nbr, nmct), macmbrt(nbr, nmct), ssmacmb(nbr, nmct))
+     allocate(cw(kmx, imx), bic(kmx, imx))
+     allocate(mactrmr(kmx, imx, nmct), mactrmf(kmx, imx, nmct),                &
+            & mactrm(kmx, imx, nmct))
+     allocate(mlfpr(kmx, kmx, imx, nmct))
+     allocate(mllim(kmx, kmx, imx, nmct), mplim(kmx, imx, nmct),               &
+            & mclim(kmx, imx, nmct), mnlim(kmx, imx, nmct))
+     allocate(gammaj(kmx, kmx, imx))
+     allocate(por(kmx, imx), volkti(imx), voli(kmx, imx), vstem(kmx, imx, nmct)&
+            & , vstemkt(imx, nmct), sarea(nmct))
+     allocate(iwind(nwb))
+     allocate(layerchange(nwb))
+     allocate(cbodp(kmx, imx, nbod), cbodn(kmx, imx, nbod))
+                                                           ! CB 6/6/10
+     allocate(hab(kmx, imx))
+     allocate(iceqss(imx))
+                         ! CEMA
  ! BIOENERGETICS !mlm
-  IF(FISHBIO)THEN
-  ALLOCATE (BIOD(NOD), BIOF(NOD),biodp(NOD))
-
+     if(fishbio)then
+         allocate(biod(nod), biof(nod), biodp(nod))
+ 
   ! BIOENERGETICS OUTPUT CARDS
-  READ(FISHBIOFN,'(//(8X,A8,2I8))') BIOC,NBIO,NIBIO
-  ALLOCATE (BIOEXPFN(NIBIO),WEIGHTNUM(NIBIO),C2ZOO(KMX,IMX,NCT),VOLROOS(IMX),C2W(IMX,NCT+2),IBIO(NIBIO))
-  C2W = 0.0
-  READ(FISHBIOFN,'(//(:8X,9F8.0))') (BIOD(II),II=1,NBIO)
-  READ(FISHBIOFN,'(//(:8X,9F8.0))') (BIOF(II),II=1,NBIO)
-  READ(FISHBIOFN,'(//(:8X,9I8))') (IBIO(II),II=1,NIBIO)
-  read(FISHBIOFN,'(//(8x,a72))') biofn
-  close(FISHBIOFN)
-    weightfn = 'weight.opt' ! for output filename generation
-  bioexp                = BIOC        == '      ON'
-  if(bioexp) then
-    bhead(1) = 'Jday99'
-	bhead(2) = 'Segmnt'
-	bhead(3) = 'Dpth_m'
-	bhead(4) = 'T_C'
-	bhead(5) = 'gamma'
-    
-    do j=1,(nzooe-nzoos+1)
-        write(segnum,'(i0)')j
-        SEGNUM = ADJUSTL(SEGNUM)
-        L      = LEN_TRIM(SEGNUM)
-        bhead(5+j)='Zoo'//SEGNUM(1:L)
-    enddo
-	!bhead(6) = 'Zoo1'
-	!bhead(7) = 'Zoo2'	
-	bhead(5+j) = 'K'
-	bhead(6+j) = 'BH'
-	bhead(7+j)= 'EL'
-	bhead(8+j)= 'date'
-  end if
+         read(fishbiofn, '(//(8X,A8,2I8))')bioc, nbio, nibio
+         allocate(bioexpfn(nibio), weightnum(nibio), c2zoo(kmx, imx, nct),     &
+                & volroos(imx), c2w(imx, nct + 2), ibio(nibio))
+         c2w = 0.0
+         read(fishbiofn, '(//(:8X,9F8.0))')(biod(ii), ii = 1, nbio)
+         read(fishbiofn, '(//(:8X,9F8.0))')(biof(ii), ii = 1, nbio)
+         read(fishbiofn, '(//(:8X,9I8))')(ibio(ii), ii = 1, nibio)
+         read(fishbiofn, '(//(8x,a72))')biofn
+         close(fishbiofn)
+         weightfn = 'weight.opt'
+                            ! for output filename generation
+         bioexp = bioc=='      ON'
+         if(bioexp)then
+             BHEAD(1) = 'Jday99'
+             BHEAD(2) = 'Segmnt'
+             BHEAD(3) = 'Dpth_m'
+             BHEAD(4) = 'T_C'
+             BHEAD(5) = 'gamma'
+ 
+             do j = 1, (nzooe - nzoos + 1)
+                 write(segnum, '(i0)')j
+                 segnum = ADJUSTL(segnum)
+                 l = LEN_TRIM(segnum)
+                 BHEAD(5 + j) = 'Zoo' // segnum(1:l)
+             enddo
+!!bhead(6)   = 'Zoo1'
+!!bhead(7)   = 'Zoo2'
+             BHEAD(5 + j) = 'K'
+             BHEAD(6 + j) = 'BH'
+             BHEAD(7 + j) = 'EL'
+             BHEAD(8 + j) = 'date'
+         endif
   ! NVIOL CARD
  ! read(1222,'(//(8x,a8))') nviolc
  ! NVIOL_PRINT = NVIOLC        == '      ON'
@@ -406,784 +562,1268 @@ END IF
  !	allocate(nviol_loc(kmx,imx))
  !	nviol_loc = 0
  ! end if
-ENDIF
-! Allocate subroutine variables
-
-  CALL TRANSPORT
-  CALL KINETICS
-  CALL WATERBODY
-  CALL OPEN_CHANNEL_INITIALIZE
-  CALL PIPE_FLOW_INITIALIZE
-
-! State variables
-
-  TDS  => C2(:,:,1);         PO4  => C2(:,:,NPO4);      NH4  => C2(:,:,NNH4);        NO3  => C2(:,:,NNO3);   DSI  => C2(:,:,NDSI)
-  PSI  => C2(:,:,NPSI);      FE   => C2(:,:,NFE);       LDOM => C2(:,:,NLDOM);       RDOM => C2(:,:,NRDOM);  LPOM => C2(:,:,NLPOM)
-  RPOM => C2(:,:,NRPOM);     O2   => C2(:,:,NDO);       TIC  => C2(:,:,NTIC);        ALK  => C2(:,:,NALK)
-  CG   => C2(:,:,NGCS:NGCE); SS   => C2(:,:,NSSS:NSSE); ALG  => C2(:,:,NAS:NAE)
-  CBOD => C2(:,:,NBODCS:NBODCE); CBODP => C2(:,:,NBODPS:NBODPE)  ; CBODN => C2(:,:,NBODNS:NBODNE)                                                       ! CB 6/6/10
-  ZOO  => C2(:,:,NZOOS:NZOOE)
-  LDOMP  => C2(:,:,NLDOMP); RDOMP  => C2(:,:,NRDOMP); LPOMP  => C2(:,:,NLPOMP); RPOMP  => C2(:,:,NRPOMP)
-  LDOMN  => C2(:,:,NLDOMN); RDOMN  => C2(:,:,NRDOMN); LPOMN  => C2(:,:,NLPOMN); RPOMN  => C2(:,:,NRPOMN)
-
-! State variable source/sinks
-
-  CGSS   => CSSK(:,:,NGCS:NGCE);   SSSS   => CSSK(:,:,NSSS:NSSE); PO4SS  => CSSK(:,:,NPO4);  NH4SS  => CSSK(:,:,NNH4)
-  NO3SS  => CSSK(:,:,NNO3);        DSISS  => CSSK(:,:,NDSI);      PSISS  => CSSK(:,:,NPSI);  FESS   => CSSK(:,:,NFE)
-  LDOMSS => CSSK(:,:,NLDOM);       RDOMSS => CSSK(:,:,NRDOM);     LPOMSS => CSSK(:,:,NLPOM); RPOMSS => CSSK(:,:,NRPOM)
-  ASS    => CSSK(:,:,NAS:NAE);   DOSS   => CSSK(:,:,NDO);   TICSS  => CSSK(:,:,NTIC)  
-  CBODSS => CSSK(:,:,NBODCS:NBODCE); CBODPSS => CSSK(:,:,NBODPS:NBODPE); CBODNSS => CSSK(:,:,NBODNS:NBODNE)	  	      ! CB 6/6/10
-  ZOOSS  => CSSK(:,:,NZOOS:NZOOE)
-  LDOMPSS  => CSSK(:,:,NLDOMP); RDOMPSS  => CSSK(:,:,NRDOMP); LPOMPSS  => CSSK(:,:,NLPOMP); RPOMPSS  => CSSK(:,:,NRPOMP)
-  LDOMNSS  => CSSK(:,:,NLDOMN); RDOMNSS  => CSSK(:,:,NRDOMN); LPOMNSS  => CSSK(:,:,NLPOMN); RPOMNSS  => CSSK(:,:,NRPOMN)
-  alkss    => CSSK(:,:,nalk)          ! enhanced pH buffering
-
-! Derived variables
-
-  DOC   => CD(:,:,1);  POC  => CD(:,:,2);  TOC  => CD(:,:,3);  DON  => CD(:,:,4);  PON   => CD(:,:,5);  TON  => CD(:,:,6)
-  TKN   => CD(:,:,7);  TN   => CD(:,:,8);  DOP  => CD(:,:,9);  POP  => CD(:,:,10); TOP   => CD(:,:,11); TP   => CD(:,:,12)
-  APR   => CD(:,:,13); CHLA => CD(:,:,14); ATOT => CD(:,:,15); O2DG => CD(:,:,16); TOTSS => CD(:,:,17); TISS => CD(:,:,18)
-  CBODU => CD(:,:,19); PH   => CD(:,:,20); CO2  => CD(:,:,21); HCO3 => CD(:,:,22); CO3   => CD(:,:,23); TDG => CD(:,:,24)   ! SW 10/20/15
-
-! Kinetic fluxes
-
-  SSSI   => KF(:,:,1);  SSSO   => KF(:,:,2);  PO4AR  => KF(:,:,3);  PO4AG  => KF(:,:,4);  PO4AP  => KF(:,:,5)
-  PO4ER  => KF(:,:,6);  PO4EG  => KF(:,:,7);  PO4EP  => KF(:,:,8);  PO4POM => KF(:,:,9);  PO4DOM => KF(:,:,10)
-  PO4OM  => KF(:,:,11); PO4SD  => KF(:,:,12); PO4SR  => KF(:,:,13); PO4NS  => KF(:,:,14); NH4D   => KF(:,:,15)
-  NH4AR  => KF(:,:,16); NH4AG  => KF(:,:,17); NH4AP  => KF(:,:,18); NH4ER  => KF(:,:,19); NH4EG  => KF(:,:,20)
-  NH4EP  => KF(:,:,21); NH4POM => KF(:,:,22); NH4DOM => KF(:,:,23); NH4OM  => KF(:,:,24); NH4SD  => KF(:,:,25)
-  NH4SR  => KF(:,:,26); NO3D   => KF(:,:,27); NO3AG  => KF(:,:,28); NO3EG  => KF(:,:,29); NO3SED => KF(:,:,30)
-  DSIAG  => KF(:,:,31); DSIEG  => KF(:,:,32); DSID   => KF(:,:,33); DSISD  => KF(:,:,34); DSISR  => KF(:,:,35)
-  DSIS   => KF(:,:,36); PSIAM  => KF(:,:,37); PSINS  => KF(:,:,38); PSID   => KF(:,:,39); FENS   => KF(:,:,40)
-  FESR   => KF(:,:,41); LDOMD  => KF(:,:,42); LRDOMD => KF(:,:,43); RDOMD  => KF(:,:,44); LDOMAP => KF(:,:,45)
-  LDOMEP => KF(:,:,46); LPOMD  => KF(:,:,47); LRPOMD => KF(:,:,48); RPOMD  => KF(:,:,49); LPOMAP => KF(:,:,50)
-  LPOMEP => KF(:,:,51); LPOMNS => KF(:,:,52); RPOMNS => KF(:,:,53); CBODDK => KF(:,:,54); DOAP   => KF(:,:,55)
+     endif
+!    Allocate subroutine variables
+ 
+     call TRANSPORT
+     call KINETICS
+     call WATERBODY
+     call OPEN_CHANNEL_INITIALIZE
+     call PIPE_FLOW_INITIALIZE
+ 
+!    State variables
+ 
+     tds => c2(:, :, 1)
+ 
+!    State variables
+ 
+     po4 => c2(:, :, npo4)
+ 
+!    State variables
+ 
+     nh4 => c2(:, :, nnh4)
+ 
+!    State variables
+ 
+     no3 => c2(:, :, nno3)
+ 
+!    State variables
+ 
+     dsi => c2(:, :, ndsi)
+     psi => c2(:, :, npsi)
+     fe => c2(:, :, nfe)
+     ldom => c2(:, :, nldom)
+     rdom => c2(:, :, nrdom)
+     lpom => c2(:, :, nlpom)
+     rpom => c2(:, :, nrpom)
+     o2 => c2(:, :, ndo)
+     tic => c2(:, :, ntic)
+     alk => c2(:, :, nalk)
+     cg => c2(:, :, ngcs:ngce)
+     ss => c2(:, :, nsss:nsse)
+     alg => c2(:, :, nas:nae)
+     cbod => c2(:, :, nbodcs:nbodce)
+     cbodp => c2(:, :, nbodps:nbodpe)
+     cbodn => c2(:, :, nbodns:nbodne)                                                                                                                   ! CB 6/6/10
+     zoo => c2(:, :, nzoos:nzooe)
+     ldomp => c2(:, :, nldomp)
+     rdomp => c2(:, :, nrdomp)
+     lpomp => c2(:, :, nlpomp)
+     rpomp => c2(:, :, nrpomp)
+     ldomn => c2(:, :, nldomn)
+     rdomn => c2(:, :, nrdomn)
+     lpomn => c2(:, :, nlpomn)
+     rpomn => c2(:, :, nrpomn)
+ 
+!    State variable source/sinks
+ 
+     cgss => cssk(:, :, ngcs:ngce)
+ 
+!    State variable source/sinks
+ 
+     ssss => cssk(:, :, nsss:nsse)
+ 
+!    State variable source/sinks
+ 
+     po4ss => cssk(:, :, npo4)
+ 
+!    State variable source/sinks
+ 
+     nh4ss => cssk(:, :, nnh4)
+     no3ss => cssk(:, :, nno3)
+     dsiss => cssk(:, :, ndsi)
+     psiss => cssk(:, :, npsi)
+     fess => cssk(:, :, nfe)
+     ldomss => cssk(:, :, nldom)
+     rdomss => cssk(:, :, nrdom)
+     lpomss => cssk(:, :, nlpom)
+     rpomss => cssk(:, :, nrpom)
+     ass => cssk(:, :, nas:nae)
+     doss => cssk(:, :, ndo)
+     ticss => cssk(:, :, ntic)
+     cbodss => cssk(:, :, nbodcs:nbodce)
+     cbodpss => cssk(:, :, nbodps:nbodpe)
+     cbodnss => cssk(:, :, nbodns:nbodne)                                                                                     ! CB 6/6/10
+     zooss => cssk(:, :, nzoos:nzooe)
+     ldompss => cssk(:, :, nldomp)
+     rdompss => cssk(:, :, nrdomp)
+     lpompss => cssk(:, :, nlpomp)
+     rpompss => cssk(:, :, nrpomp)
+     ldomnss => cssk(:, :, nldomn)
+     rdomnss => cssk(:, :, nrdomn)
+     lpomnss => cssk(:, :, nlpomn)
+     rpomnss => cssk(:, :, nrpomn)
+     alkss => cssk(:, :, nalk)        ! enhanced pH buffering
+ 
+!    Derived variables
+ 
+     doc => cd(:, :, 1)
+ 
+!    Derived variables
+ 
+     poc => cd(:, :, 2)
+ 
+!    Derived variables
+ 
+     toc => cd(:, :, 3)
+ 
+!    Derived variables
+ 
+     don => cd(:, :, 4)
+ 
+!    Derived variables
+ 
+     pon => cd(:, :, 5)
+ 
+!    Derived variables
+ 
+     ton => cd(:, :, 6)
+     tkn => cd(:, :, 7)
+     tn => cd(:, :, 8)
+     dop => cd(:, :, 9)
+     pop => cd(:, :, 10)
+     top => cd(:, :, 11)
+     tp => cd(:, :, 12)
+     apr => cd(:, :, 13)
+     chla => cd(:, :, 14)
+     atot => cd(:, :, 15)
+     o2dg => cd(:, :, 16)
+     totss => cd(:, :, 17)
+     tiss => cd(:, :, 18)
+     cbodu => cd(:, :, 19)
+     ph => cd(:, :, 20)
+     co2 => cd(:, :, 21)
+     hco3 => cd(:, :, 22)
+     co3 => cd(:, :, 23)
+     tdg => cd(:, :, 24)                                                                                                    ! SW 10/20/15
+ 
+!    Kinetic fluxes
+ 
+     sssi => kf(:, :, 1)
+ 
+!    Kinetic fluxes
+ 
+     ssso => kf(:, :, 2)
+ 
+!    Kinetic fluxes
+ 
+     po4ar => kf(:, :, 3)
+ 
+!    Kinetic fluxes
+ 
+     po4ag => kf(:, :, 4)
+ 
+!    Kinetic fluxes
+ 
+     po4ap => kf(:, :, 5)
+     po4er => kf(:, :, 6)
+     po4eg => kf(:, :, 7)
+     po4ep => kf(:, :, 8)
+     po4pom => kf(:, :, 9)
+     po4dom => kf(:, :, 10)
+     po4om => kf(:, :, 11)
+     po4sd => kf(:, :, 12)
+     po4sr => kf(:, :, 13)
+     po4ns => kf(:, :, 14)
+     nh4d => kf(:, :, 15)
+     nh4ar => kf(:, :, 16)
+     nh4ag => kf(:, :, 17)
+     nh4ap => kf(:, :, 18)
+     nh4er => kf(:, :, 19)
+     nh4eg => kf(:, :, 20)
+     nh4ep => kf(:, :, 21)
+     nh4pom => kf(:, :, 22)
+     nh4dom => kf(:, :, 23)
+     nh4om => kf(:, :, 24)
+     nh4sd => kf(:, :, 25)
+     nh4sr => kf(:, :, 26)
+     no3d => kf(:, :, 27)
+     no3ag => kf(:, :, 28)
+     no3eg => kf(:, :, 29)
+     no3sed => kf(:, :, 30)
+     dsiag => kf(:, :, 31)
+     dsieg => kf(:, :, 32)
+     dsid => kf(:, :, 33)
+     dsisd => kf(:, :, 34)
+     dsisr => kf(:, :, 35)
+     dsis => kf(:, :, 36)
+     psiam => kf(:, :, 37)
+     psins => kf(:, :, 38)
+     psid => kf(:, :, 39)
+     fens => kf(:, :, 40)
+     fesr => kf(:, :, 41)
+     ldomd => kf(:, :, 42)
+     lrdomd => kf(:, :, 43)
+     rdomd => kf(:, :, 44)
+     ldomap => kf(:, :, 45)
+     ldomep => kf(:, :, 46)
+     lpomd => kf(:, :, 47)
+     lrpomd => kf(:, :, 48)
+     rpomd => kf(:, :, 49)
+     lpomap => kf(:, :, 50)
+     lpomep => kf(:, :, 51)
+     lpomns => kf(:, :, 52)
+     rpomns => kf(:, :, 53)
+     cboddk => kf(:, :, 54)
+     doap => kf(:, :, 55)
  ! DOAR   => KF(:,:,56); DOEP   => KF(:,:,57); DOER   => KF(:,:,58); DOPOM  => KF(:,:,59); DODOM  => KF(:,:,60)   ! cb 6/2/2009
-  DOEP   => KF(:,:,56); DOAR   => KF(:,:,57); DOER   => KF(:,:,58); DOPOM  => KF(:,:,59); DODOM  => KF(:,:,60)   ! cb 9/16/2015
-  DOOM   => KF(:,:,61); DONIT  => KF(:,:,62); DOBOD  => KF(:,:,63); DOAE   => KF(:,:,64); DOSED  => KF(:,:,65)
-  DOSOD  => KF(:,:,66); TICAP  => KF(:,:,67); TICEP  => KF(:,:,68); SEDD   => KF(:,:,69); SEDAS  => KF(:,:,70)
-  SEDOMS => KF(:,:,71); SEDNS  => KF(:,:,72); SODD   => KF(:,:,73)
-
-  LDOMPAP => KF(:,:,74); LDOMPeP => KF(:,:,75); LPOMpAP => KF(:,:,76); LPOMPNS => KF(:,:,77); RPOMPNS => KF(:,:,78)
-  LDOMnAP => KF(:,:,79); LDOMneP => KF(:,:,80); LPOMnAP => KF(:,:,81); LPOMnNS => KF(:,:,82); RPOMnNS => KF(:,:,83)
-  SEDDp   => KF(:,:,84); SEDASp  => KF(:,:,85); SEDOMSp => KF(:,:,86); SEDNSp  => KF(:,:,87); lpomepp => KF(:,:,88)
-  SEDDn   => KF(:,:,89); SEDASn  => KF(:,:,90); SEDOMSn => KF(:,:,91); SEDNSn  => KF(:,:,92); lpomepn => KF(:,:,93)
-  SEDDc   => KF(:,:,94); SEDASc  => KF(:,:,95); SEDOMSc => KF(:,:,96); SEDNSc  => KF(:,:,97); lpomepc => KF(:,:,98)
-  SEDNO3  => KF(:,:,99)
-  PO4MR   => KF(:,:,100);PO4MG   => KF(:,:,101); NH4MR   => KF(:,:,102); NH4MG => KF(:,:,103); LDOMMAC => KF(:,:,104)
-  RPOMMAC => KF(:,:,105);LPOMMAC => KF(:,:,106); DOMP    => KF(:,:,107); DOMR  => KF(:,:,108); TICMC   => KF(:,:,109)
-  CBODNS  => KF(:,:,110);SEDCB   => KF(:,:,111); SEDCBP  => KF(:,:,112); SEDCBN => KF(:,:,113); SEDCBC  => KF(:,:,114)
-  SEDBR   => KF(:,:,115);SEDBRP  => KF(:,:,116); SEDBRN  => KF(:,:,117); SEDBRC  => KF(:,:,118); CO2REAER =>  KF(:,:,121)
-  CBODNSP  => KF(:,:,119);CBODNSN  => KF(:,:,120)      ! CB 6/6/10
+     doep => kf(:, :, 56)
+ ! DOAR   => KF(:,:,56); DOEP   => KF(:,:,57); DOER   => KF(:,:,58); DOPOM  => KF(:,:,59); DODOM  => KF(:,:,60)   ! cb 6/2/2009
+     doar => kf(:, :, 57)
+ ! DOAR   => KF(:,:,56); DOEP   => KF(:,:,57); DOER   => KF(:,:,58); DOPOM  => KF(:,:,59); DODOM  => KF(:,:,60)   ! cb 6/2/2009
+     doer => kf(:, :, 58)
+ ! DOAR   => KF(:,:,56); DOEP   => KF(:,:,57); DOER   => KF(:,:,58); DOPOM  => KF(:,:,59); DODOM  => KF(:,:,60)   ! cb 6/2/2009
+     dopom => kf(:, :, 59)
+ ! DOAR   => KF(:,:,56); DOEP   => KF(:,:,57); DOER   => KF(:,:,58); DOPOM  => KF(:,:,59); DODOM  => KF(:,:,60)   ! cb 6/2/2009
+     dodom => kf(:, :, 60)                                                                                       ! cb 9/16/2015
+     doom => kf(:, :, 61)
+     donit => kf(:, :, 62)
+     dobod => kf(:, :, 63)
+     doae => kf(:, :, 64)
+     dosed => kf(:, :, 65)
+     dosod => kf(:, :, 66)
+     ticap => kf(:, :, 67)
+     ticep => kf(:, :, 68)
+     sedd => kf(:, :, 69)
+     sedas => kf(:, :, 70)
+     sedoms => kf(:, :, 71)
+     sedns => kf(:, :, 72)
+     sodd => kf(:, :, 73)
+ 
+     ldompap => kf(:, :, 74)
+ 
+     ldompep => kf(:, :, 75)
+ 
+     lpompap => kf(:, :, 76)
+ 
+     lpompns => kf(:, :, 77)
+ 
+     rpompns => kf(:, :, 78)
+     ldomnap => kf(:, :, 79)
+     ldomnep => kf(:, :, 80)
+     lpomnap => kf(:, :, 81)
+     lpomnns => kf(:, :, 82)
+     rpomnns => kf(:, :, 83)
+     seddp => kf(:, :, 84)
+     sedasp => kf(:, :, 85)
+     sedomsp => kf(:, :, 86)
+     sednsp => kf(:, :, 87)
+     lpomepp => kf(:, :, 88)
+     seddn => kf(:, :, 89)
+     sedasn => kf(:, :, 90)
+     sedomsn => kf(:, :, 91)
+     sednsn => kf(:, :, 92)
+     lpomepn => kf(:, :, 93)
+     seddc => kf(:, :, 94)
+     sedasc => kf(:, :, 95)
+     sedomsc => kf(:, :, 96)
+     sednsc => kf(:, :, 97)
+     lpomepc => kf(:, :, 98)
+     sedno3 => kf(:, :, 99)
+     po4mr => kf(:, :, 100)
+     po4mg => kf(:, :, 101)
+     nh4mr => kf(:, :, 102)
+     nh4mg => kf(:, :, 103)
+     ldommac => kf(:, :, 104)
+     rpommac => kf(:, :, 105)
+     lpommac => kf(:, :, 106)
+     domp => kf(:, :, 107)
+     domr => kf(:, :, 108)
+     ticmc => kf(:, :, 109)
+     cbodns => kf(:, :, 110)
+     sedcb => kf(:, :, 111)
+     sedcbp => kf(:, :, 112)
+     sedcbn => kf(:, :, 113)
+     sedcbc => kf(:, :, 114)
+     sedbr => kf(:, :, 115)
+     sedbrp => kf(:, :, 116)
+     sedbrn => kf(:, :, 117)
+     sedbrc => kf(:, :, 118)
+     co2reaer => kf(:, :, 121)
+     cbodnsp => kf(:, :, 119)
+     cbodnsn => kf(:, :, 120)                          ! CB 6/6/10
   ! CEMA start
-  doh2s => kf(:,:,122); doch4 => kf(:,:,123); h2sreaer => kf(:,:,124); ch4reaer => kf(:,:,125); h2sd => kf(:,:,126)
-  ch4d => kf(:,:,127); sdinc => kf(:,:,128);sdinn => kf(:,:,129);sdinp => kf(:,:,130)
-  dosedia => kf(:,:,131); fe2d => kf(:,:,132); dofe2=> kf(:,:,133); sdinFeOOH=> kf(:,:,134)  
-  sdinMnO2=> kf(:,:,135); Mn2d => kf(:,:,136); doMn2=> kf(:,:,137);sedd1 => kf(:,:,138);sedd2 => kf(:,:,139)
+     doh2s => kf(:, :, 122)
+  ! CEMA start
+     doch4 => kf(:, :, 123)
+  ! CEMA start
+     h2sreaer => kf(:, :, 124)
+  ! CEMA start
+     ch4reaer => kf(:, :, 125)
+  ! CEMA start
+     h2sd => kf(:, :, 126)
+     ch4d => kf(:, :, 127)
+     sdinc => kf(:, :, 128)
+     sdinn => kf(:, :, 129)
+     sdinp => kf(:, :, 130)
+     dosedia => kf(:, :, 131)
+     fe2d => kf(:, :, 132)
+     dofe2 => kf(:, :, 133)
+     sdinfeooh => kf(:, :, 134)
+     sdinmno2 => kf(:, :, 135)
+     mn2d => kf(:, :, 136)
+     domn2 => kf(:, :, 137)
+     sedd1 => kf(:, :, 138)
+     sedd2 => kf(:, :, 139)
   ! CEMA end
-  
-
-! Algal rate variables
-
-  AGR => AF(:,:,:,1); ARR => AF(:,:,:,2); AER => AF(:,:,:,3); AMR => AF(:,:,:,4); ASR => AF(:,:,:,5)
-  EGR => EF(:,:,:,1); ERR => EF(:,:,:,2); EER => EF(:,:,:,3); EMR => EF(:,:,:,4); EBR => EF(:,:,:,5)
-
-! Hydrodynamic variables
-
-  DLTLIM => HYD(:,:,1);  U   => HYD(:,:,2);  W    => HYD(:,:,3); T2   => HYD(:,:,4);  RHO => HYD(:,:,5);  AZ  => HYD(:,:,6)
-  VSH    => HYD(:,:,7);  ST  => HYD(:,:,8);  SB   => HYD(:,:,9); ADMX => HYD(:,:,10); DM  => HYD(:,:,11); HDG => HYD(:,:,12)
-  ADMZ   => HYD(:,:,13); HPG => HYD(:,:,14); GRAV => HYD(:,:,15)
-
-! I/O units
-
-  SNP => OPT(:,1); PRF => OPT(:,2); VPL => OPT(:,3); CPL => OPT(:,4); SPR => OPT(:,5); FLX => OPT(:,6);FLX2 => OPT(:,7)
-
-! Zero variables
-
-  ITR  = 0;   JBTR = 0;   KTTR = 0;   KBTR = 0;   QTR  = 0.0; TTR  = 0.0; CTR  = 0.0; QTRF = 0.0; SNPD  = 0.0; TSRD  = 0.0
-  PRFD = 0.0; SPRD = 0.0; CPLD = 0.0; VPLD = 0.0; SCRD = 0.0; FLXD = 0.0; WDOD = 0.0; RSOD = 0.0; ELTRB = 0.0; ELTRT = 0.0
-
-! Input file unit numbers
-
-  NUNIT = 40
-  DO JW=1,NWB
-    BTH(JW) = NUNIT
-    VPR(JW) = NUNIT+1
-    LPR(JW) = NUNIT+2
-    NUNIT   = NUNIT+3
-  END DO
-  GRF = NUNIT; NUNIT = NUNIT+1
-
-! Time control cards
-
-  READ (CON,'(//8X,2F8.0,I8)')         TMSTRT,   TMEND,    YEAR
-  READ (CON,'(//8X,I8,F8.0,a8)')         NDLT,     DLTMIN, DLTINTER; DLTD=0.0  ! SW 9/28/13 INITIALIZE ARRAY TO NOD SINCE ONLY NDLT ASSIGNED
-  READ (CON,'(//(:8X,9F8.0))')        (DLTD(J),            J =1,NDLT)
-  READ (CON,'(//(:8X,9F8.0))')        (DLTMAX(J),          J =1,NDLT)
-  READ (CON,'(//(:8X,9F8.0))')        (DLTF(J),            J =1,NDLT)
-  READ (CON,'(//(8X,3A8))')           (VISC(JW), CELC(JW), DLTADD(JW), JW=1,NWB)
-
-! Grid definition cards
-
-  READ (CON,'(//(8X,7I8,F8.0,F8.0))') (US(JB),  DS(JB),     UHS(JB),   DHS(JB), UQB(JB), DQB(JB),  NL(JB), SLOPE(JB),SLOPEC(JB), JB=1,NBR)
-  READ (CON,'(//(8X,3F8.0,3I8))')     (LAT(JW), LONGIT(JW), ELBOT(JW), BS(JW),  BE(JW),  JBDN(JW),                    JW=1,NWB)
-
-! Initial condition cards
-
-  READ (CON,'(//(8X,2F8.0,2A8))')     (T2I(JW),    ICETHI(JW),  WTYPEC(JW),  GRIDC(JW),                               JW=1,NWB)
-  READ (CON,'(//(8X,6A8))')           (VBC(JW),    EBC(JW),     MBC(JW),     PQC(JW),   EVC(JW),   PRC(JW),           JW=1,NWB)
-  READ (CON,'(//(8X,4A8))')           (WINDC(JW),  QINC(JW),    QOUTC(JW),   HEATC(JW),                               JW=1,NWB)
-  READ (CON,'(//(8X,3A8))')           (QINIC(JB),  DTRIC(JB),   HDIC(JB),                                             JB=1,NBR)
-  READ (CON,'(//(8X,5A8,4F8.0))')     (SLHTC(JW),  SROC(JW),    RHEVC(JW),   METIC(JW), FETCHC(JW), AFW(JW),                       &
-                                       BFW(JW),    CFW(JW),     WINDH(JW),                                            JW=1,NWB)
-  READ (CON,'(//(8X,2A8,6F8.0))')     (ICEC(JW),   SLICEC(JW),  ALBEDO(JW),  HWI(JW),   BETAI(JW),  GAMMAI(JW),                    &
-                                       ICEMIN(JW), ICET2(JW),                                                         JW=1,NWB)
-  READ (CON,'(//(8X,A8,F8.0))')       (SLTRC(JW),  THETA(JW),                                                         JW=1,NWB)
-  READ (CON,'(//(8X,6F8.0,A8,F8.0))')      (AX(JW),     DXI(JW),     CBHE(JW),    TSED(JW),  FI(JW),     TSEDF(JW),                     &
-                                       FRICC(JW), Z0(JW),                                                                    JW=1,NWB)
-  READ (CON,'(//(8X,2A8,F8.0,I8,F8.0,F8.0,F8.0,F8.0,A8))')     (AZC(JW),    AZSLC(JW),   AZMAX(JW),   TKEBC(JW),EROUGH(JW),       &
-                                       ARODI(JW),STRICK(JW),TKELATPRDCONST(JW),IMPTKE(JW),JW=1,NWB)          !,PHISET(JW
-
-  DO JW=1,NWB
-  IF(Z0(JW) <= 0.0)Z0(JW)=0.001      ! SW 11/28/07
-   DO JB=BS(JW),BE(JW)
-    DO I=US(JB),DS(JB)
-    E(I)=EROUGH(JW)
-    ENDDO
-   ENDDO
-  ENDDO
-
-! Inflow-outflow cards
-
-  READ (CON,'(//(8X,I8,A8))')            (NSTR(JB),DYNSTRUC(JB),      JB=1,NBR)
-  READ (CON,'(/)')
-  DO JB=1,NBR
-    READ (CON,'(:8X,9A8)')            (STRIC(JS,JB),  JS=1,NSTR(JB))
-  END DO
-  READ (CON,'(/)')
-  DO JB=1,NBR
-    READ (CON,'(:8X,9I8)')            (KTSWT(JS,JB), JS=1,NSTR(JB))
-  END DO
-  READ (CON,'(/)')
-  DO JB=1,NBR
-    READ (CON,'(:8X,9I8)')            (KBSWT(JS,JB), JS=1,NSTR(JB))
-  END DO
-  READ (CON,'(/)')
-  DO JB=1,NBR
-    READ (CON,'(:8X,9A8)')            (SINKCT(JS,JB),JS=1,NSTR(JB))
-  END DO
-  READ (CON,'(/)')
-  DO JB=1,NBR
-    READ (CON,'(:8X,9F8.0)')          (ESTRT(JS,JB), JS=1,NSTR(JB))
-  END DO
-  READ (CON,'(/)')
-  DO JB=1,NBR
-    READ (CON,'(:8X,9F8.0)')          (WSTRT(JS,JB), JS=1,NSTR(JB))
-  END DO
-  READ (CON,'(//(:8X,2I8,6F8.0,A8,A8))') (IUPI(JP),   IDPI(JP),   EUPI(JP),   EDPI(JP),    WPI(JP),                                   &
-                                       DLXPI(JP),  FPI(JP),    FMINPI(JP), LATPIC(JP),  DYNPIPE(JP),JP=1,NPI)
-  READ (CON,'(//(:8X,A8,2F8.0,2I8))') (PUPIC(JP),  ETUPI(JP),  EBUPI(JP),  KTUPI(JP),   KBUPI(JP),  JP=1,NPI)
-  READ (CON,'(//(:8X,A8,2F8.0,2I8))') (PDPIC(JP),  ETDPI(JP),  EBDPI(JP),  KTDPI(JP),   KBDPI(JP),  JP=1,NPI)
-  READ (CON,'(//(:8X,2I8,5F8.0,A8))') (IUSP(JS),   IDSP(JS),   ESP(JS),    A1SP(JS),    B1SP(JS),                                  &
-                                       A2SP(JS),   B2SP(JS),   LATSPC(JS),                          JS=1,NSP)
-  READ (CON,'(//(:8X,A8,2F8.0,2I8))') (PUSPC(JS),  ETUSP(JS),  EBUSP(JS),  KTUSP(JS),   KBUSP(JS),  JS=1,NSP)
-  READ (CON,'(//(:8X,A8,2F8.0,2I8))') (PDSPC(JS),  ETDSP(JS),  EBDSP(JS),  KTDSP(JS),   KBDSP(JS),  JS=1,NSP)
-  READ (CON,'(//(:8X,A8,I8,3F8.0))')  (GASSPC(JS), EQSP(JS),   AGASSP(JS), BGASSP(JS),  CGASSP(JS), JS=1,NSP)
-  READ (CON,'(//(:8X,2I8,7F8.0,A8))') (IUGT(JG),   IDGT(JG),   EGT(JG),    A1GT(JG),    B1GT(JG),                                  &
-                                       G1GT(JG),   A2GT(JG),   B2GT(JG),   G2GT(JG),    LATGTC(JG), JG=1,NGT)
-  READ (CON,'(//(:8X,4F8.0,2A8))')     (GTA1(JG),   GTB1(JG),   GTA2(JG),   GTB2(JG),    DYNGTC(JG),GTIC(JG), JG=1,NGT)  ! cb 8/13/2010
-  READ (CON,'(//(:8X,A8,2F8.0,2I8))') (PUGTC(JG),  ETUGT(JG),  EBUGT(JG),  KTUGT(JG),   KBUGT(JG),  JG=1,NGT)
-  READ (CON,'(//(:8X,A8,2F8.0,2I8))') (PDGTC(JG),  ETDGT(JG),  EBDGT(JG),  KTDGT(JG),   KBDGT(JG),  JG=1,NGT)
-  READ (CON,'(//(:8X,A8,I8,3F8.0))')  (GASGTC(JG), EQGT(JG),   AGASGT(JG), BGASGT(JG),  CGASGT(JG), JG=1,NGT)
-  READ (CON,'(//(:8X,2I8,6F8.0,2A8))') (IUPU(JP),   IDPU(JP),   EPU(JP),    STRTPU(JP),  ENDPU(JP),                                 &
-                                       EONPU(JP),  EOFFPU(JP), QPU(JP),    LATPUC(JP),  DYNPUMP(JP),      JP=1,NPU)
-  READ (CON,'(//(:8X,A8,2F8.0,2I8))') (PPUC(JP),   ETPU(JP),   EBPU(JP),   KTPU(JP),    KBPU(JP),   JP=1,NPU)
-  READ (CON,'(//(:8X,9I8))')          (IWR(JW),    JW=1,NIW)
-  READ (CON,'(//(:8X,9F8.0))')        (EKTWR(JW),   JW=1,NIW)               ! SW 3/18/16
-  READ (CON,'(//(:8X,9F8.0))')        (EKBWR(JW),   JW=1,NIW)               ! SW 3/18/16
-  READ (CON,'(//(:8X,9A8))')          (WDIC(JW),   JW=1,NWD)
-  READ (CON,'(//(:8X,9I8))')          (IWD(JW),    JW=1,NWD)
-  READ (CON,'(//(:8X,9F8.0))')        (EWD(JW),    JW=1,NWD)
-  READ (CON,'(//(:8X,9I8))')          (KTWD(JW),   JW=1,NWD)
-  READ (CON,'(//(:8X,9I8))')          (KBWD(JW),   JW=1,NWD); TRC= '      '  ! SW 9/27/13 INITIALIZATION SINCE ALLOCATION IS TO NTRT
-  READ (CON,'(//(:8X,9A8))')          (TRC(JT),    JT=1,NTR)
-  READ (CON,'(//(:8X,9A8))')          (TRIC(JT),   JT=1,NTR)
-  READ (CON,'(//(:8X,9I8))')          (ITR(JT),    JT=1,NTR)
-  READ (CON,'(//(:8X,9F8.0))')        (ELTRT(JT),  JT=1,NTR)
-  READ (CON,'(//(:8X,9F8.0))')        (ELTRB(JT),  JT=1,NTR)
-  READ (CON,'(//(8X,A8))')            (DTRC(JB),   JB=1,NBR)
-
-! Output control cards (excluding constituents)
-
-  READ (CON,'(/)')
-  DO JH=1,NHY
-    READ (CON,'(:8X,9A8)')            (HPRWBC(JH,JW),JW=1,NWB)
-  END DO
-  READ (CON,'(//(8X,A8,2I8))')        (SNPC(JW), NSNP(JW), NISNP(JW), JW=1,NWB)
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (SNPD(J,JW),J=1,NSNP(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (SNPF(J,JW),J=1,NSNP(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9I8)')            (ISNP(I,JW),I=1,NISNP(JW))
-  END DO
-  READ (CON,'(//(8X,A8,I8))')         (SCRC(JW), NSCR(JW), JW=1,NWB)
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (SCRD(J,JW),J=1,NSCR(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (SCRF(J,JW),J=1,NSCR(JW))
-  END DO
-  READ (CON,'(//(8X,A8,2I8))')        (PRFC(JW), NPRF(JW), NIPRF(JW), JW=1,NWB)
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (PRFD(J,JW),J=1,NPRF(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (PRFF(J,JW),J=1,NPRF(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9I8)')            (IPRF(J,JW),J=1,NIPRF(JW))
-  END DO
-  READ (CON,'(//(8X,A8,2I8))')        (SPRC(JW), NSPR(JW), NISPR(JW), JW=1,NWB)
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (SPRD(J,JW),J=1,NSPR(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (SPRF(J,JW),J=1,NSPR(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9I8)')            (ISPR(J,JW), J=1,NISPR(JW))
-  END DO
-  READ (CON,'(//(8X,A8,I8))')         (VPLC(JW),  NVPL(JW),  JW=1,NWB)
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (VPLD(J,JW), J=1,NVPL(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (VPLF(J,JW), J=1,NVPL(JW))
-  END DO
-  READ (CON,'(//(8X,A8,I8,A8))')      (CPLC(JW),   NCPL(JW), TECPLOT(JW),JW=1,NWB)
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (CPLD(J,JW), J=1,NCPL(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (CPLF(J,JW), J=1,NCPL(JW))
-  END DO
-  READ (CON,'(//(8X,A8,I8))')         (FLXC(JW),   NFLX(JW), JW=1,NWB)
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (FLXD(J,JW), J=1,NFLX(JW))
-  END DO
-  READ (CON,'(/)')
-  DO JW=1,NWB
-    READ (CON,'(:8X,9F8.0)')          (FLXF(J,JW), J=1,NFLX(JW))
-  END DO
-  READ (CON,'(//8X,A8,2I8)')           TSRC,    NTSR,    NIKTSR; ALLOCATE (ITSR(MAX(1,NIKTSR)), ETSR(MAX(1,NIKTSR)))
-  READ (CON,'(//(:8X,9F8.0))')        (TSRD(J), J=1,NTSR)
-  READ (CON,'(//(:8X,9F8.0))')        (TSRF(J), J=1,NTSR)
-  READ (CON,'(//(:8X,9I8))')          (ITSR(J), J=1,NIKTSR)
-  READ (CON,'(//(:8X,9F8.0))')        (ETSR(J), J=1,NIKTSR)
-  READ (CON,'(//8X,A8,2I8)')           WDOC,    NWDO,    NIWDO;  ALLOCATE (IWDO(MAX(1,NIWDO)))
-  READ (CON,'(//(:8X,9F8.0))')        (WDOD(J), J=1,NWDO)
-  READ (CON,'(//(:8X,9F8.0))')        (WDOF(J), J=1,NWDO)
-  READ (CON,'(//(8X,9I8))')           (IWDO(J), J=1,NIWDO)
-  READ (CON,'(//8X,A8,I8,A8)')         RSOC,    NRSO,    RSIC; RSOD=0.0 ! SW 9/27/13 INITIALIZE SINCE ALLOCATED AS NOD BUT ONLY NRSO USED
-  READ (CON,'(//(:8X,9F8.0))')        (RSOD(J), J=1,NRSO)
-  READ (CON,'(//(:8X,9F8.0))')        (RSOF(J), J=1,NRSO)
-
-! Constituent control cards
-
-  READ (CON,'(//8X,2A8,I8)')           CCC, LIMC, CUF
-  READ (CON,'(//(2A8))')              (CNAME2(JC),  CAC(JC),      JC=1,NCT)
-  READ (CON,'(/)')
-  
+ 
+ 
+!    Algal rate variables
+ 
+     agr => af(:, :, :, 1)
+  ! CEMA end
+ 
+ 
+!    Algal rate variables
+ 
+     arr => af(:, :, :, 2)
+  ! CEMA end
+ 
+ 
+!    Algal rate variables
+ 
+     aer => af(:, :, :, 3)
+  ! CEMA end
+ 
+ 
+!    Algal rate variables
+ 
+     amr => af(:, :, :, 4)
+  ! CEMA end
+ 
+ 
+!    Algal rate variables
+ 
+     asr => af(:, :, :, 5)
+     egr => ef(:, :, :, 1)
+     err => ef(:, :, :, 2)
+     eer => ef(:, :, :, 3)
+     emr => ef(:, :, :, 4)
+     ebr => ef(:, :, :, 5)
+ 
+!    Hydrodynamic variables
+ 
+     dltlim => hyd(:, :, 1)
+ 
+!    Hydrodynamic variables
+ 
+     u => hyd(:, :, 2)
+ 
+!    Hydrodynamic variables
+ 
+     w => hyd(:, :, 3)
+ 
+!    Hydrodynamic variables
+ 
+     t2 => hyd(:, :, 4)
+ 
+!    Hydrodynamic variables
+ 
+     rho => hyd(:, :, 5)
+ 
+!    Hydrodynamic variables
+ 
+     az => hyd(:, :, 6)
+     vsh => hyd(:, :, 7)
+     st => hyd(:, :, 8)
+     sb => hyd(:, :, 9)
+     admx => hyd(:, :, 10)
+     dm => hyd(:, :, 11)
+     hdg => hyd(:, :, 12)
+     admz => hyd(:, :, 13)
+     hpg => hyd(:, :, 14)
+     grav => hyd(:, :, 15)
+ 
+!    I/O units
+ 
+     snp => opt(:, 1)
+ 
+!    I/O units
+ 
+     prf => opt(:, 2)
+ 
+!    I/O units
+ 
+     vpl => opt(:, 3)
+ 
+!    I/O units
+ 
+     cpl => opt(:, 4)
+ 
+!    I/O units
+ 
+     spr => opt(:, 5)
+ 
+!    I/O units
+ 
+     flx => opt(:, 6)
+ 
+!    I/O units
+ 
+     flx2 => opt(:, 7)
+ 
+!    Zero variables
+ 
+     itr = 0
+ 
+!    Zero variables
+ 
+     jbtr = 0
+ 
+!    Zero variables
+ 
+     kttr = 0
+ 
+!    Zero variables
+ 
+     kbtr = 0
+ 
+!    Zero variables
+ 
+     qtr = 0.0
+ 
+!    Zero variables
+ 
+     ttr = 0.0
+ 
+!    Zero variables
+ 
+     ctr = 0.0
+ 
+!    Zero variables
+ 
+     qtrf = 0.0
+ 
+!    Zero variables
+ 
+     snpd = 0.0
+ 
+!    Zero variables
+ 
+     tsrd = 0.0
+     prfd = 0.0
+     sprd = 0.0
+     cpld = 0.0
+     vpld = 0.0
+     scrd = 0.0
+     flxd = 0.0
+     wdod = 0.0
+     rsod = 0.0
+     eltrb = 0.0
+     eltrt = 0.0
+ 
+!    Input file unit numbers
+ 
+     nunit = 40
+     do jw = 1, nwb
+         bth(jw) = nunit
+         vpr(jw) = nunit + 1
+         lpr(jw) = nunit + 2
+         nunit = nunit + 3
+     enddo
+     grf = nunit
+     nunit = nunit + 1
+ 
+!    Time control cards
+ 
+     read(con, '(//8X,2F8.0,I8)')tmstrt, tmend, year
+     read(con, '(//8X,I8,F8.0,a8)')ndlt, dltmin, dltinter
+     dltd = 0.0                                                                ! SW 9/28/13 INITIALIZE ARRAY TO NOD SINCE ONLY NDLT ASSIGNED
+     read(con, '(//(:8X,9F8.0))')(dltd(j), j = 1, ndlt)
+     read(con, '(//(:8X,9F8.0))')(dltmax(j), j = 1, ndlt)
+     read(con, '(//(:8X,9F8.0))')(dltf(j), j = 1, ndlt)
+     read(con, '(//(8X,3A8))')(visc(jw), celc(jw), dltadd(jw), jw = 1, nwb)
+ 
+!    Grid definition cards
+ 
+     read(con, '(//(8X,7I8,F8.0,F8.0))')(us(jb), ds(jb), uhs(jb), dhs(jb), uqb(&
+                                      & jb), dqb(jb), nl(jb), slope(jb),       &
+                                      & slopec(jb), jb = 1, nbr)
+     read(con, '(//(8X,3F8.0,3I8))')(lat(jw), longit(jw), elbot(jw), bs(jw),   &
+                                  & be(jw), jbdn(jw), jw = 1, nwb)
+ 
+!    Initial condition cards
+ 
+     read(con, '(//(8X,2F8.0,2A8))')(t2i(jw), icethi(jw), wtypec(jw), gridc(jw)&
+                                  & , jw = 1, nwb)
+     read(con, '(//(8X,6A8))')(vbc(jw), ebc(jw), mbc(jw), pqc(jw), evc(jw),    &
+                            & prc(jw), jw = 1, nwb)
+     read(con, '(//(8X,4A8))')(windc(jw), qinc(jw), qoutc(jw), heatc(jw),      &
+                            & jw = 1, nwb)
+     read(con, '(//(8X,3A8))')(qinic(jb), dtric(jb), hdic(jb), jb = 1, nbr)
+     read(con, '(//(8X,5A8,4F8.0))')(slhtc(jw), sroc(jw), rhevc(jw), metic(jw),&
+                                  & fetchc(jw), afw(jw), bfw(jw), cfw(jw),     &
+                                  & windh(jw), jw = 1, nwb)
+     read(con, '(//(8X,2A8,6F8.0))')(icec(jw), slicec(jw), albedo(jw), hwi(jw),&
+                                  & betai(jw), gammai(jw), icemin(jw),         &
+                                  & icet2(jw), jw = 1, nwb)
+     read(con, '(//(8X,A8,F8.0))')(sltrc(jw), theta(jw), jw = 1, nwb)
+     read(con, '(//(8X,6F8.0,A8,F8.0))')(ax(jw), dxi(jw), cbhe(jw), tsed(jw),  &
+                                      & fi(jw), tsedf(jw), fricc(jw), z0(jw),  &
+                                      & jw = 1, nwb)
+     read(con, '(//(8X,2A8,F8.0,I8,F8.0,F8.0,F8.0,F8.0,A8))')                  &
+        & (azc(jw), azslc(jw), azmax(jw), tkebc(jw), erough(jw), arodi(jw),    &
+        & strick(jw), tkelatprdconst(jw), imptke(jw), jw = 1, nwb)                                           !,PHISET(JW
+ 
+     do jw = 1, nwb
+         if(z0(jw)<=0.0)z0(jw) = 0.001
+                                     ! SW 11/28/07
+         do jb = bs(jw), be(jw)
+             do i = us(jb), ds(jb)
+                 e(i) = erough(jw)
+             enddo
+         enddo
+     enddo
+ 
+!    Inflow-outflow cards
+ 
+     read(con, '(//(8X,I8,A8))')(nstr(jb), dynstruc(jb), jb = 1, nbr)
+     read(con, '(/)')
+     do jb = 1, nbr
+         read(con, '(:8X,9A8)')(stric(js, jb), js = 1, nstr(jb))
+     enddo
+     read(con, '(/)')
+     do jb = 1, nbr
+         read(con, '(:8X,9I8)')(ktswt(js, jb), js = 1, nstr(jb))
+     enddo
+     read(con, '(/)')
+     do jb = 1, nbr
+         read(con, '(:8X,9I8)')(kbswt(js, jb), js = 1, nstr(jb))
+     enddo
+     read(con, '(/)')
+     do jb = 1, nbr
+         read(con, '(:8X,9A8)')(sinkct(js, jb), js = 1, nstr(jb))
+     enddo
+     read(con, '(/)')
+     do jb = 1, nbr
+         read(con, '(:8X,9F8.0)')(estrt(js, jb), js = 1, nstr(jb))
+     enddo
+     read(con, '(/)')
+     do jb = 1, nbr
+         read(con, '(:8X,9F8.0)')(wstrt(js, jb), js = 1, nstr(jb))
+     enddo
+     read(con, '(//(:8X,2I8,6F8.0,A8,A8))')                                    &
+        & (iupi(jp), idpi(jp), eupi(jp), edpi(jp), wpi(jp), dlxpi(jp), fpi(jp),&
+        & fminpi(jp), latpic(jp), dynpipe(jp), jp = 1, npi)
+     read(con, '(//(:8X,A8,2F8.0,2I8))')(pupic(jp), etupi(jp), ebupi(jp), ktupi&
+                                      & (jp), kbupi(jp), jp = 1, npi)
+     read(con, '(//(:8X,A8,2F8.0,2I8))')(pdpic(jp), etdpi(jp), ebdpi(jp), ktdpi&
+                                      & (jp), kbdpi(jp), jp = 1, npi)
+     read(con, '(//(:8X,2I8,5F8.0,A8))')(iusp(js), idsp(js), esp(js), a1sp(js),&
+                                      & b1sp(js), a2sp(js), b2sp(js),          &
+                                      & latspc(js), js = 1, nsp)
+     read(con, '(//(:8X,A8,2F8.0,2I8))')(puspc(js), etusp(js), ebusp(js), ktusp&
+                                      & (js), kbusp(js), js = 1, nsp)
+     read(con, '(//(:8X,A8,2F8.0,2I8))')(pdspc(js), etdsp(js), ebdsp(js), ktdsp&
+                                      & (js), kbdsp(js), js = 1, nsp)
+     read(con, '(//(:8X,A8,I8,3F8.0))')(gasspc(js), eqsp(js), agassp(js),      &
+                                     & bgassp(js), cgassp(js), js = 1, nsp)
+     read(con, '(//(:8X,2I8,7F8.0,A8))')(iugt(jg), idgt(jg), egt(jg), a1gt(jg),&
+                                      & b1gt(jg), g1gt(jg), a2gt(jg), b2gt(jg),&
+                                      & g2gt(jg), latgtc(jg), jg = 1, ngt)
+     read(con, '(//(:8X,4F8.0,2A8))')(gta1(jg), gtb1(jg), gta2(jg), gtb2(jg),  &
+                                   & dyngtc(jg), gtic(jg), jg = 1, ngt)                                                  ! cb 8/13/2010
+     read(con, '(//(:8X,A8,2F8.0,2I8))')(pugtc(jg), etugt(jg), ebugt(jg), ktugt&
+                                      & (jg), kbugt(jg), jg = 1, ngt)
+     read(con, '(//(:8X,A8,2F8.0,2I8))')(pdgtc(jg), etdgt(jg), ebdgt(jg), ktdgt&
+                                      & (jg), kbdgt(jg), jg = 1, ngt)
+     read(con, '(//(:8X,A8,I8,3F8.0))')(gasgtc(jg), eqgt(jg), agasgt(jg),      &
+                                     & bgasgt(jg), cgasgt(jg), jg = 1, ngt)
+     read(con, '(//(:8X,2I8,6F8.0,2A8))')                                      &
+        & (iupu(jp), idpu(jp), epu(jp), strtpu(jp), endpu(jp), eonpu(jp),      &
+        & eoffpu(jp), qpu(jp), latpuc(jp), dynpump(jp), jp = 1, npu)
+     read(con, '(//(:8X,A8,2F8.0,2I8))')(ppuc(jp), etpu(jp), ebpu(jp), ktpu(jp)&
+                                      & , kbpu(jp), jp = 1, npu)
+     read(con, '(//(:8X,9I8))')(iwr(jw), jw = 1, niw)
+     read(con, '(//(:8X,9F8.0))')(ektwr(jw), jw = 1, niw)                   ! SW 3/18/16
+     read(con, '(//(:8X,9F8.0))')(ekbwr(jw), jw = 1, niw)                   ! SW 3/18/16
+     read(con, '(//(:8X,9A8))')(wdic(jw), jw = 1, nwd)
+     read(con, '(//(:8X,9I8))')(iwd(jw), jw = 1, nwd)
+     read(con, '(//(:8X,9F8.0))')(ewd(jw), jw = 1, nwd)
+     read(con, '(//(:8X,9I8))')(ktwd(jw), jw = 1, nwd)
+     read(con, '(//(:8X,9I8))')(kbwd(jw), jw = 1, nwd)
+     trc = '      '                                                          ! SW 9/27/13 INITIALIZATION SINCE ALLOCATION IS TO NTRT
+     read(con, '(//(:8X,9A8))')(trc(jt), jt = 1, ntr)
+     read(con, '(//(:8X,9A8))')(tric(jt), jt = 1, ntr)
+     read(con, '(//(:8X,9I8))')(itr(jt), jt = 1, ntr)
+     read(con, '(//(:8X,9F8.0))')(eltrt(jt), jt = 1, ntr)
+     read(con, '(//(:8X,9F8.0))')(eltrb(jt), jt = 1, ntr)
+     read(con, '(//(8X,A8))')(dtrc(jb), jb = 1, nbr)
+ 
+!    Output control cards (excluding constituents)
+ 
+     read(con, '(/)')
+     do jh = 1, nhy
+         read(con, '(:8X,9A8)')(hprwbc(jh, jw), jw = 1, nwb)
+     enddo
+     read(con, '(//(8X,A8,2I8))')(snpc(jw), nsnp(jw), nisnp(jw), jw = 1, nwb)
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(snpd(j, jw), j = 1, nsnp(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(snpf(j, jw), j = 1, nsnp(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9I8)')(isnp(i, jw), i = 1, nisnp(jw))
+     enddo
+     read(con, '(//(8X,A8,I8))')(scrc(jw), nscr(jw), jw = 1, nwb)
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(scrd(j, jw), j = 1, nscr(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(scrf(j, jw), j = 1, nscr(jw))
+     enddo
+     read(con, '(//(8X,A8,2I8))')(prfc(jw), nprf(jw), niprf(jw), jw = 1, nwb)
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(prfd(j, jw), j = 1, nprf(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(prff(j, jw), j = 1, nprf(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9I8)')(iprf(j, jw), j = 1, niprf(jw))
+     enddo
+     read(con, '(//(8X,A8,2I8))')(sprc(jw), nspr(jw), nispr(jw), jw = 1, nwb)
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(sprd(j, jw), j = 1, nspr(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(sprf(j, jw), j = 1, nspr(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9I8)')(ispr(j, jw), j = 1, nispr(jw))
+     enddo
+     read(con, '(//(8X,A8,I8))')(vplc(jw), nvpl(jw), jw = 1, nwb)
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(vpld(j, jw), j = 1, nvpl(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(vplf(j, jw), j = 1, nvpl(jw))
+     enddo
+     read(con, '(//(8X,A8,I8,A8))')(cplc(jw), ncpl(jw), tecplot(jw), jw = 1,   &
+                                 & nwb)
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(cpld(j, jw), j = 1, ncpl(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(cplf(j, jw), j = 1, ncpl(jw))
+     enddo
+     read(con, '(//(8X,A8,I8))')(flxc(jw), nflx(jw), jw = 1, nwb)
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(flxd(j, jw), j = 1, nflx(jw))
+     enddo
+     read(con, '(/)')
+     do jw = 1, nwb
+         read(con, '(:8X,9F8.0)')(flxf(j, jw), j = 1, nflx(jw))
+     enddo
+     read(con, '(//8X,A8,2I8)')tsrc, ntsr, niktsr
+     allocate(itsr(MAX(1, niktsr)), etsr(MAX(1, niktsr)))
+     read(con, '(//(:8X,9F8.0))')(tsrd(j), j = 1, ntsr)
+     read(con, '(//(:8X,9F8.0))')(tsrf(j), j = 1, ntsr)
+     read(con, '(//(:8X,9I8))')(itsr(j), j = 1, niktsr)
+     read(con, '(//(:8X,9F8.0))')(etsr(j), j = 1, niktsr)
+     read(con, '(//8X,A8,2I8)')wdoc, nwdo, niwdo
+     allocate(iwdo(MAX(1, niwdo)))
+     read(con, '(//(:8X,9F8.0))')(wdod(j), j = 1, nwdo)
+     read(con, '(//(:8X,9F8.0))')(wdof(j), j = 1, nwdo)
+     read(con, '(//(8X,9I8))')(iwdo(j), j = 1, niwdo)
+     read(con, '(//8X,A8,I8,A8)')rsoc, nrso, rsic
+     rsod = 0.0                                                         ! SW 9/27/13 INITIALIZE SINCE ALLOCATED AS NOD BUT ONLY NRSO USED
+     read(con, '(//(:8X,9F8.0))')(rsod(j), j = 1, nrso)
+     read(con, '(//(:8X,9F8.0))')(rsof(j), j = 1, nrso)
+ 
+!    Constituent control cards
+ 
+     read(con, '(//8X,2A8,I8)')ccc, limc, cuf
+     read(con, '(//(2A8))')(cname2(jc), cac(jc), jc = 1, nct)
+     read(con, '(/)')
+ 
   !IF(.NOT.RESTART_PUSHED)THEN
-        NNDC=NDC-1     ! SW 4/14/2017
+     nndc = ndc - 1    ! SW 4/14/2017
     !ELSE
     !    NNDC=NDC
     !ENDIF
-    
-  DO JD=1,NNDC    !NDC-1    ! SW 10/20/15 ADDED AN EXTRA DERIVED VARIABLE INTERNALLY
-    if(nwb < 10)READ (CON,'(A8,(:9A8))')           CDNAME2(JD),(CDWBC(JD,JW), JW=1,NWB)
-    if(nwb >= 10)READ (CON,'(A8,9A8,/(:8X,9A8))')           CDNAME2(JD),(CDWBC(JD,JW), JW=1,NWB)          !cb 9/13/12  sw 2/18/13  Foramt 6/16/13 8/13/13
-  END DO
-  
-  CDNAME2(NDC)=' TDG(%)'            ! SW 10/20/15
-  CDWBC(NDC,:)='      ON'
-  
-  READ (CON,'(/)')
-  KFNAME2 ='     '   ! SW 9/27/13 INITIALIZE ENTIRE ARRAY
-  KFWBC   ='     '   ! SW 9/27/13 INITIALIZE ENTIRE ARRAY
-!  DO JF=1,NFL
-  do jf=1,73   ! Fix this later
-    if(nwb < 10)READ (CON,'(A8,(:9A8))')         KFNAME2(JF),(KFWBC(JF,JW),  JW=1,NWB)
-    if(nwb >= 10)READ (CON,'(A8,9A8,/(:8X,9A8))')         KFNAME2(JF),(KFWBC(JF,JW),  JW=1,NWB)          !cb 9/13/12  sw2/18/13  Foramt 6/16/13 8/13/13
-    KFNAME2(JF)=KFNAME2(JF)(1:8)//'(kg/d)'
-  END DO
-  kfname2(121) = 'CO2GASX(kg/d)'
-! CEMA and Amaila start
-   kfname2(122) = 'DOH2S(kg/d)';kfname2(123)= 'DOCH4(kg/d)';kfname2(124) = 'H2SGASX(kg/d)';kfname2(125) = 'CH4GASX(kg/d)'
-   kfname2(126) = 'H2SDK(kg/d)'; kfname2(127) = 'CH4DK(kg/d)'; kfname2(128) = 'SD_C_IN(kg/d)'; kfname2(129) = 'SD_N_IN(kg/d)'
-   kfname2(130) = 'SD_P_IN(kg/d)'
-   kfname2(131) = 'DOSEDIA(kg/d)';kfname2(132) = 'Fe2D(kg/d)';kfname2(133) = 'DOFe2(kg/d)';kfname2(134) = 'SDINFeOOH(kg/d)'
-   kfname2(135) = 'SDINMnO2(kg/d)';kfname2(136) = 'Mn2d(kg/d)';kfname2(137) = 'DOMn2(kg/d)'
-   kfname2(138) = 'SEDD1(kg/d)';kfname2(139) = 'SEDD2(kg/d)'
-! CEMA end
-  READ (CON,'(/)')
-  DO JC=1,NCT
-    READ (CON,'(:8X,9F8.0)')          (C2I(JC,JW),    JW=1,NWB)
-  END DO
-  READ (CON,'(/)')
-  DO JC=1,NCT
-    READ (CON,'(:8X,9A8)')            (CPRWBC(JC,JW), JW=1,NWB)
-  END DO
-  READ (CON,'(/)')
-  DO JC=1,NCT
-    READ (CON,'(:8X,9A8)')            (CINBRC(JC,JB), JB=1,NBR)
-  END DO
-  READ (CON,'(/)')
-  DO JC=1,NCT
-    READ (CON,'(:8X,9A8)')            (CTRTRC(JC,JT), JT=1,NTR)
-  END DO
-  READ (CON,'(/)')
-  DO JC=1,NCT
-    READ (CON,'(:8X,9A8)')            (CDTBRC(JC,JB), JB=1,NBR)
-  END DO
-  READ (CON,'(/)')
-  DO JC=1,NCT
-    READ (CON,'(:8X,9A8)')            (CPRBRC(JC,JB), JB=1,NBR)
-  END DO
-
-! Kinetics coefficients
-
-  READ (CON,'(//(8X,4F8.0,2A8))')     (EXH2O(JW),  EXSS(JW),   EXOM(JW),   BETA(JW),   EXC(JW),   EXIC(JW),    JW=1,NWB)
-  READ (CON,'(//(8X,9F8.0))')         (EXA(JA),                                                                JA=1,NAL)
-  READ (CON,'(//(8X,9F8.0))')         (EXZ(JZ),                                                                JZ=1,NZPT)  
-  READ (CON,'(//(8X,9F8.0))')         (EXM(JM),                                                                JM=1,NMCT)  
-!  READ (CON,'(//(8X,4F8.0))')         (CGQ10(JG),  CG0DK(JG),  CG1DK(JG),  CGS(JG),                            JG=1,NGC)
-  READ (CON,'(//(8X,7F8.0))')         (CGQ10(JG),  CG0DK(JG),  CG1DK(JG),  CGS(JG), CGLDK(JG),CGKLF(JG),CGCS(JG),           JG=1,NGC) !LCJ 2/26/15
-  READ (CON,'(//(8X,F8.0,A,F8.0))')   (SSS(JS),    SEDRC(JS),  TAUCR(JS),                                      JS=1,NSS)     ! READ (CON,'(//(8X,F8.0,A8,2F8.0,I8))') (SSS(JS), SEDRC(JS),  TAUCR(JS),  SSFLOC(JS), FLOCEQN(JS),            JS=1,NSS) !SR 04/21/13
-  READ (CON,'(//(8X,9F8.0))')         (AG(JA),     AR(JA),     AE(JA),     AM(JA),     AS(JA),                                     &
-                                       AHSP(JA),   AHSN(JA),   AHSSI(JA),  ASAT(JA),                           JA=1,NAL)
-  READ (CON,'(//(8X,8F8.0))')         (AT1(JA),    AT2(JA),    AT3(JA),    AT4(JA),    AK1(JA),   AK2(JA),                         &
-                                       AK3(JA),    AK4(JA),                                                    JA=1,NAL)
-  READ (CON,'(//(8X,6F8.0,I8,F8.0))') (AP(JA),     AN(JA),     AC(JA),     ASI(JA),    ACHLA(JA), APOM(JA),                        &
-                                       ANEQN(JA),  ANPR(JA),   JA=1,NAL)
-  READ (CON,'(//(8X,9A8))')           (EPIC(JW,1),                                                             JW=1,NWB)
-  DO JE=2,NEPT
-    READ (CON,'(8X,9A8)')             (EPIC(JW,JE),                                                            JW=1,NWB)
-  END DO
-  READ (CON,'(//(8X,9A8))')           (EPIPRC(JW,1),                                                           JW=1,NWB)
-  DO JE=2,NEPT
-    READ (CON,'(8X,9A8)')             (EPIPRC(JW,JE),                                                          JW=1,NWB)
-  END DO
-  READ (CON,'(//(8X,9F8.0))')         (EPICI(JW,1),                                                            JW=1,NWB)
-  DO JE=2,NEPT
-    READ (CON,'(8X,9F8.0)')           (EPICI(JW,JE),                                                           JW=1,NWB)
-  END DO
-  READ (CON,'(//(8X,8F8.0))')         (EG(JE),     ER(JE),     EE(JE),     EM(JE),     EB(JE),    EHSP(JE),                        &
-                                       EHSN(JE),   EHSSI(JE),                                                  JE=1,NEPT)        !JE=1,NEP)  SW 9/27/13
-  READ (CON,'(//(8X,2F8.0,I8,F8.0))') (ESAT(JE),   EHS(JE),    ENEQN(JE),  ENPR(JE),                           JE=1,NEPT)        !JE=1,NEP)  SW 9/27/13
-  READ (CON,'(//(8X,8F8.0))')         (ET1(JE),    ET2(JE),    ET3(JE),    ET4(JE),    EK1(JE),   EK2(JE),                         &
-                                       EK3(JE),    EK4(JE),                                                    JE=1,NEPT)        !JE=1,NEP)  SW 9/27/13
-  READ (CON,'(//(8X,6F8.0))')         (EP(JE),     EN(JE),     EC(JE),     ESI(JE),    ECHLA(JE), EPOM(JE),    JE=1,NEPT)        !JE=1,NEP)  SW 9/27/13
-  READ (CON,'(//(8X,7F8.0))')         (ZG(JZ),ZR(JZ),ZM(JZ),ZEFF(JZ),PREFP(JZ),ZOOMIN(JZ),ZS2P(JZ),            JZ=1,NZPT)
-
-  READ (CON,'(//(8X,8F8.0))')         (PREFA(JA,1),                                                            JA=1,NAL)          ! MM 7/13/06
-  DO JZ=2,NZPT
-    READ (CON,'((8X,8F8.0))')       (PREFA(JA,JZ),                                                           JA=1,NAL)
-  END DO
-  READ (CON,'(//(8X,8F8.0))')       (PREFZ(JJZ,1),                                                          JJZ=1,NZPT)
-  DO JZ=2,NZPT
-    READ (CON,'((8X,8F8.0))')       (PREFZ(JJZ,JZ),                                                          JJZ=1,NZPT)           ! MM 7/13/06
-  END DO
-  READ (CON,'(//(8X,8F8.0))')         (ZT1(JZ),    ZT2(JZ),    ZT3(JZ),    ZT4(JZ),    ZK1(JZ),   ZK2(JZ),                         &
-                                       ZK3(JZ),    ZK4(JZ),                                                    JZ=1,NZPT)
-  READ (CON,'(//(8X,3F8.0))')         (ZP(JZ),     ZN(JZ),     ZC(JZ),                                         JZ=1,NZPT)
-  READ (CON,'(//(8X,9A8))')           (MACWBC(JW,1),                                                           JW=1,NWB)
-  DO JM=2,NMCT
-    READ (CON,'(8X,9A8)')             (MACWBC(JW,JM),                                                          JW=1,NWB)
-  END DO
-  READ (CON,'(//(8X,9A8))')           (MPRWBC(JW,1),                                                           JW=1,NWB)
-  DO JM=2,NMCT
-    READ (CON,'(8X,9A8)')             (MPRWBC(JW,JM),                                                          JW=1,NWB)
-  END DO
-  READ (CON,'(//(8X,9F8.0))')         (MACWBCI(JW,1),                                                          JW=1,NWB)
-  DO JM=2,NMCT
-    READ (CON,'(8X,9F8.0)')           (MACWBCI(JW,JM),                                                         JW=1,NWB)
-  END DO
-  READ (CON,'(//(8X,9F8.0))')         (MG(JM), MR(JM), MM(JM), MSAT(JM),MHSP(JM),MHSN(JM),MHSC(JM),                           &
-                                          MPOM(JM),LRPMAC(JM),     JM=1,NMCT)
-  READ (CON,'(//(8X,2F8.0))')         (PSED(JM), NSED(JM),                                                     JM=1,NMCT)
-  READ (CON,'(//(8X,2F8.0))')         (MBMP(JM), MMAX(JM),                                                     JM=1,NMCT)
-  READ (CON,'(//(8X,4F8.0))')         (CDDRAG(JM),DWV(JM),DWSA(JM),ANORM(JM),                                 JM=1,NMCT)  !CB 6/29/06
-  READ (CON,'(//(8X,8F8.0))')         (MT1(JM),    MT2(JM),    MT3(JM),    MT4(JM),    MK1(JM),   MK2(JM),                         &
-                                       MK3(JM),    MK4(JM),                                                    JM=1,NMCT)
-  READ (CON,'(//(8X,3F8.0))')         (MP(JM),     MN(JM),     MC(JM),                                         JM=1,NMCT)
-  READ (CON,'(//(8X,3F8.0))')         (LDOMDK(JW), RDOMDK(JW), LRDDK(JW),                                      JW=1,NWB)
-  READ (CON,'(//(8X,4F8.0))')         (LPOMDK(JW), RPOMDK(JW), LRPDK(JW),  POMS(JW),                           JW=1,NWB)
-  READ (CON,'(//(8X,4F8.0))')         (ORGP(JW),   ORGN(JW),   ORGC(JW),   ORGSI(JW),                          JW=1,NWB)
-  READ (CON,'(//(8X,4F8.0))')         (OMT1(JW),   OMT2(JW),   OMK1(JW),   OMK2(JW),                           JW=1,NWB)
-  READ (CON,'(//(8X,4F8.0))')         (KBOD(JB),   TBOD(JB),   RBOD(JB), CBODS(JB),                           JB=1,NBOD)
-  READ (CON,'(//(8X,3F8.0))')         (BODP(JB),   BODN(JB),   BODC(JB),                                       JB=1,NBOD)
-  READ (CON,'(//(8X,2F8.0))')         (PO4R(JW),   PARTP(JW),                                                  JW=1,NWB)
-  READ (CON,'(//(8X,2F8.0))')         (NH4R(JW),   NH4DK(JW),                                                  JW=1,NWB)
-  READ (CON,'(//(8X,4F8.0))')         (NH4T1(JW),  NH4T2(JW),  NH4K1(JW),  NH4K2(JW),                          JW=1,NWB)
-  READ (CON,'(//(8X,3F8.0))')         (NO3DK(JW),  NO3S(JW),   FNO3SED(JW),                                    JW=1,NWB)
-  READ (CON,'(//(8X,4F8.0))')         (NO3T1(JW),  NO3T2(JW),  NO3K1(JW),  NO3K2(JW),                          JW=1,NWB)
-  READ (CON,'(//(8X,4F8.0))')         (DSIR(JW),   PSIS(JW),   PSIDK(JW),  PARTSI(JW),                         JW=1,NWB)
-  READ (CON,'(//(8X,2F8.0))')         (FER(JW),    FES(JW),                                                    JW=1,NWB)
-  READ (CON,'(//(8X,F8.0))')          (CO2R(JW),                                                               JW=1,NWB)
-  READ (CON,'(//(8X,2F8.0))')         (O2NH4(JW),  O2OM(JW),                                                   JW=1,NWB)
-  READ (CON,'(//(8X,2F8.0))')         (O2AR(JA),   O2AG(JA),                                                   JA=1,NAL)
-  READ (CON,'(//(8X,2F8.0))')         (O2ER(JE),   O2EG(JE),                                                   JE=1,NEPT)
-  READ (CON,'(//(8X,F8.0))')          (O2ZR(JZ),                                                               JZ=1,NZPT)
-  READ (CON,'(//(8X,2F8.0))')         (O2MR(JM),   O2MG(JM),                                                   JM=1,NMCT)
-  READ (CON,'(//(8X,F8.0))')           KDO
-  IF(KDO==0.0)KDO=0.01                                       ! SW 10/24/15 ERROR TRAPPING
-  READ (CON,'(//(8X,2A8,6F8.0,A8))')     (SEDCC(JW),   SEDPRC(JW), SEDCI(JW),  SDK(JW), SEDS(JW),   FSOD(JW),   FSED(JW), SEDB(JW),DYNSEDK(JW),   JW=1,NWB)  ! cb 11/28/06
-  READ (CON,'(//(8X,4F8.0))')         (SODT1(JW),  SODT2(JW),  SODK1(JW),  SODK2(JW),                          JW=1,NWB)
-  READ (CON,'(//(8X,9F8.0))')         (SOD(I),                                                                  I=1,IMX)
-  READ (CON,'(//(8X,A8,I8,4F8.2))')   (REAERC(JW), NEQN(JW),   RCOEF1(JW), RCOEF2(JW), RCOEF3(JW), RCOEF4(JW), JW=1,NWB)
-
-! Input filenames
-
-  READ (CON,'(//(8X,A72))')  RSIFN
-  READ (CON,'(//(8X,A72))')  QWDFN
-  READ (CON,'(//(8X,A72))')  QGTFN
-  READ (CON,'(//(8X,A72))')  WSCFN
-  READ (CON,'(//(8X,A72))')  SHDFN
-  READ (CON,'(//(8X,A72))') (BTHFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (METFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (EXTFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (VPRFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (LPRFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (QINFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (TINFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (CINFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (QOTFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (QTRFN(JT), JT=1,NTR)
-  READ (CON,'(//(8X,A72))') (TTRFN(JT), JT=1,NTR)
-  READ (CON,'(//(8X,A72))') (CTRFN(JT), JT=1,NTR)
-  READ (CON,'(//(8X,A72))') (QDTFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (TDTFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (CDTFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (PREFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (TPRFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (CPRFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (EUHFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (TUHFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (CUHFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (EDHFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (TDHFN(JB), JB=1,NBR)
-  READ (CON,'(//(8X,A72))') (CDHFN(JB), JB=1,NBR)
-
-! Output filenames
-
-  READ (CON,'(//(8X,A72))') (SNPFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (PRFFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (VPLFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (CPLFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (SPRFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))') (FLXFN(JW), JW=1,NWB)
-  READ (CON,'(//(8X,A72))')  TSRFN1
-  READ (CON,'(//(8X,A72))')  WDOFN
-  CLOSE (CON)
-
-! Bathymetry file
-
-  DO JW=1,NWB
-    OPEN (BTH(JW),FILE=BTHFN(JW),STATUS='OLD')
-	READ  (BTH(JW),'(a1)')char1                                 ! New Bathymetry format option SW 6/22/09
-      IF(CHAR1=='$')THEN
-      READ  (BTH(JW),*)
-      READ  (BTH(JW),*) AID,(DLX(I),  I=US(BS(JW))-1,DS(BE(JW))+1)
-      READ  (BTH(JW),*) AID,(ELWS(I), I=US(BS(JW))-1,DS(BE(JW))+1)
-      READ  (BTH(JW),*) AID,(PHI0(I), I=US(BS(JW))-1,DS(BE(JW))+1)
-      READ  (BTH(JW),*) AID,(FRIC(I), I=US(BS(JW))-1,DS(BE(JW))+1)
-      READ  (BTH(JW),*)
-      DO K=1,KMX
-      READ  (BTH(JW),*) H(K,JW),(B(K,I),I=US(BS(JW))-1,DS(BE(JW))+1)
-      END DO
-      DO I=US(BS(JW))-1,DS(BE(JW))+1
-      H2(:,I) = H(:,JW)
-      END DO
-      ELSE	
-    READ (BTH(JW),'(//(10F8.0))') (DLX(I),  I=US(BS(JW))-1,DS(BE(JW))+1)
-    READ (BTH(JW),'(//(10F8.0))') (ELWS(I), I=US(BS(JW))-1,DS(BE(JW))+1)
-    READ (BTH(JW),'(//(10F8.0))') (PHI0(I), I=US(BS(JW))-1,DS(BE(JW))+1)
-    READ (BTH(JW),'(//(10F8.0))') (FRIC(I), I=US(BS(JW))-1,DS(BE(JW))+1)
-    READ (BTH(JW),'(//(10F8.0))') (H(K,JW), K=1,KMX)
-    DO I=US(BS(JW))-1,DS(BE(JW))+1
-      READ (BTH(JW),'(//(10F8.0))') (B(K,I), K=1,KMX)
-      H2(:,I) = H(:,JW)
-    END DO
-	endif
-    CLOSE (BTH(JW))
-  END DO
-  H1 = H2
-  BI = B
-
-  ALLOCATE(BSAVE(KMX,IMX))
-  BSAVE=0.0
-  BSAVE = B
-  
-!  Amaila start - reading additional sediment compartments coefficients
-  SEDCOMP_EXIST=.FALSE.
-  INQUIRE(FILE='w2_amaila.npt',EXIST=SEDCOMP_EXIST)    ! SW 4/30/15
-  IF(SEDCOMP_EXIST)THEN
-   open(NUNIT,file='w2_amaila.npt',status='old')
+ 
+     do jd = 1, nndc
+                  !NDC-1    ! SW 10/20/15 ADDED AN EXTRA DERIVED VARIABLE INTERNALLY
+         if(nwb<10)read(con, '(A8,(:9A8))')cdname2(jd),                        &
+                      & (cdwbc(jd, jw), jw = 1, nwb)
+         if(nwb>=10)read(con, '(A8,9A8,/(:8X,9A8))')cdname2(jd),               &
+                       & (cdwbc(jd, jw), jw = 1, nwb)                                                     !cb 9/13/12  sw 2/18/13  Foramt 6/16/13 8/13/13
+     enddo
+ 
+     cdname2(ndc) = ' TDG(%)'       ! SW 10/20/15
+     cdwbc(ndc, :) = '      ON'
+ 
+     read(con, '(/)')
+     kfname2 = '     '
+                     ! SW 9/27/13 INITIALIZE ENTIRE ARRAY
+     kfwbc = '     ' ! SW 9/27/13 INITIALIZE ENTIRE ARRAY
+!    DO JF=1,NFL
+     do jf = 1, 73
+               ! Fix this later
+         if(nwb<10)read(con, '(A8,(:9A8))')kfname2(jf),                        &
+                      & (kfwbc(jf, jw), jw = 1, nwb)
+         if(nwb>=10)read(con, '(A8,9A8,/(:8X,9A8))')kfname2(jf),               &
+                       & (kfwbc(jf, jw), jw = 1, nwb)                                                    !cb 9/13/12  sw2/18/13  Foramt 6/16/13 8/13/13
+         kfname2(jf) = kfname2(jf)(1:8) // '(kg/d)'
+     enddo
+     kfname2(121) = 'CO2GASX(kg/d)'
+!    CEMA and Amaila start
+     kfname2(122) = 'DOH2S(kg/d)'
+!    CEMA and Amaila start
+     kfname2(123) = 'DOCH4(kg/d)'
+!    CEMA and Amaila start
+     kfname2(124) = 'H2SGASX(kg/d)'
+!    CEMA and Amaila start
+     kfname2(125) = 'CH4GASX(kg/d)'
+     kfname2(126) = 'H2SDK(kg/d)'
+     kfname2(127) = 'CH4DK(kg/d)'
+     kfname2(128) = 'SD_C_IN(kg/d)'
+     kfname2(129) = 'SD_N_IN(kg/d)'
+     kfname2(130) = 'SD_P_IN(kg/d)'
+     kfname2(131) = 'DOSEDIA(kg/d)'
+     kfname2(132) = 'Fe2D(kg/d)'
+     kfname2(133) = 'DOFe2(kg/d)'
+     kfname2(134) = 'SDINFeOOH(kg/d)'
+     kfname2(135) = 'SDINMnO2(kg/d)'
+     kfname2(136) = 'Mn2d(kg/d)'
+     kfname2(137) = 'DOMn2(kg/d)'
+     kfname2(138) = 'SEDD1(kg/d)'
+     kfname2(139) = 'SEDD2(kg/d)'
+!    CEMA end
+     read(con, '(/)')
+     do jc = 1, nct
+         read(con, '(:8X,9F8.0)')(c2i(jc, jw), jw = 1, nwb)
+     enddo
+     read(con, '(/)')
+     do jc = 1, nct
+         read(con, '(:8X,9A8)')(cprwbc(jc, jw), jw = 1, nwb)
+     enddo
+     read(con, '(/)')
+     do jc = 1, nct
+         read(con, '(:8X,9A8)')(cinbrc(jc, jb), jb = 1, nbr)
+     enddo
+     read(con, '(/)')
+     do jc = 1, nct
+         read(con, '(:8X,9A8)')(ctrtrc(jc, jt), jt = 1, ntr)
+     enddo
+     read(con, '(/)')
+     do jc = 1, nct
+         read(con, '(:8X,9A8)')(cdtbrc(jc, jb), jb = 1, nbr)
+     enddo
+     read(con, '(/)')
+     do jc = 1, nct
+         read(con, '(:8X,9A8)')(cprbrc(jc, jb), jb = 1, nbr)
+     enddo
+ 
+!    Kinetics coefficients
+ 
+     read(con, '(//(8X,4F8.0,2A8))')(exh2o(jw), exss(jw), exom(jw), beta(jw),  &
+                                  & exc(jw), exic(jw), jw = 1, nwb)
+     read(con, '(//(8X,9F8.0))')(exa(ja), ja = 1, nal)
+     read(con, '(//(8X,9F8.0))')(exz(jz), jz = 1, nzpt)
+     read(con, '(//(8X,9F8.0))')(exm(jm), jm = 1, nmct)
+!    READ (CON,'(//(8X,4F8.0))')         (CGQ10(JG),  CG0DK(JG),  CG1DK(JG), 
+!    CGS(JG),                            JG=1,NGC)
+     read(con, '(//(8X,7F8.0))')(cgq10(jg), cg0dk(jg), cg1dk(jg), cgs(jg),     &
+                              & cgldk(jg), cgklf(jg), cgcs(jg), jg = 1, ngc)                                                          !LCJ 2/26/15
+     read(con, '(//(8X,F8.0,A,F8.0))')(sss(js), sedrc(js), taucr(js), js = 1,  &
+                                    & nss)                                                                                   ! READ (CON,'(//(8X,F8.0,A8,2F8.0,I8))') (SSS(JS), SEDRC(JS),  TAUCR(JS),  SSFLOC(JS), FLOCEQN(JS),            JS=1,NSS) !SR 04/21/13
+     read(con, '(//(8X,9F8.0))')(ag(ja), ar(ja), ae(ja), am(ja), as(ja),       &
+                              & ahsp(ja), ahsn(ja), ahssi(ja), asat(ja),       &
+                              & ja = 1, nal)
+     read(con, '(//(8X,8F8.0))')(at1(ja), at2(ja), at3(ja), at4(ja), ak1(ja),  &
+                              & ak2(ja), ak3(ja), ak4(ja), ja = 1, nal)
+     read(con, '(//(8X,6F8.0,I8,F8.0))')(ap(ja), an(ja), ac(ja), asi(ja), achla&
+                                      & (ja), apom(ja), aneqn(ja), anpr(ja),   &
+                                      & ja = 1, nal)
+     read(con, '(//(8X,9A8))')(epic(jw, 1), jw = 1, nwb)
+     do je = 2, nept
+         read(con, '(8X,9A8)')(epic(jw, je), jw = 1, nwb)
+     enddo
+     read(con, '(//(8X,9A8))')(epiprc(jw, 1), jw = 1, nwb)
+     do je = 2, nept
+         read(con, '(8X,9A8)')(epiprc(jw, je), jw = 1, nwb)
+     enddo
+     read(con, '(//(8X,9F8.0))')(epici(jw, 1), jw = 1, nwb)
+     do je = 2, nept
+         read(con, '(8X,9F8.0)')(epici(jw, je), jw = 1, nwb)
+     enddo
+     read(con, '(//(8X,8F8.0))')(eg(je), er(je), ee(je), em(je), eb(je),       &
+                              & ehsp(je), ehsn(je), ehssi(je), je = 1, nept)                                                     !JE=1,NEP)  SW 9/27/13
+     read(con, '(//(8X,2F8.0,I8,F8.0))')(esat(je), ehs(je), eneqn(je), enpr(je)&
+                                      & , je = 1, nept)                                                                          !JE=1,NEP)  SW 9/27/13
+     read(con, '(//(8X,8F8.0))')(et1(je), et2(je), et3(je), et4(je), ek1(je),  &
+                              & ek2(je), ek3(je), ek4(je), je = 1, nept)                                                         !JE=1,NEP)  SW 9/27/13
+     read(con, '(//(8X,6F8.0))')(ep(je), en(je), ec(je), esi(je), echla(je),   &
+                              & epom(je), je = 1, nept)                                                                          !JE=1,NEP)  SW 9/27/13
+     read(con, '(//(8X,7F8.0))')(zg(jz), zr(jz), zm(jz), zeff(jz), prefp(jz),  &
+                              & zoomin(jz), zs2p(jz), jz = 1, nzpt)
+ 
+     read(con, '(//(8X,8F8.0))')(prefa(ja, 1), ja = 1, nal)                                                                       ! MM 7/13/06
+     do jz = 2, nzpt
+         read(con, '((8X,8F8.0))')(prefa(ja, jz), ja = 1, nal)
+     enddo
+     read(con, '(//(8X,8F8.0))')(prefz(jjz, 1), jjz = 1, nzpt)
+     do jz = 2, nzpt
+         read(con, '((8X,8F8.0))')(prefz(jjz, jz), jjz = 1, nzpt)                                                                  ! MM 7/13/06
+     enddo
+     read(con, '(//(8X,8F8.0))')(zt1(jz), zt2(jz), zt3(jz), zt4(jz), zk1(jz),  &
+                              & zk2(jz), zk3(jz), zk4(jz), jz = 1, nzpt)
+     read(con, '(//(8X,3F8.0))')(zp(jz), zn(jz), zc(jz), jz = 1, nzpt)
+     read(con, '(//(8X,9A8))')(macwbc(jw, 1), jw = 1, nwb)
+     do jm = 2, nmct
+         read(con, '(8X,9A8)')(macwbc(jw, jm), jw = 1, nwb)
+     enddo
+     read(con, '(//(8X,9A8))')(mprwbc(jw, 1), jw = 1, nwb)
+     do jm = 2, nmct
+         read(con, '(8X,9A8)')(mprwbc(jw, jm), jw = 1, nwb)
+     enddo
+     read(con, '(//(8X,9F8.0))')(macwbci(jw, 1), jw = 1, nwb)
+     do jm = 2, nmct
+         read(con, '(8X,9F8.0)')(macwbci(jw, jm), jw = 1, nwb)
+     enddo
+     read(con, '(//(8X,9F8.0))')(mg(jm), mr(jm), mm(jm), msat(jm), mhsp(jm),   &
+                              & mhsn(jm), mhsc(jm), mpom(jm), lrpmac(jm),      &
+                              & jm = 1, nmct)
+     read(con, '(//(8X,2F8.0))')(psed(jm), nsed(jm), jm = 1, nmct)
+     read(con, '(//(8X,2F8.0))')(mbmp(jm), mmax(jm), jm = 1, nmct)
+     read(con, '(//(8X,4F8.0))')(cddrag(jm), dwv(jm), dwsa(jm), anorm(jm),     &
+                              & jm = 1, nmct)                                                                             !CB 6/29/06
+     read(con, '(//(8X,8F8.0))')(mt1(jm), mt2(jm), mt3(jm), mt4(jm), mk1(jm),  &
+                              & mk2(jm), mk3(jm), mk4(jm), jm = 1, nmct)
+     read(con, '(//(8X,3F8.0))')(mp(jm), mn(jm), mc(jm), jm = 1, nmct)
+     read(con, '(//(8X,3F8.0))')(ldomdk(jw), rdomdk(jw), lrddk(jw), jw = 1,    &
+                              & nwb)
+     read(con, '(//(8X,4F8.0))')(lpomdk(jw), rpomdk(jw), lrpdk(jw), poms(jw),  &
+                              & jw = 1, nwb)
+     read(con, '(//(8X,4F8.0))')(orgp(jw), orgn(jw), orgc(jw), orgsi(jw),      &
+                              & jw = 1, nwb)
+     read(con, '(//(8X,4F8.0))')(omt1(jw), omt2(jw), omk1(jw), omk2(jw),       &
+                              & jw = 1, nwb)
+     read(con, '(//(8X,4F8.0))')(kbod(jb), tbod(jb), rbod(jb), cbods(jb),      &
+                              & jb = 1, nbod)
+     read(con, '(//(8X,3F8.0))')(bodp(jb), bodn(jb), bodc(jb), jb = 1, nbod)
+     read(con, '(//(8X,2F8.0))')(po4r(jw), partp(jw), jw = 1, nwb)
+     read(con, '(//(8X,2F8.0))')(nh4r(jw), nh4dk(jw), jw = 1, nwb)
+     read(con, '(//(8X,4F8.0))')(nh4t1(jw), nh4t2(jw), nh4k1(jw), nh4k2(jw),   &
+                              & jw = 1, nwb)
+     read(con, '(//(8X,3F8.0))')(no3dk(jw), no3s(jw), fno3sed(jw), jw = 1, nwb)
+     read(con, '(//(8X,4F8.0))')(no3t1(jw), no3t2(jw), no3k1(jw), no3k2(jw),   &
+                              & jw = 1, nwb)
+     read(con, '(//(8X,4F8.0))')(dsir(jw), psis(jw), psidk(jw), partsi(jw),    &
+                              & jw = 1, nwb)
+     read(con, '(//(8X,2F8.0))')(fer(jw), fes(jw), jw = 1, nwb)
+     read(con, '(//(8X,F8.0))')(co2r(jw), jw = 1, nwb)
+     read(con, '(//(8X,2F8.0))')(o2nh4(jw), o2om(jw), jw = 1, nwb)
+     read(con, '(//(8X,2F8.0))')(o2ar(ja), o2ag(ja), ja = 1, nal)
+     read(con, '(//(8X,2F8.0))')(o2er(je), o2eg(je), je = 1, nept)
+     read(con, '(//(8X,F8.0))')(o2zr(jz), jz = 1, nzpt)
+     read(con, '(//(8X,2F8.0))')(o2mr(jm), o2mg(jm), jm = 1, nmct)
+     read(con, '(//(8X,F8.0))')kdo
+     if(kdo==0.0)kdo = 0.01                                  ! SW 10/24/15 ERROR TRAPPING
+     read(con, '(//(8X,2A8,6F8.0,A8))')(sedcc(jw), sedprc(jw), sedci(jw), sdk( &
+                                     & jw), seds(jw), fsod(jw), fsed(jw),      &
+                                     & sedb(jw), dynsedk(jw), jw = 1, nwb)                                                                                   ! cb 11/28/06
+     read(con, '(//(8X,4F8.0))')(sodt1(jw), sodt2(jw), sodk1(jw), sodk2(jw),   &
+                              & jw = 1, nwb)
+     read(con, '(//(8X,9F8.0))')(sod(i), i = 1, imx)
+     read(con, '(//(8X,A8,I8,4F8.2))')(reaerc(jw), neqn(jw), rcoef1(jw), rcoef2&
+                                    & (jw), rcoef3(jw), rcoef4(jw), jw = 1,    &
+                                    & nwb)
+ 
+!    Input filenames
+ 
+     read(con, '(//(8X,A72))')rsifn
+     read(con, '(//(8X,A72))')qwdfn
+     read(con, '(//(8X,A72))')qgtfn
+     read(con, '(//(8X,A72))')wscfn
+     read(con, '(//(8X,A72))')shdfn
+     read(con, '(//(8X,A72))')(bthfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(metfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(extfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(vprfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(lprfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(qinfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(tinfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(cinfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(qotfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(qtrfn(jt), jt = 1, ntr)
+     read(con, '(//(8X,A72))')(ttrfn(jt), jt = 1, ntr)
+     read(con, '(//(8X,A72))')(ctrfn(jt), jt = 1, ntr)
+     read(con, '(//(8X,A72))')(qdtfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(tdtfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(cdtfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(prefn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(tprfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(cprfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(euhfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(tuhfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(cuhfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(edhfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(tdhfn(jb), jb = 1, nbr)
+     read(con, '(//(8X,A72))')(cdhfn(jb), jb = 1, nbr)
+ 
+!    Output filenames
+ 
+     read(con, '(//(8X,A72))')(snpfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(prffn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(vplfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(cplfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(sprfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')(flxfn(jw), jw = 1, nwb)
+     read(con, '(//(8X,A72))')tsrfn1
+     read(con, '(//(8X,A72))')wdofn
+     close(con)
+ 
+!    Bathymetry file
+ 
+     do jw = 1, nwb
+         open(bth(jw), file = bthfn(jw), status = 'OLD')
+         read(bth(jw), '(a1)')char1                                 ! New Bathymetry format option SW 6/22/09
+         if(char1=='$')then
+             read(bth(jw), *)
+             read(bth(jw), *)aid, (dlx(i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             read(bth(jw), *)aid, (elws(i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             read(bth(jw), *)aid, (phi0(i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             read(bth(jw), *)aid, (fric(i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             read(bth(jw), *)
+             do k = 1, kmx
+                 read(bth(jw), *)h(k, jw),                                     &
+                               & (b(k, i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             enddo
+             do i = us(bs(jw)) - 1, ds(be(jw)) + 1
+                 h2(:, i) = h(:, jw)
+             enddo
+         else
+             read(bth(jw), '(//(10F8.0))')                                     &
+                & (dlx(i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             read(bth(jw), '(//(10F8.0))')                                     &
+                & (elws(i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             read(bth(jw), '(//(10F8.0))')                                     &
+                & (phi0(i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             read(bth(jw), '(//(10F8.0))')                                     &
+                & (fric(i), i = us(bs(jw)) - 1, ds(be(jw)) + 1)
+             read(bth(jw), '(//(10F8.0))')(h(k, jw), k = 1, kmx)
+             do i = us(bs(jw)) - 1, ds(be(jw)) + 1
+                 read(bth(jw), '(//(10F8.0))')(b(k, i), k = 1, kmx)
+                 h2(:, i) = h(:, jw)
+             enddo
+         endif
+         close(bth(jw))
+     enddo
+     h1 = h2
+     bi = b
+ 
+     allocate(bsave(kmx, imx))
+     bsave = 0.0
+     bsave = b
+ 
+!    Amaila start - reading additional sediment compartments coefficients
+     sedcomp_exist = .FALSE.
+     inquire(file = 'w2_amaila.npt', exist = sedcomp_exist)
+                                                       ! SW 4/30/15
+     if(sedcomp_exist)then
+         open(nunit, file = 'w2_amaila.npt', status = 'old')
    !READ (NUNIT,'(//(8X,2A8,6F8.0,A8))')     (SEDCC1(JW),   SEDPRC1(JW), SEDCI1(JW),  SDK1(JW),   JW=1,NWB)
-   READ (NUNIT,'(//(8X,2A8,3F8.0))')     (SEDCC1(JW),   SEDPRC1(JW), SEDCI1(JW),  SDK1(JW),  FSEDC1(JW),   JW=1,NWB)  ! cb 6/7/17
+         read(nunit, '(//(8X,2A8,3F8.0))')(sedcc1(jw), sedprc1(jw), sedci1(jw),&
+            & sdk1(jw), fsedc1(jw), jw = 1, nwb)                                                                      ! cb 6/7/17
    !READ (NUNIT,'(//(8X,2A8,6F8.0,A8))')     (SEDCC2(JW),   SEDPRC2(JW), SEDCI2(JW),  SDK2(JW),   JW=1,NWB)
-   READ (NUNIT,'(//(8X,2A8,3F8.0))')     (SEDCC2(JW),   SEDPRC2(JW), SEDCI2(JW),  SDK2(JW),  FSEDC2(JW),   JW=1,NWB)
-   READ (NUNIT,'(//(8X,3F8.0))')     (pbiom(JW),   nbiom(JW), cbiom(JW),   JW=1,NWB)  ! cb 6/7/17
-   close(NUNIT)
-   ENDIF
-
-
-! Output file unit numbers
-
-  ALLOCATE (TSR(NIKTSR))
-  ALLOCATE (WDO(NIWDO,4),WDO2(NWD+NST+NGT+NSP+NPU+NPI,4))  
-  DO J=1,7
-    DO JW=1,NWB
-      OPT(JW,J) = NUNIT; NUNIT = NUNIT+1
-    END DO
-  END DO
-  DO J=1,NIKTSR
-    TSR(J) = NUNIT; NUNIT = NUNIT+1
-  END DO
-  DO JW=1,NIWDO
-    WDO(JW,1) = NUNIT; NUNIT = NUNIT+1
-    WDO(JW,2) = NUNIT; NUNIT = NUNIT+1
-    WDO(JW,3) = NUNIT; NUNIT = NUNIT+1
-    WDO(JW,4) = NUNIT; NUNIT = NUNIT+1
-  END DO
-
-! BIOENERGETICS bioexp mlm output filenumber assigment
-IF(FISHBIO)THEN
-DO J = 1,NIBIO
-    BIOEXPFN(J) = NUNIT; NUNIT = NUNIT+1
-  END DO
-  DO J = 1,NIBIO
-    WEIGHTNUM(J) = NUNIT; NUNIT = NUNIT+1
-  END DO
-ENDIF
-! Variable names, formats, multipliers, and Compaq Visual FORTRAN array viewer controls
-
-  OPEN (GRF,FILE='graph.npt',STATUS='OLD')
-  READ (GRF,'(///(A43,1X,A9,3F8.0,A8))') (HNAME(J),  FMTH(J),  HMULT(J),  HYMIN(J), HYMAX(J), HPLTC(J), J=1,NHY)
-  READ (GRF,'(// (A43,1X,A9,3F8.0,A8))') (CNAME(J),  FMTC(J),  CMULT(J),  CMIN(J),  CMAX(J),  CPLTC(J), J=1,NCT)
-  READ (GRF,'(// (A43,1X,A9,3F8.0,A8))') (CDNAME(J), FMTCD(J), CDMULT(J), CDMIN(J), CDMAX(J), CDPLTC(J),J=1,NNDC)   ! SW 10/20/15 INTERNAL TDG
-  CLOSE (GRF)
-  
-  CDNAME(NDC)='TDG(%)'      ! SW 10/17/15
-  FMTCD(NDC)=' (F10.3)'
-  CDMULT(NDC)=1.0
-  
-  
-  DO JC=1,NCT
-    L3         = 1
-    L1         = SCAN (CNAME(JC),',')+2
-      IF(L1 == 2)L1=43          ! SW 12/3/2012   Implies no comma found
-    L2         = SCAN (CNAME(JC)(L1:43),'  ')+L1
-      IF(L2 > 43)L2=43          ! SW 12/3/2012
-    CUNIT(JC)  = CNAME(JC)(L1:L2)
-    CNAME1(JC) = CNAME(JC)(1:L1-3)
-    CNAME3(JC) = CNAME1(JC)
-    DO WHILE (L3 < L1-3)
-      IF (CNAME(JC)(L3:L3) == ' ') CNAME3(JC)(L3:L3) = '_'
-      L3 = L3+1
-    END DO
-    CUNIT1(JC) = CUNIT(JC)(1:1)
-    CUNIT2(JC) = CUNIT(JC)
-    IF (CUNIT(JC)(1:2) == 'mg') THEN
-      CUNIT1(JC) = 'g'
-      CUNIT2(JC) = 'g/m^3'
-    END IF
-    IF (CUNIT(JC)(1:2) /= 'g/' .AND. CUNIT(JC)(1:2) /= 'mg') CUNIT1(JC) = '  '
-  END DO
-  DO JC=1,NDC
-    L1          = 1
-    L2          = MAX(4,SCAN (CDNAME(JC),',')-1)
-    CDNAME3(JC) = CDNAME(JC)(1:L2)
-    DO WHILE (L1 < L2)
-      IF (CDNAME(JC)(L1:L1) == ' ') CDNAME3(JC)(L1:L1) = '_'
-      L1 = L1+1
-    END DO
-  END DO
-  FMTH(1:NHY) = ADJUSTL (FMTH(1:NHY))
-
-! Initialize logical control variables
-
-  VERT_PROFILE = .FALSE.
-  LONG_PROFILE = .FALSE.
-  CONSTITUENTS =  CCC  == '      ON'
-  DO JW=1,NWB
-    ISO_TEMP(JW)         = T2I(JW)     >=  0
-    VERT_TEMP(JW)        = T2I(JW)     == -1
-    LONG_TEMP(JW)        = T2I(JW)     <  -1
-    IF(CONSTITUENTS)THEN                     ! CB 12/04/08
-    ISO_SEDIMENT(JW)     = SEDCI(JW)   >=  0   .AND. SEDCC(JW)   == '      ON'
-    VERT_SEDIMENT(JW)    = SEDCI(JW)   == -1.0 .AND. SEDCC(JW)   == '      ON'
-    LONG_SEDIMENT(JW)    = SEDCI(JW)   <  -1.0 .AND. SEDCC(JW)   == '      ON'
-! Amaila Start
-    ISO_SEDIMENT1(JW)     = SEDCI1(JW)   >=  0   .AND. SEDCC1(JW)   == '      ON'
-    VERT_SEDIMENT1(JW)    = SEDCI1(JW)   == -1.0 .AND. SEDCC1(JW)   == '      ON'
-    LONG_SEDIMENT1(JW)    = SEDCI1(JW)   <  -1.0 .AND. SEDCC1(JW)   == '      ON'
-    ISO_SEDIMENT2(JW)     = SEDCI2(JW)   >=  0   .AND. SEDCC2(JW)   == '      ON'
-    VERT_SEDIMENT2(JW)    = SEDCI2(JW)   == -1.0 .AND. SEDCC2(JW)   == '      ON'
-    LONG_SEDIMENT2(JW)    = SEDCI2(JW)   <  -1.0 .AND. SEDCC2(JW)   == '      ON'
-! Amaila End
-    ISO_EPIPHYTON(JW,:)  = EPICI(JW,:) >=  0   .AND. EPIC(JW,:) == '      ON'
-    VERT_EPIPHYTON(JW,:) = EPICI(JW,:) == -1.0 .AND. EPIC(JW,:) == '      ON'
-    LONG_EPIPHYTON(JW,:) = EPICI(JW,:) <  -1.0 .AND. EPIC(JW,:) == '      ON'
-    iso_macrophyte(JW,:)  = MACWBCI(JW,:) >=  0   .AND. MACWBC(JW,:) == '      ON'   ! cb 8/21/15
-    vert_macrophyte(JW,:) = MACWBCI(JW,:) == -1.0 .AND. MACWBC(JW,:) == '      ON'   ! cb 8/21/15
-    long_macrophyte(JW,:) = MACWBCI(JW,:) <  -1.0 .AND. MACWBC(JW,:) == '      ON'   ! cb 8/21/15
-    DO JC=1,NCT
-      ISO_CONC(JC,JW)  = C2I(JC,JW) >=  0.0
-      VERT_CONC(JC,JW) = C2I(JC,JW) == -1.0 .AND. CAC(JC) == '      ON'
-      LONG_CONC(JC,JW) = C2I(JC,JW) <  -1.0 .AND. CAC(JC) == '      ON'
-      IF (VERT_CONC(JC,JW)) VERT_PROFILE(JW) = .TRUE.
-      IF (LONG_CONC(JC,JW)) LONG_PROFILE(JW) = .TRUE.
-    END DO
-    IF (VERT_SEDIMENT(JW))         VERT_PROFILE(JW) = .TRUE.
-    IF (VERT_SEDIMENT1(JW))         VERT_PROFILE(JW) = .TRUE.  ! amaila
-    IF (VERT_SEDIMENT2(JW))         VERT_PROFILE(JW) = .TRUE.  ! amaila
-    IF (LONG_SEDIMENT(JW))         LONG_PROFILE(JW) = .TRUE.
-    IF (LONG_SEDIMENT1(JW))         LONG_PROFILE(JW) = .TRUE.  ! amaila
-    IF (LONG_SEDIMENT2(JW))         LONG_PROFILE(JW) = .TRUE.  ! amaila
-    IF (ANY(VERT_EPIPHYTON(JW,:))) VERT_PROFILE(JW) = .TRUE.
-    IF (ANY(LONG_EPIPHYTON(JW,:))) LONG_PROFILE(JW) = .TRUE.
-    IF (ANY(VERT_macrophyte(JW,:))) VERT_PROFILE(JW) = .TRUE.   ! cb 8/21/15
-    IF (ANY(LONG_macrophyte(JW,:))) LONG_PROFILE(JW) = .TRUE.   ! cb 8/21/15
-    END IF                          ! cb 12/04/08
-    IF (VERT_TEMP(JW))             VERT_PROFILE(JW) = .TRUE.
-    IF (LONG_TEMP(JW))             LONG_PROFILE(JW) = .TRUE.
-    DO M=1,NMC
+         read(nunit, '(//(8X,2A8,3F8.0))')(sedcc2(jw), sedprc2(jw), sedci2(jw),&
+            & sdk2(jw), fsedc2(jw), jw = 1, nwb)
+         read(nunit, '(//(8X,3F8.0))')(pbiom(jw), nbiom(jw), cbiom(jw), jw = 1,&
+                                    & nwb)                                            ! cb 6/7/17
+         close(nunit)
+     endif
+ 
+ 
+!    Output file unit numbers
+ 
+     allocate(tsr(niktsr))
+     allocate(wdo(niwdo, 4), wdo2(nwd + nst + ngt + nsp + npu + npi, 4))
+     do j = 1, 7
+         do jw = 1, nwb
+             opt(jw, j) = nunit
+             nunit = nunit + 1
+         enddo
+     enddo
+     do j = 1, niktsr
+         tsr(j) = nunit
+         nunit = nunit + 1
+     enddo
+     do jw = 1, niwdo
+         wdo(jw, 1) = nunit
+         nunit = nunit + 1
+         wdo(jw, 2) = nunit
+         nunit = nunit + 1
+         wdo(jw, 3) = nunit
+         nunit = nunit + 1
+         wdo(jw, 4) = nunit
+         nunit = nunit + 1
+     enddo
+ 
+!    BIOENERGETICS bioexp mlm output filenumber assigment
+     if(fishbio)then
+         do j = 1, nibio
+             bioexpfn(j) = nunit
+             nunit = nunit + 1
+         enddo
+         do j = 1, nibio
+             weightnum(j) = nunit
+             nunit = nunit + 1
+         enddo
+     endif
+!    Variable names, formats, multipliers, and Compaq Visual FORTRAN array
+ 
+!    viewer controls
+     open(grf, file = 'graph.npt', status = 'OLD')
+     read(grf, '(///(A43,1X,A9,3F8.0,A8))')                                    &
+        & (hname(j), fmth(j), hmult(j), hymin(j), hymax(j), hpltc(j), j = 1,   &
+        & nhy)
+     read(grf, '(// (A43,1X,A9,3F8.0,A8))')                                    &
+        & (cname(j), fmtc(j), cmult(j), cmin(j), cmax(j), cpltc(j), j = 1, nct)
+     read(grf, '(// (A43,1X,A9,3F8.0,A8))')                                    &
+        & (cdname(j), fmtcd(j), cdmult(j), cdmin(j), cdmax(j), cdpltc(j),      &
+        & j = 1, nndc)                                                                                              ! SW 10/20/15 INTERNAL TDG
+     close(grf)
+ 
+     cdname(ndc) = 'TDG(%)' ! SW 10/17/15
+     fmtcd(ndc) = ' (F10.3)'
+     cdmult(ndc) = 1.0
+ 
+ 
+     do jc = 1, nct
+         l3 = 1
+         l1 = SCAN(cname(jc), ',') + 2
+         if(l1==2)l1 = 43       ! SW 12/3/2012   Implies no comma found
+         l2 = SCAN(cname(jc)(l1:43), '  ') + l1
+         if(l2>43)l2 = 43       ! SW 12/3/2012
+         cunit(jc) = cname(jc)(l1:l2)
+         cname1(jc) = cname(jc)(1:l1 - 3)
+         cname3(jc) = cname1(jc)
+         do while (l3<l1 - 3)
+             if(cname(jc)(l3:l3)==' ')cname3(jc)(l3:l3) = '_'
+             l3 = l3 + 1
+         enddo
+         cunit1(jc) = cunit(jc)(1:1)
+         cunit2(jc) = cunit(jc)
+         if(cunit(jc)(1:2)=='mg')then
+             cunit1(jc) = 'g'
+             cunit2(jc) = 'g/m^3'
+         endif
+         if(cunit(jc)(1:2)/='g/' .AND. cunit(jc)(1:2)/='mg')cunit1(jc) = '  '
+     enddo
+     do jc = 1, ndc
+         l1 = 1
+         l2 = MAX(4, SCAN(cdname(jc), ',') - 1)
+         cdname3(jc) = cdname(jc)(1:l2)
+         do while (l1<l2)
+             if(cdname(jc)(l1:l1)==' ')cdname3(jc)(l1:l1) = '_'
+             l1 = l1 + 1
+         enddo
+     enddo
+     fmth(1:nhy) = ADJUSTL(fmth(1:nhy))
+ 
+!    Initialize logical control variables
+ 
+     vert_profile = .FALSE.
+     long_profile = .FALSE.
+     constituents = ccc=='      ON'
+     do jw = 1, nwb
+         iso_temp(jw) = t2i(jw)>=0
+         vert_temp(jw) = t2i(jw)== - 1
+         long_temp(jw) = t2i(jw)< - 1
+         if(constituents)then                ! CB 12/04/08
+             iso_sediment(jw) = sedci(jw)>=0 .AND. sedcc(jw)=='      ON'
+             vert_sediment(jw) = sedci(jw)== - 1.0 .AND. sedcc(jw)=='      ON'
+             long_sediment(jw) = sedci(jw)< - 1.0 .AND. sedcc(jw)=='      ON'
+!            Amaila Start
+             iso_sediment1(jw) = sedci1(jw)>=0 .AND. sedcc1(jw)=='      ON'
+             vert_sediment1(jw) = sedci1(jw)== - 1.0 .AND. sedcc1(jw)          &
+                                 &=='      ON'
+             long_sediment1(jw) = sedci1(jw)< - 1.0 .AND. sedcc1(jw)           &
+                                 &=='      ON'
+             iso_sediment2(jw) = sedci2(jw)>=0 .AND. sedcc2(jw)=='      ON'
+             vert_sediment2(jw) = sedci2(jw)== - 1.0 .AND. sedcc2(jw)          &
+                                 &=='      ON'
+             long_sediment2(jw) = sedci2(jw)< - 1.0 .AND. sedcc2(jw)           &
+                                 &=='      ON'
+!            Amaila End
+             iso_epiphyton(jw, :) = epici(jw, :)>=0 .AND. epic(jw, :)          &
+                                   &=='      ON'
+             vert_epiphyton(jw, :) = epici(jw, :)== - 1.0 .AND. epic(jw, :)    &
+                                    &=='      ON'
+             long_epiphyton(jw, :) = epici(jw, :)< - 1.0 .AND. epic(jw, :)     &
+                                    &=='      ON'
+             iso_macrophyte(jw, :) = macwbci(jw, :)>=0 .AND. macwbc(jw, :)     &
+                                    &=='      ON'                                    ! cb 8/21/15
+             vert_macrophyte(jw, :) = macwbci(jw, :)== - 1.0 .AND.             &
+                                    & macwbc(jw, :)=='      ON'                      ! cb 8/21/15
+             long_macrophyte(jw, :) = macwbci(jw, :)< - 1.0 .AND. macwbc(jw, :)&
+                                    & =='      ON'                                   ! cb 8/21/15
+             do jc = 1, nct
+                 iso_conc(jc, jw) = c2i(jc, jw)>=0.0
+                 vert_conc(jc, jw) = c2i(jc, jw)== - 1.0 .AND. cac(jc)         &
+                                    &=='      ON'
+                 long_conc(jc, jw) = c2i(jc, jw)< - 1.0 .AND. cac(jc)          &
+                                    &=='      ON'
+                 if(vert_conc(jc, jw))vert_profile(jw) = .TRUE.
+                 if(long_conc(jc, jw))long_profile(jw) = .TRUE.
+             enddo
+             if(vert_sediment(jw))vert_profile(jw) = .TRUE.
+             if(vert_sediment1(jw))vert_profile(jw) = .TRUE.   ! amaila
+             if(vert_sediment2(jw))vert_profile(jw) = .TRUE.   ! amaila
+             if(long_sediment(jw))long_profile(jw) = .TRUE.
+             if(long_sediment1(jw))long_profile(jw) = .TRUE.   ! amaila
+             if(long_sediment2(jw))long_profile(jw) = .TRUE.   ! amaila
+             if(ANY(vert_epiphyton(jw, :)))vert_profile(jw) = .TRUE.
+             if(ANY(long_epiphyton(jw, :)))long_profile(jw) = .TRUE.
+             if(ANY(vert_macrophyte(jw, :)))vert_profile(jw) = .TRUE.
+                                                                ! cb 8/21/15
+             if(ANY(long_macrophyte(jw, :)))long_profile(jw) = .TRUE.
+                                                                ! cb 8/21/15
+         endif                      ! cb 12/04/08
+         if(vert_temp(jw))vert_profile(jw) = .TRUE.
+         if(long_temp(jw))long_profile(jw) = .TRUE.
+         do m = 1, nmc
       !MACROPHYTE_CALC(JW,M) = CONSTITUENTS.AND.MACWBC(JW,M).EQ.' ON'
       !PRINT_MACROPHYTE(JW,M) = MACROPHYTE_CALC(JW,M).AND.MPRWBC(JW,M).EQ.' ON'
-      MACROPHYTE_CALC(JW,M) = CONSTITUENTS.AND.MACWBC(JW,M).EQ.'      ON'              ! cb 8/24/15
-      PRINT_MACROPHYTE(JW,M) = MACROPHYTE_CALC(JW,M).AND.MPRWBC(JW,M).EQ.'      ON'   ! cb 8/24/15
-      IF(MACROPHYTE_CALC(JW,M))MACROPHYTE_ON=.TRUE.
-    END DO
-  END DO
-
-! Open error and warning files
-
-  OPEN (W2ERR,FILE='w2.err',STATUS='UNKNOWN'); OPEN (WRN,FILE='w2.wrn',STATUS='UNKNOWN')
-  
-! Initialize variables for enhanced pH buffering ! entire section ! SR 01/01/12
- PHBUFF_EXIST=.FALSE.
- INQUIRE(FILE='pH_buffering.npt',EXIST=PHBUFF_EXIST)
- IF(CONSTITUENTS .AND. PHBUFF_EXIST)THEN
-   OPEN (NUNIT,FILE='ph_buffering.npt',STATUS='OLD')
-   READ (NUNIT,'(///8X,2A8)')PHBUFC,NCALKC
-   READ (NUNIT,'(//8X,3A8)') NH4BUFC, PO4BUFC, OMBUFC
-   READ (NUNIT,'(//8X,A8,I8,A8)') OMTYPE, NAGI, POMBUFC
-   ALLOCATE (SDENI(NAGI),PKI(NAGI),PKSD(NAGI))
-   READ (NUNIT,'(//(:8X,9F8.0))') (SDENI(J), J=1,NAGI)
-   READ (NUNIT,'(//(:8X,9F8.0))') (PKI(J), J=1,NAGI)
-   READ (NUNIT,'(//(:8X,9F8.0))') (PKSD(J), J=1,NAGI)
-   CLOSE (NUNIT)
-   pH_BUFFERING = PHBUFC == '      ON'
-   NONCON_ALKALINITY = NCALKC == '      ON'
-   AMMONIA_BUFFERING = NH4BUFC == '      ON'
-   PHOSPHATE_BUFFERING = PO4BUFC == '      ON'
-   OM_BUFFERING = OMBUFC == '      ON'
-   POM_BUFFERING = POMBUFC == '      ON' .AND. OM_BUFFERING
-   IF (OM_BUFFERING) THEN
-     SDENI = ABS(SDENI)
-     IF (OMTYPE == '    DIST') THEN
-       IF (ANY(PKSD <= 0)) THEN
-         WARNING_OPEN = .TRUE.
-         WRITE (WRN,'(A)') 'WARNING -- PKSD inputs in the ph_buffering.npt file must be greater than zero.'
-         WRITE (WRN,'(A/)') 'Please fix your inputs. For now, PKSD values of zero will be set to 1.'
-       END IF
-       DO JA=1,NAGI
-         IF (PKSD(JA) <= 0) PKSD(JA) = 1.0
-       END DO
-       NAG = 27
-       ALLOCATE (SDEN(NAG),PK(NAG),FRACT(NAG))
-       SDEN = 0.0
-       DO J=1,NAG
-         PK(J) = 0.5*J
-       END DO
-       DO JA=1,NAGI
-         SUM = 0.0
-         DO J=1,NAG
-           FRACT(J) = EXP(-0.5*(((PK(J)-PKI(JA))/PKSD(JA))**2))
-           SUM = SUM+FRACT(J)
-         END DO
-         DO J=1,NAG
-           SDEN(J) = SDEN(J)+SDENI(JA)*FRACT(J)/SUM
-         END DO
-       END DO
-     ELSE
-       ALLOCATE (SDEN(NAGI),PK(NAGI))
-       NAG = NAGI
-       SDEN = SDENI
-       PK = PKI
-       OMTYPE = ' MONO'
-     END IF
-   END IF
-   OPEN (NUNIT,FILE='ph_buffering.opt',STATUS='UNKNOWN')
-   WRITE (NUNIT,'(A/)') 'Enhanced pH buffering output file'
-   WRITE (NUNIT,'(2A)') 'Ammonia buffering: ', ADJUSTL(TRIM(NH4BUFC))
-   WRITE (NUNIT,'(2A)') 'Phosphate buffering: ', ADJUSTL(TRIM(PO4BUFC))
-   WRITE (NUNIT,'(2A)') 'OM buffering: ', ADJUSTL(TRIM(OMBUFC))
-   IF (OM_BUFFERING) THEN
-     WRITE (NUNIT,'(2A)') 'POM buffering: ', ADJUSTL(TRIM(POMBUFC))
-     WRITE (NUNIT,'(2A)') 'OM buffer type: ', ADJUSTL(TRIM(OMTYPE))
-     WRITE (NUNIT,'(/A/A)') 'Inputs:','Group Site density pKa std.dev.'
-     DO JA=1,NAGI
-       IF (OMTYPE == ' DIST') THEN
-         WRITE (NUNIT,'(1X,I3,5X,F8.4,4X,F6.3,3X,F6.3)') JA, SDENI(JA), PKI(JA), PKSD(JA)
-       ELSE
-         WRITE (NUNIT,'(1X,I3,5X,F8.4,4X,F6.3,3X,A)') JA, SDENI(JA), PKI(JA), ' N/A'
-       END IF
-     END DO
-     WRITE (NUNIT,'(/A/A)') 'Modeled:','Group Site density pKa'
-     DO JA=1,NAG
-       WRITE (NUNIT,'(1X,I3,5X,F8.4,4X,F6.3)') JA, SDEN(JA), PK(JA)
-     END DO
-   END IF
-   CLOSE (NUNIT)
- ELSE
-   AMMONIA_BUFFERING = .FALSE.
-   PHOSPHATE_BUFFERING = .FALSE.
-   OM_BUFFERING = .FALSE.
-   POM_BUFFERING = .FALSE.
- END IF
- NGCTDG = 0
- NGN2=0
-  NDC=NDC-1     ! SW 10/20/15
-  DO JG=1,NGC   ! SW 10/16/2015
-      IF(CGCS(JG)==-1.0)THEN
-          NGCTDG=JG    ! JG COUNTER
-          NDC=NDC+1    ! THERE CAN BE ONLY 1 TDG AMONG THE CONSITUENTS
-          NGN2=NGCS+JG-1        ! GLOBAL COUNTER
-          EXIT
-      ENDIF
-  ENDDO
-  IF (NGCTDG == 0) CDWBC(NDC+1,:)= '     OFF'     ! SR 7/15/17
-RETURN
-END SUBROUTINE INPUT
+             macrophyte_calc(jw, m) = constituents .AND. macwbc(jw, m)         &
+                                     &=='      ON'                                     ! cb 8/24/15
+             print_macrophyte(jw, m) = macrophyte_calc(jw, m) .AND.            &
+                                     & mprwbc(jw, m)=='      ON'                      ! cb 8/24/15
+             if(macrophyte_calc(jw, m))macrophyte_on = .TRUE.
+         enddo
+     enddo
+ 
+!    Open error and warning files
+ 
+     open(w2err, file = 'w2.err', status = 'UNKNOWN')
+ 
+!    Open error and warning files
+ 
+     open(wrn, file = 'w2.wrn', status = 'UNKNOWN')
+ 
+!    Initialize variables for enhanced pH buffering ! entire section ! SR
+!    01/01/12
+     phbuff_exist = .FALSE.
+     inquire(file = 'pH_buffering.npt', exist = phbuff_exist)
+     if(constituents .AND. phbuff_exist)then
+         open(nunit, file = 'ph_buffering.npt', status = 'OLD')
+         read(nunit, '(///8X,2A8)')phbufc, ncalkc
+         read(nunit, '(//8X,3A8)')nh4bufc, po4bufc, ombufc
+         read(nunit, '(//8X,A8,I8,A8)')omtype, nagi, pombufc
+         allocate(sdeni(nagi), pki(nagi), pksd(nagi))
+         read(nunit, '(//(:8X,9F8.0))')(sdeni(j), j = 1, nagi)
+         read(nunit, '(//(:8X,9F8.0))')(pki(j), j = 1, nagi)
+         read(nunit, '(//(:8X,9F8.0))')(pksd(j), j = 1, nagi)
+         close(nunit)
+         ph_buffering = phbufc=='      ON'
+         noncon_alkalinity = ncalkc=='      ON'
+         ammonia_buffering = nh4bufc=='      ON'
+         phosphate_buffering = po4bufc=='      ON'
+         om_buffering = ombufc=='      ON'
+         pom_buffering = pombufc=='      ON' .AND. om_buffering
+         if(om_buffering)then
+             sdeni = ABS(sdeni)
+             if(omtype=='    DIST')then
+                 if(ANY(pksd<=0))then
+                     warning_open = .TRUE.
+                     write(wrn, '(A)')                                         &
+     &'WARNING -- PKSD inputs in the ph_buffering.npt file must be greater than&
+     & zero.'
+                     write(wrn, '(A/)')                                        &
+      &'Please fix your inputs. For now, PKSD values of zero will be set to 1.'
+                 endif
+                 do ja = 1, nagi
+                     if(pksd(ja)<=0)pksd(ja) = 1.0
+                 enddo
+                 nag = 27
+                 allocate(sden(nag), pk(nag), fract(nag))
+                 sden = 0.0
+                 do j = 1, nag
+                     pk(j) = 0.5*j
+                 enddo
+                 do ja = 1, nagi
+                     sum = 0.0
+                     do j = 1, nag
+                         fract(j) = EXP( - 0.5*(((pk(j)-pki(ja))/pksd(ja))**2))
+                         sum = sum + fract(j)
+                     enddo
+                     do j = 1, nag
+                         sden(j) = sden(j) + sdeni(ja)*fract(j)/sum
+                     enddo
+                 enddo
+             else
+                 allocate(sden(nagi), pk(nagi))
+                 nag = nagi
+                 sden = sdeni
+                 pk = pki
+                 omtype = ' MONO'
+             endif
+         endif
+         open(nunit, file = 'ph_buffering.opt', status = 'UNKNOWN')
+         write(nunit, '(A/)')'Enhanced pH buffering output file'
+         write(nunit, '(2A)')'Ammonia buffering: ', ADJUSTL(TRIM(nh4bufc))
+         write(nunit, '(2A)')'Phosphate buffering: ', ADJUSTL(TRIM(po4bufc))
+         write(nunit, '(2A)')'OM buffering: ', ADJUSTL(TRIM(ombufc))
+         if(om_buffering)then
+             write(nunit, '(2A)')'POM buffering: ', ADJUSTL(TRIM(pombufc))
+             write(nunit, '(2A)')'OM buffer type: ', ADJUSTL(TRIM(omtype))
+             write(nunit, '(/A/A)')'Inputs:', 'Group Site density pKa std.dev.'
+             do ja = 1, nagi
+                 if(omtype==' DIST')then
+                     write(nunit, '(1X,I3,5X,F8.4,4X,F6.3,3X,F6.3)')ja,        &
+                         & sdeni(ja), pki(ja), pksd(ja)
+                 else
+                     write(nunit, '(1X,I3,5X,F8.4,4X,F6.3,3X,A)')ja, sdeni(ja),&
+                         & pki(ja), ' N/A'
+                 endif
+             enddo
+             write(nunit, '(/A/A)')'Modeled:', 'Group Site density pKa'
+             do ja = 1, nag
+                 write(nunit, '(1X,I3,5X,F8.4,4X,F6.3)')ja, sden(ja), pk(ja)
+             enddo
+         endif
+         close(nunit)
+     else
+         ammonia_buffering = .FALSE.
+         phosphate_buffering = .FALSE.
+         om_buffering = .FALSE.
+         pom_buffering = .FALSE.
+     endif
+     ngctdg = 0
+     ngn2 = 0
+     ndc = ndc - 1
+                ! SW 10/20/15
+     do jg = 1, ngc
+                ! SW 10/16/2015
+         if(cgcs(jg)== - 1.0)then
+             ngctdg = jg
+                       ! JG COUNTER
+             ndc = ndc + 1
+                       ! THERE CAN BE ONLY 1 TDG AMONG THE CONSITUENTS
+             ngn2 = ngcs + jg - 1
+                                ! GLOBAL COUNTER
+             exit
+         endif
+     enddo
+     if(ngctdg==0)cdwbc(ndc + 1, :) = '     OFF'  ! SR 7/15/17
+     end subroutine INPUT
