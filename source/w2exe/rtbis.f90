@@ -4,7 +4,6 @@
      use GLOBAL, ONLY:wrn, jw
      use EDDY, ONLY:AZC
      use SCREENC, ONLY:jday
-     use PREC
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -15,15 +14,15 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: U, V, X1, X2, Xacc, Y
-     real(r8) :: RTBIS
+     real(R8KIND) :: U, V, X1, X2, Xacc, Y
+     real(R8KIND) :: RTBIS
      intent (in) U, V, X1, X2, Xacc, Y
 !
 ! Local variables
 !
-     real(r8) :: dx, f, fmid, xmid
+     real(R8KIND) :: dx, f, fmid, xmid
      integer :: j
-     real(r8), external :: SEMILOG
+     real(R8KIND), external :: SEMILOG
 !
 !*** End of declarations rewritten by SPAG
 !

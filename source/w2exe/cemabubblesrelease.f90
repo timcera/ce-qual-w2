@@ -12,15 +12,9 @@
 !
 ! Local variables
 !
-     real :: BE, BS, BUBBLESATSURFACE, BUBBLESGASCONC, BUBBLESRADIUS,          &
-           & BUBBLESRELEASEALLVALUE, BUBBLESSTATUS, CUS, DS
-     real :: BRRATEAGAS, BRVOLUAGAS, BUBBLERELWB, BUBBLESCARRIED
-     real :: brrateagasnet, dlt, segnumi
-     real :: CEMAVARS, GEOMC, GLOBAL, SCREENC
-     integer :: ICE, KTWB
-     integer :: id, iu, jb, jw, kt, ngas, nrelarr, numbubrelarr, numgas, nwb
-     integer :: MAIN
+     integer :: ngas, nrelarr
      real(8) :: tempbubblesrelvolume
+
 !
 !*** End of declarations rewritten by SPAG
 !
@@ -44,18 +38,18 @@
                          do ngas = 1, numgas
                             !TempBubblesRelVolume = 4/3*3.14*BubblesRadius(SegNumI, nRelArr)**3
                              tempbubblesrelvolume = 4./3.*3.14*BUBBLESRADIUS   &
-                               & (segnumi, nrelarr)**3                                              ! SW 10/10/2017
+                               & (segnumi, nrelarr)**3                            ! SW 10/10/2017
                              BRVOLUAGAS(segnumi, nrelarr, ngas)                &
                                & = BUBBLESRELEASEALLVALUE(segnumi, nrelarr)    &
                                & *tempbubblesrelvolume*BUBBLESGASCONC(segnumi, &
                                & nrelarr, ngas)                                                                                                                         !gm
                              BRRATEAGAS(segnumi, nrelarr, ngas)                &
-                               & = BRVOLUAGAS(segnumi, nrelarr, ngas)/dlt                               !gm/s
+                               & = BRVOLUAGAS(segnumi, nrelarr, ngas)/dlt         !gm/s
                              brrateagasnet(segnumi, ngas)                      &
                                & = brrateagasnet(segnumi, ngas)                &
-                               & + BRRATEAGAS(segnumi, nrelarr, ngas)                                                        !gm/s
+                               & + BRRATEAGAS(segnumi, nrelarr, ngas)             !gm/s
                              BUBBLERELWB(jw, ngas) = BUBBLERELWB(jw, ngas)     &
-                               & + dlt*brrateagasnet(segnumi, ngas)/1000.                                         ! SW 7/1/2017 Convert from gm/s to kg
+                               & + dlt*brrateagasnet(segnumi, ngas)/1000.         ! SW 7/1/2017 Convert from gm/s to kg
                          enddo !nGas
  
                          BUBBLESCARRIED(segnumi, nrelarr)                      &

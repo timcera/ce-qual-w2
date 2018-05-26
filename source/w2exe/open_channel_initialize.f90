@@ -14,26 +14,26 @@
 !
 ! PARAMETER definitions
 !
-     real(r8), parameter :: THETA = 0.55
+     real(R8KIND), parameter :: THETA = 0.55
 !
 ! Dummy arguments
 !
-     real(r8) :: Dt, El1, El2, Qout
+     real(R8KIND) :: Dt, El1, El2, Qout
      integer :: Ic
      intent (in) Dt, El1, El2
      intent (inout) Qout
 !
 ! Local variables
 !
-     real(r8), allocatable, dimension(:, :), save :: al, daa
-     real(r8), allocatable, dimension(:), save :: b, belev, carea, q, rt,      &
+     real(R8KIND), allocatable, dimension(:, :), save :: al, daa
+     real(R8KIND), allocatable, dimension(:), save :: b, belev, carea, q, rt,      &
            & tarea, topw, topwt, v, vold, vpr, vt, y, yold, ypr, yt
-     real(r8), save :: bar1, bar2, bc1, bc2, bepr1, bepr2, d, dist, dltx,      &
+     real(R8KIND), save :: bar1, bar2, bc1, bc2, bepr1, bepr2, d, dist, dltx,      &
                      & dltx2, phi, qavg, qsum, rad1, rad2, slope, vavg, vtot,  &
                      & wlslope
-     real(r8) :: BAREA, TWIDTH, WETPER
+     real(R8KIND) :: BAREA, TWIDTH, WETPER
      real :: BEGIN, VS, VST, WLFLAG, YS, YST
-     real, save :: clen, closs, dia, dnie, fman, g, r8, upie
+     real, save :: clen, closs, dia, dnie, fman, g, upie
      real :: DTP, QOLD, VMAX
      real :: GLOBAL, STRUCTURES
      integer, save :: i, j, n, nc, nn, np, nqcnt

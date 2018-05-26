@@ -26,7 +26,6 @@
      use NAMESC
      use GEOMC
      use LOGICC
-     use PREC
      use SURFHE
      use KINETIC
      use SHADEC

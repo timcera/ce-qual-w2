@@ -117,7 +117,7 @@
    ! Real(8), Allocatable, Dimension(:) :: sedcellwidth
  
     !Real(8), Allocatable, Dimension(:) :: SDRegn_Theta_POC_Ine, SDRegn_CH4CompMethod
-                                                                       ! SW 7/1/2017
+    ! SW 7/1/2017
  
  
  
@@ -125,15 +125,15 @@
     !Real(8), Allocatable, Dimension(:) :: IceQSS
  
  
-                                                                      ! cb 10/8/13
-                                ! cb 2/5/13
-                                                                      !,GasReleaseCO2   ! SW 10/10/2017   ! SW 10/19/2017
+    ! cb 10/8/13
+    ! cb 2/5/13
+    !,GasReleaseCO2   ! SW 10/10/2017   ! SW 10/19/2017
  
-                                   ! SW 5/25/2017
-                                                                                                                                  ! cb 5/22/15
+    ! SW 5/25/2017
+    ! cb 5/22/15
  
     !Generic BOD constituent variables
-                                                                  ! SW 10/20/2017
+    ! SW 10/20/2017
     !End generic BOD constituent variables
  
     ! CEMA testing variables start

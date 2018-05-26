@@ -4,7 +4,6 @@
 !***********************************************************************************************************************************
  
      function DENSITY(T, Tds, Ss)
-     use PREC
      use LOGICC, ONLY:susp_solids, FRESH_WATER, SALT_WATER
      use GLOBAL, ONLY:jw
      implicit none
@@ -13,7 +12,7 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: Ss, T, Tds
+     real(R8KIND) :: Ss, T, Tds
      real :: DENSITY
      intent (in) Ss, T, Tds
 !

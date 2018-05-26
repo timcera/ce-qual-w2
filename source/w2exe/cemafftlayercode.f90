@@ -7,7 +7,6 @@
      use GEOMC
      use SCREENC
      use RSTART
-     use PREC
      use EDDY
      use LOGICC
      use TVDC

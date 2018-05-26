@@ -1,6 +1,6 @@
 !*==zooplanktonc.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
      module ZOOPLANKTONC
-     use PREC
+     use f77kinds
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -15,9 +15,7 @@
      real, allocatable, dimension(:) :: exz, o2zr, prefp, zc, zeff, zg, zk1,   &
                                       & zk2, zk3, zk4, zm, zn, zoomin, zp, zr, &
                                       & zs2p, zt1, zt2, zt3, zt4
-     real :: PREC
-     real :: r8
-     real(r8), pointer, dimension(:, :, :) :: zoo, zooss
+     real(R8KIND), pointer, dimension(:, :, :) :: zoo, zooss
      logical :: zooplankton_calc
 !
 !*** End of declarations rewritten by SPAG

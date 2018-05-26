@@ -14,7 +14,7 @@
 !
 ! Local variables
 !
-     real(r8) :: dlel, elid, eliu, henergy, htail
+     real(R8KIND) :: dlel, elid, eliu, henergy, htail
      integer :: igt, isub, jg
 !
 !*** End of declarations rewritten by SPAG

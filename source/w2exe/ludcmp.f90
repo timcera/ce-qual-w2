@@ -5,7 +5,6 @@
 !***********************************************************************************************************************************
  
      subroutine LUDCMP(A, N, Np, Indx, D)
-     use PREC
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -16,9 +15,9 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: D
+     real(R8KIND) :: D
      integer :: N, Np
-     real(r8), dimension(Np, Np) :: A
+     real(R8KIND), dimension(Np, Np) :: A
      integer, dimension(Np) :: Indx
      intent (in) N, Np
      intent (out) Indx
@@ -26,11 +25,9 @@
 !
 ! Local variables
 !
-     real(r8) :: aamax, dum, sum
+     real(R8KIND) :: aamax, dum, sum
      integer :: i, imax, j, k
-     real :: PREC
-     real :: r8
-     real(r8), dimension(500) :: vv
+     real(R8KIND), dimension(500) :: vv
 !
 !*** End of declarations rewritten by SPAG
 !

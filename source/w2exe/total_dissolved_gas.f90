@@ -17,7 +17,7 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: C, P, T
+     real(R8KIND) :: C, P, T
      integer :: N, Nsat, Nsg
      intent (in) Nsat, Nsg, P, T
      intent (inout) C

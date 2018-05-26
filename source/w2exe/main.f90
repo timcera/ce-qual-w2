@@ -1,6 +1,6 @@
 !*==main.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
      module MAIN
-     use PREC
+     use f77kinds
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -11,13 +11,13 @@
 !
 ! Local variables
 !
-     real(r8), allocatable, dimension(:) :: a, albedo, ax, betai, bhrho, bta,  &
+     real(R8KIND), allocatable, dimension(:) :: a, albedo, ax, betai, bhrho, bta,  &
            & c, cbhe, d, dlvol, dlvr, dlxrho, dxi, elbot, esr, etr, etsr, ev,  &
            & evbr, f, fetch, fi, fsed, fsedc1, fsedc2, fsod, gammai, gma, hwi, &
            & icemin, icesw, icet2, icethi, q, qdt, qinsum, qpr, qprbr, qssum,  &
            & qwdo, ranlw, rn, rs, sedci, sedci1, sedci2, srosh, t2i, tinsum,   &
            & tpb, tsed, v, volb, volg, wshx, xbr
-     real(r8) :: ab, bhrsum, bhsum, colb, coldep, del, depkti, dfc, dlmr,      &
+     real(R8KIND) :: ab, bhrsum, bhsum, colb, coldep, del, depkti, dfc, dlmr,      &
                & dltcal, dlxmin, dtv, ea, effric, elt, eltms, es, gc2, heatex, &
                & hia, hice, hmin, hrad, iceth1, iceth2, icethu, qinfr, rhoicp, &
                & rhoin, rhoirl1, sroin, sronet, sroout, srosed, sstot, t2r4,   &
@@ -64,7 +64,7 @@
           & nisnp, nispr, nl, npoint, nprf, nscr, nsnp, nspr, nvpl, tsr, vpr
      character(72), allocatable, dimension(:) :: bthfn, cplfn, flxfn, flxfn2,  &
                 & lprfn, prffn, snpfn, sprfn, vplfn, vprfn
-     real(r8), allocatable, dimension(:, :) :: c2i, epici, hseg, p, qtot, qtrf,&
+     real(R8KIND), allocatable, dimension(:, :) :: c2i, epici, hseg, p, qtot, qtrf,&
            & tssdh1, tssuh1
      real, allocatable, dimension(:) :: cdsum, cdtot, csum, dltd, dltf, dltmax,&
                                       & ebdgt, ebdpi, ebdsp, ebpu, ebugt,      &
@@ -81,11 +81,10 @@
        & cpld, cplf, cwdo, estrt, flxd, flxf, hab, kfjw, prfd, prff, qinf,     &
        & scrd, scrf, sedvp, sedvp1, sedvp2, snpd, snpf, sprd, sprf, tvp, vpld, &
        & vplf, wstrt
-     real :: celrty, dlxmax, hmax, jday1, jdayts, nxtvd, r8, tmend, tmstrt,    &
-           & ttime
+     real :: celrty, dlxmax, hmax, jday1, jdayts, nxtvd, tmend, tmstrt, ttime
      character(10), allocatable, dimension(:, :) :: conv1
-     real(r8), save :: cp, ice_tol, rhoa, rhoi, rimt, rk1, rl1, thrkti, vtol
-     real(r8), allocatable, dimension(:, :, :) :: cssdh1, cssuh1
+     real(R8KIND), save :: cp, ice_tol, rhoa, rhoi, rimt, rk1, rl1, thrkti, vtol
+     real(R8KIND), allocatable, dimension(:, :, :) :: cssdh1, cssuh1
      character(4), allocatable, dimension(:) :: cunit1
      real, allocatable, dimension(:, :, :) :: cvp, epivp, macrclp, macrcvp
      character(2) :: deg
@@ -111,7 +110,6 @@
      integer :: ndg = 16
      integer :: nrso, nsse, nsss, ntac, ntacmn, ntacmx, ntds, ntic, ntrt, ntsr,&
               & nwdt, rsi, sif, vsf
-     real :: PREC
      character(10) :: sedcch, sedch, sednch, sedpch
 !
 !*** End of declarations rewritten by SPAG

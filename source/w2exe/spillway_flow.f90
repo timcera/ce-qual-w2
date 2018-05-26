@@ -15,8 +15,8 @@
 ! Local variables
 !
      real :: A1SP, A2SP, B1SP, B2SP, DLX, ELWS, ESP, U, US
-     real(r8) :: dlel, elid, eliu, henergy, htail
-     real :: g, r8
+     real(R8KIND) :: dlel, elid, eliu, henergy, htail
+     real :: g
      real :: GEOMC, GLOBAL, STRUCTURES
      integer :: IDSP, IUSP, JBDSP, JWUSP, KTWB, LATERAL_SPILLWAY
      integer :: isub, js, nsp

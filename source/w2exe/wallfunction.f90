@@ -18,9 +18,9 @@
 !
 ! Local variables
 !
-     real(r8) :: area, bs1, ks, lbound, perimeter, ubound, ust, v, visck
+     real(R8KIND) :: area, bs1, ks, lbound, perimeter, ubound, ust, v, visck
      integer :: k, multiplier
-     real(r8), external :: RTBIS, SEMILOG
+     real(R8KIND), external :: RTBIS, SEMILOG
 !
 !*** End of declarations rewritten by SPAG
 !

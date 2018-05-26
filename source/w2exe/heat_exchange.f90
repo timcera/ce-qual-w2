@@ -10,7 +10,6 @@
      use SURFHE
      use TVDC
      use SHADEC
-     use PREC
      use f77kinds
      implicit none
 !
@@ -19,17 +18,17 @@
 ! Dummy arguments
 !
      real :: Jday
-     real(r8) :: Tsur
+     real(R8KIND) :: Tsur
      intent (in) Jday, Tsur
 !
 ! Local variables
 !
-     real(r8) :: a0, aconv, bconv, beta, dtv, dtvl, ea, es, etp, fw, hour, ra, &
+     real(R8KIND) :: a0, aconv, bconv, beta, dtv, dtvl, ea, es, etp, fw, hour, ra, &
                & sinal, sro_br, standard, tairv, tair_f, taud, tdew_f, tstar,  &
                & wind2m, wind_mph
-     real(r8), save :: bowen_constant, btu_ft2_day_to_w_m2, flux_br_to_flux_si,&
+     real(R8KIND), save :: bowen_constant, btu_ft2_day_to_w_m2, flux_br_to_flux_si,&
                      & mps_to_mph, w_m2_to_btu_ft2_day
-     real(r8) :: DEG_C, DEG_F
+     real(R8KIND) :: DEG_C, DEG_F
      integer :: iday, j
      real :: local
 !

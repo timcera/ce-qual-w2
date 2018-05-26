@@ -3,21 +3,18 @@
 ! Function declaration
  
      function DEG_F(X)
-     use PREC
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
 !
 ! Dummy arguments
 !
-     real(r8) :: X
+     real(R8KIND) :: X
      real :: DEG_F
      intent (in) X
 !
 ! Local variables
 !
-     real :: PREC
-     real :: r8
 !
 !*** End of declarations rewritten by SPAG
 !

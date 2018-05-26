@@ -7,7 +7,6 @@
      use NAMESC
      use GEOMC
      use LOGICC
-     use PREC
      use SURFHE
      use KINETIC
      use SHADEC
@@ -30,7 +29,7 @@
 !
 ! Local variables
 !
-     real(r8) :: akbr, cgas, dtvl, elw, fw, qsumm, qtrfr, rhotr, tm, tsum,     &
+     real(R8KIND) :: akbr, cgas, dtvl, elw, fw, qsumm, qtrfr, rhotr, tm, tsum,     &
                & vptg, vqtr, vqtri
      integer :: jbd, jbu, jlat, jwu
      external RESTART_OUTPUT

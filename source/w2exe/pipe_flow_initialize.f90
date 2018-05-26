@@ -16,10 +16,10 @@
 ! Local variables
 !
      real, save :: begin, clen, closs, dia, dlt, dnie, eps2, fman, omega, qold,&
-                 & r8, upie, vmax, wlflag
-     real(r8), save :: d1, d2, dcheck, dcrit, dltx, dtest, dtq, el1, el2, eps, &
+                 & upie, vmax, wlflag
+     real(R8KIND), save :: d1, d2, dcheck, dcrit, dltx, dtest, dtq, el1, el2, eps, &
                      & hie, tott, vtot
-     real(r8) :: DEPTHCRIT
+     real(R8KIND) :: DEPTHCRIT
      real :: DLX, DLXPI, EDPI, ELWS, EUPI, FMINPI, FPI, US, WPI
      real :: GEOMC, GLOBAL, SCREENC, STRUCTURES
      integer :: IDPI, IUPI, JBDPI, LATERAL_PIPE

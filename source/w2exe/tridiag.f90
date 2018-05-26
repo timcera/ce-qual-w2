@@ -5,6 +5,7 @@
 !***********************************************************************************************************************************
  
      subroutine TRIDIAG(A, V, C, D, S, E, N, U)
+     use f77kinds
      use TRIDIAG_V
      implicit none
 !
@@ -13,17 +14,14 @@
 ! Dummy arguments
 !
      integer :: E, N, S
-     real(r8), dimension(E) :: A, C, D, V
-     real(r8), dimension(N) :: U
+     real(R8KIND), dimension(E) :: A, C, D, V
+     real(R8KIND), dimension(N) :: U
      intent (in) A, C, D, E, N, S, V
      intent (out) U
 !
 ! Local variables
 !
-     real :: BTA1, GMA1
      integer :: i
-     real :: r8
-     real :: TRIDIAG_V
 !
 !*** End of declarations rewritten by SPAG
 !

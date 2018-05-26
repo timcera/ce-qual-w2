@@ -14,13 +14,12 @@
 !
 ! Local variables
 !
-     real(r8) :: area, a_coef, b_coef, c_coef, sl
+     real(R8KIND) :: area, a_coef, b_coef, c_coef, sl
      real :: B, BB, BI, EL, H, SZ, Z
      real :: GEOMC, GLOBAL, RSTART
      integer :: i, jw, k, kt
      integer :: KB
      integer :: KTI
-     real :: r8
 !
 !*** End of declarations rewritten by SPAG
 !

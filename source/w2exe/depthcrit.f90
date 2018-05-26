@@ -12,15 +12,15 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: Flow
+     real(R8KIND) :: Flow
      real :: DEPTHCRIT
 !
 ! Local variables
 !
-     real :: dia, r8
+     real :: dia
      real :: STRUCTURES
-     real(r8) :: tol, x1, x2
-     real(r8) :: ZBRENT1
+     real(R8KIND) :: tol, x1, x2
+     real(R8KIND) :: ZBRENT1
 !
 !*** End of declarations rewritten by SPAG
 !

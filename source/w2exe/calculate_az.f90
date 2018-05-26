@@ -8,7 +8,6 @@
      use GEOMC
      use GLOBAL
      use TRANS
-     use PREC
      use EDDY
      use KINETIC
      use MACROPHYTEC
@@ -21,14 +20,14 @@
 !
 ! Local variables
 !
-     real(r8), save :: ab, ata, az0, bouk, buoy, convex, convez, convkx,       &
+     real(R8KIND), save :: ab, ata, az0, bouk, buoy, convex, convez, convkx,       &
                      & convkz, depth, depthl, depthr, effric, expaz, gc2, hrad,&
                      & prdk, prhe, prhk, ri, riaz0, riaz1, slm, udl, udr, unse,&
                      & unst, ustar, ustarb, ustarbkt, viscf, visck, zd, zdlr
      integer, save :: idt, iut, j, jj, k, kl
-     real(r8), dimension(2), save :: sig
-     real(r8), save :: tkemin1, tkemin2
-     real(r8), external :: WALLFUNCTION
+     real(R8KIND), dimension(2), save :: sig
+     real(R8KIND), save :: tkemin1, tkemin2
+     real(R8KIND), external :: WALLFUNCTION
 !
 !*** End of declarations rewritten by SPAG
 !
@@ -47,8 +46,8 @@
          do k = kt, KBMIN(i) - 1
              call CALCULATE_AZ0
              buoy = (RHO(k + 1, i) - RHO(k, i) + RHO(k + 1, i + 1)             &
-                  & - RHO(k, i + 1))/(AVH2(k, i) + AVH2(k, i + 1))                               ! 2.0*AVH2(K,I)
-             riaz0 = DLOG(az0/AZMAX(jw))*0.666666667D0                                              ! /1.5
+                  & - RHO(k, i + 1))/(AVH2(k, i) + AVH2(k, i + 1))                ! 2.0*AVH2(K,I)
+             riaz0 = DLOG(az0/AZMAX(jw))*0.666666667D0                            ! /1.5
              ri = g*buoy/(rhow*VSH(k, i) + nonzero)
              riaz1 = DMAX1(ri, riaz0)
              riaz1 = DMIN1(riaz1, 10.0D0)
@@ -121,17 +120,17 @@
          gc2 = 0.0
          if(FRIC(i)/=0.0)gc2 = g/(FRIC(i)*FRIC(i))
      endif
-     ustarbkt = SQRT(gc2)*ABS(0.5*(U(kt, i) + U(kt, i - 1)))                                            ! SG 10/4/07
+     ustarbkt = SQRT(gc2)*ABS(0.5*(U(kt, i) + U(kt, i - 1)))                      ! SG 10/4/07
      TKE(kt, i, 1) = (3.33*(ustar*ustar + ustarbkt*ustarbkt))                  &
-                   & *(BH2(kt, i)/BH1(kt, i))                                                           ! SG 10/4/07
+                   & *(BH2(kt, i)/BH1(kt, i))                                     ! SG 10/4/07
      TKE(kt, i, 2) = (ustar*ustar*ustar + ustarbkt*ustarbkt*ustarbkt)          &
-                   & *5.0/H1(kt, i)*(BH2(kt, i)/BH1(kt, i))                                             ! SG 10/4/07
+                   & *5.0/H1(kt, i)*(BH2(kt, i)/BH1(kt, i))                       ! SG 10/4/07
      do k = kt + 1, KB(i) - 1
          bouk = MAX(AZ(k, i)*g*(RHO(k + 1, i) - RHO(k, i))/(H(k, jw)*rhow),    &
               & 0.0)
          prdk = AZ(k, i)                                                       &
               & *(0.5*(U(k, i) + U(k, i - 1) - U(k + 1, i) - U(k + 1, i - 1))  &
-              & /(H(k, jw)*0.5 + H(k + 1, jw)*0.5))**2.0                                                ! SG 10/4/07
+              & /(H(k, jw)*0.5 + H(k + 1, jw)*0.5))**2.0                          ! SG 10/4/07
          prhe = 10.0*gc2**1.25*ABS(0.5*(U(k, i) + U(k, i - 1)))                &
               & **4.0/(0.5*B(k, i))**2.0
          if(MANNINGS_N(jw))then
@@ -251,7 +250,7 @@
 !CALCULATE HORIZONTAL PORTION OF THE SPLIT K-E EQUATIONS FOR INTERIOR LAYERS
      do k = kt + 1, KB(i) - 1
          if(MANNINGS_N(jw))then
-             hrad = BH1(kt, i)/(B(KTI(i), i) - B(kt + 1, i) + 2.D0*AVH1(kt, i))                    !HRAD = BHR(K,I)/(BR(K,I)-BR(K+1,I)+2.0*H(K,JW))
+             hrad = BH1(kt, i)/(B(KTI(i), i) - B(kt + 1, i) + 2.D0*AVH1(kt, i))   !HRAD = BHR(K,I)/(BR(K,I)-BR(K+1,I)+2.0*H(K,JW))
              gc2 = g*FRIC(i)*FRIC(i)/hrad**0.333
          else
              gc2 = 0.0
@@ -262,7 +261,7 @@
               & 0.0D0)
          prdk = AZ(k, i)                                                       &
               & *(0.5D0*(U(k, i) + U(k, i - 1) - U(k + 1, i) - U(k + 1, i - 1))&
-              & /(H(k, jw)*0.5D0 + H(k + 1, jw)*0.5D0))**2.0                                                                !/2.0  /2.0
+              & /(H(k, jw)*0.5D0 + H(k + 1, jw)*0.5D0))**2.0                      !/2.0  /2.0
          if(.NOT.TKELATPRD(jw))then
              prhe = 0.0
              prhk = 0.0
@@ -317,9 +316,9 @@
 !CALCULATE TOP LAYER BOUNDARY CONDITION AND SOLVE THE K-E EQUATION USING TRIDIAGONAL SOLVER
          if(TKEBC(jw)==1)then
 !RODI        NOWIND
-             depthl = (ELWS(i) - EL(KB(i), i) + H2(KB(i), i)*COSA(jb))/COSA(jb)                            !EL(KT,I)  -Z(I)  *COSA(JB)
+             depthl = (ELWS(i) - EL(KB(i), i) + H2(KB(i), i)*COSA(jb))/COSA(jb)   !EL(KT,I)  -Z(I)  *COSA(JB)
              depthr = (ELWS(i + 1) - EL(KB(i + 1), i + 1) + H2(KB(i + 1), i)   &
-                    & *COSA(jb))/COSA(jb)                                                               !EL(KT,I+1)-Z(I+1)*COSA(JB)
+                    & *COSA(jb))/COSA(jb)                                         !EL(KT,I+1)-Z(I+1)*COSA(JB)
              depth = (depthr + depthl)*0.5
              do j = 1, 2
                  k = kt
@@ -330,7 +329,7 @@
                      DT(k, i) = 0.0
                  else
                      TKE(kt, i, 2) = TKE(k, i, 1)**(1.5)/(ARODI(jw)*depth)     &
-                                   & *BH2(kt, i)/BH1(kt, i)                                                               !3.0/2.0
+                                   & *BH2(kt, i)/BH1(kt, i)                       !3.0/2.0
                      AT(k, i) = 0.0
                      CT(k, i) = 0.0
                      VT(k, i) = 1.0
@@ -417,7 +416,7 @@
                                    & /(0.41*(H2(kt, i)*0.5 + ARODI(jw)         &
                                    & *depth*(1 - (ustar*ustar)                 &
                                    & /(TKE(kt,i,1)*0.3))))*BH2(kt, i)          &
-                                   & /BH1(kt, i)                                                   !3.0/2.0    /2.0
+                                   & /BH1(kt, i)                                  !3.0/2.0    /2.0
                      AT(kt, i) = 0.0
                      CT(kt, i) = 0.0
                      VT(kt, i) = 1.0

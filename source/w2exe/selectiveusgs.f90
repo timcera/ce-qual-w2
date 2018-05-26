@@ -12,7 +12,6 @@
      use NAMESC
      use GEOMC
      use LOGICC
-     use PREC
      use SURFHE
      use KINETIC
      use SHADEC
@@ -39,6 +38,7 @@
      integer :: ifile, j2hi, j2lo, j2max, j2min, j2pref, jj, jjw, jst, kk, ks, &
               & kstr, n, ng0, ng1max, ng1min, nj, num_left, num_noflow, prior1,&
               & prior2
+     character(20) :: fmtstr
 !
 !*** End of declarations rewritten by SPAG
 !
@@ -1435,8 +1435,9 @@
          do jb = 1, nbr
              if(NSTR(jb)>0)then
                  ifile = ifile + 1
+                 write(fmtstr, '(I20)') nstr(jb)
                  write(ifile,                                                  &
-                     &'(f10.4,<nstr(jb)>f10.2,<nstr(jb)>f10.2,<nstr(jb)>f10.2)'&
+                     &'(f10.4,'//trim(fmtstr)//'f10.2,'//trim(fmtstr)//'f10.2,'//trim(fmtstr)//'f10.2)'&
                     & )jday, (TAVG(i, jb), i = 1, NSTR(jb)),                   &
                      & (QSTR(i, jb), i = 1, NSTR(jb)),                         &
                      & (ESTR(i, jb), i = 1, NSTR(jb))
@@ -1444,7 +1445,8 @@
          enddo
          if(nwd>0)then
              ifile = ifile + 1
-             write(ifile, '(f10.4,<nwd>f10.2,<nwd>f10.2,<nwd>f10.2)')jday,     &
+             write(fmtstr, '(I20)') nwd
+             write(ifile, '(f10.4,'//trim(fmtstr)//'f10.2,'//trim(fmtstr)//'f10.2,'//trim(fmtstr)//'f10.2)')jday,     &
                  & (TAVGW(i), i = 1, nwd), (QWD(i), i = 1, nwd),               &
                  & (EWD(i), i = 1, nwd)
          endif

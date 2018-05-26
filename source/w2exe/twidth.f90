@@ -5,7 +5,6 @@
 !***********************************************************************************************************************************
  
      function TWIDTH(Depth, Dia)
-     use PREC
      use f77kinds
      implicit none
 !
@@ -13,14 +12,9 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: Depth, Dia
+     real(R8KIND) :: Depth, Dia
      real :: TWIDTH
      intent (in) Depth, Dia
-!
-! Local variables
-!
-     real :: PREC
-     real :: r8
 !
 !*** End of declarations rewritten by SPAG
 !

@@ -1,20 +1,18 @@
 !*==deg_c.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
      function DEG_C(X)
-     use PREC
+     use f77kinds
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
 !
 ! Dummy arguments
 !
-     real(r8) :: X
+     real(R8KIND) :: X
      real :: DEG_C
      intent (in) X
 !
 ! Local variables
 !
-     real :: PREC
-     real :: r8
 !
 !*** End of declarations rewritten by SPAG
 !

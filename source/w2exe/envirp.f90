@@ -380,7 +380,7 @@
                  open(cone, file = 'envrprf_c' // i_int // '.csv',             &
                      &status = 'unknown')
                  write(cone, 9003)(CNAME2(cn_e(jc)), jc = 1, nac_e)
-9003             format(<nac_e>(a8, '_interval, Fraction_of_volume, '))
+9003             format((a8, '_interval, Fraction_of_volume, '))
                  do jc = 1, nac_e
                      if(c_cnt(n, jc)>0.0)then
                          c_avg(jc) = c_tot(n, jc)/c_cnt(n, jc)
@@ -400,7 +400,7 @@
                  do i = 1, numclass
                      write(cone, 9004)(conc_c(jc, i), c_class(n, jc, i)/sumvolt&
                                     & (n), jc = 1, nac_e)
-9004                 format(<nac_e>(f10.4, ',', e12.4, ','))
+9004                 format((f10.4, ',', e12.4, ','))
                  enddo
                  write(cone, '(1x)')
                  write(cone, 9011)(c_sum(jc), jc = 1, nac_e)
@@ -412,7 +412,7 @@
                      open(cone, file = 'envrprf_cd' // i_int // '.csv',        &
                         & status = 'unknown')
                      write(cone, 9005)(CDNAME2(cdn_e(jc)), jc = 1, nacd_e)
-9005                 format(<nacd_e>(a8, '_interval, Fraction_of_volume,'))
+9005                 format((a8, '_interval, Fraction_of_volume,'))
                      do jc = 1, nacd_e
                          if(cd_cnt(n, jc)>0.0)then
                              cd_avg(jc) = cd_tot(n, jc)/cd_cnt(n, jc)
@@ -436,7 +436,7 @@
                              & (conc_cd(jc, i), cd_class(n, jc, i)/sumvolt(n), &
                              & jc = 1, nacd_e)
  
-9006                     format(<nacd_e>(f10.4, ',', e12.4, ','))
+9006                     format((f10.4, ",", e12.4, ","))
                      enddo
                      write(cone, '(1x)')
                      write(cone, 9010)(cd_sum(jc), jc = 1, nacd_e)
@@ -453,7 +453,7 @@
                   & cn_e, cdn_e)
          deallocate(t_tot, t_cnt, v_tot, v_cnt, d_tot, d_cnt, d_class, volgl,  &
                   & sumvolt)
-9007     format(<nacd_e>(f10.4, ',', e12.4, ','))
+9007     format((f10.4, ',', e12.4, ','))
  
      endif
  
@@ -461,7 +461,7 @@
  
 9008  format( // (8x, (5x, a3, f8.0, f8.0)))
 9009  format((f6.2, ',', e12.4, ','))
-9010  format(<nacd_e>(" 0, ", e12.4, ','))
-9011  format(<nac_e>(" 0, ", e12.4, ','))
+9010  format((" 0, ", e12.4, ","))
+9011  format((" 0, ", e12.4, ","))
  
      end subroutine ENVIRP

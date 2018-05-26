@@ -32,7 +32,7 @@
      real :: coef, dlrhob, dlrhomax, dlrhot, elr, elstr, elwd, fracv, hb, hswb,&
            & hswt, ht, hwdb, hwdt, qsumjs, qsumwd, ratio, rhofb, rhoft, vsum,  &
            & wsel
-     real(r8) :: dosat, n2sat
+     real(R8KIND) :: dosat, n2sat
      integer :: k, kbot, kstr, ktop, kwd
 !
 !*** End of declarations rewritten by SPAG

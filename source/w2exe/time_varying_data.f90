@@ -5,6 +5,7 @@
 !***********************************************************************************************************************************
  
      subroutine TIME_VARYING_DATA
+     use f77kinds
      use GLOBAL
      use SURFHE
      use SCREENC
@@ -37,18 +38,17 @@
        & qpu2, sronx, sroo, tairnx, tairo, tdewnx, tdewo, windnx, windo, wscnx,&
        & xx
      integer, allocatable, dimension(:), save :: cdhf, cuhf, dhc, dhe, dht,    &
-          & dtc, dtq, dtt, dynpumpf, edhf, euhf, ext, inc, inft, inq, jjs, met,&
-          & odyns, otq, prc, pre, prt, pumpd, tdhf, trc, trq, trt, tuhf, uhc,  &
-          & uhe, uht
+          & dtc, dtq, dtt, edhf, euhf, ext, inc, inft, inq, jjs, met, odyns,   &
+          & otq, prc, pre, prt, pumpd, tdhf, trc, trq, trt, tuhf, uhc, uhe, uht
      real, allocatable, dimension(:, :, :), save :: cdhnx, cdho, cuhnx, cuho
-     real(r8), allocatable, dimension(:, :), save :: cdtrnx, cdtro, cinnx,     &
+     real(R8KIND), allocatable, dimension(:, :), save :: cdtrnx, cdtro, cinnx,     &
            & cino, cprnx, ctrnx, ctro, qoutnx, qouto, qstrnx, qstro, tdhnx,    &
            & tdho, tuhnx, tuho
-     real(r8), save :: cratio, hratio, qratio, ratio, tratio
+     real(R8KIND), save :: cratio, hratio, qratio, ratio, tratio
      logical, allocatable, dimension(:), save :: dtcf, dtqf, dtrib_const, dttf,&
-          & dynef, extf, incf, inflow_const, inqf, intf, metf, otqf, prcf,     &
-          & precip_const, prqf, prtf, trcf, trib_const, trqf, trtf
-     real(r8), allocatable, dimension(:), save :: eldhnx, eldho, eluhnx, eluho,&
+          & dynef, dynpumpf, extf, incf, inflow_const, inqf, intf, metf, otqf, &
+          & prcf, precip_const, prqf, prtf, trcf, trib_const, trqf, trtf
+     real(R8KIND), allocatable, dimension(:), save :: eldhnx, eldho, eluhnx, eluho,&
            & prnx, qdtrnx, qdtro, qinnx, qino, qtrnx, qtro, qwdnx, qwdo,       &
            & tdtrnx, tdtro, tinnx, tino, tprnx, ttrnx, ttro
      logical, save :: gatef, wdqf, wshf

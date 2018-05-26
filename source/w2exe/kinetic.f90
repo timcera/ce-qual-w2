@@ -1,6 +1,6 @@
 !*==kinetic.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
      module KINETIC
-     use PREC
+     use f77kinds
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -22,9 +22,9 @@
                                       & nh4k2
      real, pointer, dimension(:, :, :) :: aer, agr, amr, arr, asr, ebr, eer,   &
        & egr, emr, err
-     real(r8), pointer, dimension(:, :, :) :: alg, ass, cbod, cbodn, cbodnss,  &
+     real(R8KIND), pointer, dimension(:, :, :) :: alg, ass, cbod, cbodn, cbodnss,  &
            & cbodp, cbodpss, cbodss, cg, cgss, ss, ssss
-     real(r8), pointer, dimension(:, :) :: alk, alkss, cass, col, colss, doss, &
+     real(R8KIND), pointer, dimension(:, :) :: alk, alkss, cass, col, colss, doss, &
            & dsi, dsiss, fe, fess, ldom, ldomn, ldomnss, ldomp, ldompss,       &
            & ldomss, lpom, lpomn, lpomnss, lpomp, lpompss, lpomss, nh4, nh4ss, &
            & no3, no3ss, o2, po4, po4ss, psi, psiss, rdom, rdomn, rdomnss,     &
@@ -49,7 +49,7 @@
                                      & nh4ag, nh4ap, nh4ar, nh4d, nh4dom,      &
                                      & nh4eg, nh4ep, nh4er, nh4om, nh4pom,     &
                                      & nh4sd, nh4sr, no3ag
-     real(r8), allocatable, dimension(:) :: beta, cz, exa, exh2o, exom, exss,  &
+     real(R8KIND), allocatable, dimension(:) :: beta, cz, exa, exh2o, exom, exss,  &
            & qc, qerr, wind10
      character(8), allocatable, dimension(:) :: cac, reaerc
      real, allocatable, dimension(:, :, :) :: cbodd, epc, epd, epm
@@ -58,7 +58,7 @@
        & lpzoooutp, orgnld, orgnlp, orgnrd, orgnrp, orgpld, orgplp, orgprd,    &
        & orgprp, rpomnmp, rpompmp, sdkv, sed, sed1, sed1ic, sed2, sed2ic, sedc,&
        & seddktot, sedn, sedninflux, sedp, sedpinflux, sedvpc, sedvpn, sedvpp
-     real :: kdo, r8
+     real :: kdo
      integer, allocatable, dimension(:, :) :: kfcn
      character(10), allocatable, dimension(:, :) :: lfpr
      integer :: nag, nagi, nldomn, nldomp, nlpomn, nlpomp, nrdomn, nrdomp,     &
@@ -88,7 +88,6 @@
                                      & sedoms, sedomsc, sedomsn, sedomsp, sodd,&
                                      & sssi, ssso, tdg, ticap, ticep, tiss,    &
                                      & tkn, tn, toc, ton, top, totss, tp
-     real :: PREC
      logical, allocatable, dimension(:, :) :: sdfirstadd
      logical, allocatable, dimension(:) :: sediment_resuspension
 !
@@ -112,13 +111,14 @@
   ! enhanced pH buffering end
      contains                                                                          !, FLOCEQN   ! SR 04/21/13
      function SATO(T, Sal, P, Salt_water)
+     use f77kinds
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
 !
 ! Dummy arguments
 !
-     real(R8) :: P, Sal, T
+     real(R8KIND) :: P, Sal, T
      logical :: Salt_water
      real :: SATO
      intent (in) P, Sal, Salt_water, T
@@ -136,6 +136,7 @@
      endif
      end function SATO
      function FR(Tt, Tt1, Tt2, Sk1, Sk2)
+     use f77kinds
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -143,7 +144,7 @@
 ! Dummy arguments
 !
      real :: Sk1, Sk2, Tt1, Tt2
-     real(R8) :: Tt
+     real(R8KIND) :: Tt
      real :: FR
      intent (in) Sk1, Sk2, Tt, Tt1, Tt2
 !
@@ -152,6 +153,7 @@
      FR = Sk1*EXP(LOG(Sk2*(1.0 - Sk1)/(Sk1*(1.0-Sk2)))/(Tt2 - Tt1)*(Tt - Tt1))
      end function FR
      function FF(Tt, Tt3, Tt4, Sk3, Sk4)
+     use f77kinds
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -159,7 +161,7 @@
 ! Dummy arguments
 !
      real :: Sk3, Sk4, Tt3, Tt4
-     real(R8) :: Tt
+     real(R8KIND) :: Tt
      real :: FF
      intent (in) Sk3, Sk4, Tt, Tt3, Tt4
 !

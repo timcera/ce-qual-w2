@@ -5,7 +5,6 @@
 !***********************************************************************************************************************************
  
      subroutine LUBKSB(A, N, Np, Indx, B)
-     use PREC
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -13,8 +12,8 @@
 ! Dummy arguments
 !
      integer :: N, Np
-     real(r8), dimension(Np, Np) :: A
-     real(r8), dimension(N) :: B
+     real(R8KIND), dimension(Np, Np) :: A
+     real(R8KIND), dimension(N) :: B
      integer, dimension(Np) :: Indx
      intent (in) A, Indx, N, Np
      intent (inout) B
@@ -22,9 +21,7 @@
 ! Local variables
 !
      integer :: i, ii, j, ll
-     real :: PREC
-     real :: r8
-     real(r8) :: sum
+     real(R8KIND) :: sum
 !
 !*** End of declarations rewritten by SPAG
 !

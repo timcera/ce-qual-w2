@@ -19,7 +19,7 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: Bedfr, Effric, Hrad
+     real(R8KIND) :: Bedfr, Effric, Hrad
      integer :: Ii, K
      intent (in) Bedfr, Hrad
      intent (out) Effric

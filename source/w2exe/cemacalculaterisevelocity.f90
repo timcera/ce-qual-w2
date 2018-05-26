@@ -53,7 +53,7 @@
                          rhog = 0.D0
                          do ngas = 1, numgas
                              rhog = rhog + BUBBLESGASCONC(segnumi, nrelarr,    &
-                                  & ngas)/1000                                                 !kg/m³
+                                  & ngas)/1000                                    !kg/m³
                          enddo !nGas
  
                          call CEMABUBBLESRISEVELOCITY                          &

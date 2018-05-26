@@ -17,7 +17,7 @@
 ! Dummy arguments
 !
      real :: Depth, Funcvalue
-     real(r8) :: Flow
+     real(R8KIND) :: Flow
      intent (in) Depth, Flow
      intent (out) Funcvalue
 !
@@ -25,7 +25,7 @@
 !
      real :: B, EL, FRIC, SLOPEC
      real :: EDDY, GEOMC, GLOBAL
-     real :: fmann, hrad, r8, wper, wsurf, xarea
+     real :: fmann, hrad, wper, wsurf, xarea
      integer :: i, jb, jw
      integer :: KB, KTI, MANNINGS_N
      integer :: LOGICC

@@ -65,14 +65,14 @@
                             !BubbDissSrcSnk = BubbWatGasExchRate*(EqbDissConcentration - C1(BubbLNumber,SegNumI,1+nGas))    !g/m³/s
                              bubbdisssrcsnk = bubbwatgasexchrate*              &
                                & (eqbdissconcentration -                       &
-                               & C1(bubblnumber, segnumi, ngasconst))                                                         !g/m³/s  cb 2/18/13
+                               & C1(bubblnumber, segnumi, ngasconst))             !g/m³/s  cb 2/18/13
                             !CGSS(BubbLNumber,SegNumI,nGasconst) = CGSS(BubbLNumber,SegNumI,nGasconst) + BubbDissSrcSnk    !BubbDissSrcSnk > 0 Bubbles --> Water
                              C1(bubblnumber, segnumi, ngasconst)               &
                                & = C1(bubblnumber, segnumi, ngasconst)         &
-                               & + bubbdisssrcsnk                                                                     !BubbDissSrcSnk > 0 Bubbles --> Water
+                               & + bubbdisssrcsnk                                 !BubbDissSrcSnk > 0 Bubbles --> Water
                              BUBBLESGASCONC(segnumi, nrelarr, ngas)            &
                                & = BUBBLESGASCONC(segnumi, nrelarr, ngas)      &
-                               & - bubbdisssrcsnk*dlt                                                                            !BubbDissSrcSnk > 0 Bubbles --> Water
+                               & - bubbdisssrcsnk*dlt                             !BubbDissSrcSnk > 0 Bubbles --> Water
                              if(BUBBLESGASCONC(segnumi, nrelarr, ngas)<0.D0)   &
                               & BUBBLESGASCONC(segnumi, nrelarr, ngas) = 0.D0
  

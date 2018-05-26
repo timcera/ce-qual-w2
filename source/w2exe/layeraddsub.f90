@@ -5,7 +5,6 @@
      use NAMESC
      use GEOMC
      use LOGICC
-     use PREC
      use SURFHE
      use KINETIC
      use SHADEC
@@ -27,7 +26,7 @@
 !
 ! Local variables
 !
-     real(r8) :: dummy, tmac, w1, w2, w3
+     real(R8KIND) :: dummy, tmac, w1, w2, w3
      integer :: i_br_num, jbiz, kkb, ktmax
 !
 !*** End of declarations rewritten by SPAG

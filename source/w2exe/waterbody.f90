@@ -11,14 +11,13 @@
      use GEOMC
      use TVDC
      use LOGICC
-     use PREC
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
 !
 ! Dummy arguments
 !
-     real(r8), dimension(kmx, imx) :: C, Ss
+     real(R8KIND), dimension(kmx, imx) :: C, Ss
      intent (in) C
      intent (inout) Ss
 !

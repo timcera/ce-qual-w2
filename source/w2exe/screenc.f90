@@ -1,6 +1,5 @@
 !*==screenc.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
      module SCREENC
-     use PREC
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -13,7 +12,6 @@
      real :: dltav, dlts1, eltmjd, jday, jdmin, mindlt
      integer :: iloc, imin, jtt, jww, kloc, kmin, nit, nv
      integer, allocatable, dimension(:) :: izmin
-     real :: PREC
 !
 !*** End of declarations rewritten by SPAG
 !

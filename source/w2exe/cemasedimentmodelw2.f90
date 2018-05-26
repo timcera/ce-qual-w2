@@ -8,7 +8,6 @@
      use GEOMC
      use SCREENC
      use RSTART
-     use PREC
      use EDDY
      use LOGICC
      use TVDC
@@ -716,7 +715,7 @@
                  if(CEMALAYERADDED(segnumi))then
                      CEMACUMPWTORELEASE(segnumi) = CEMACUMPWRELEASE(segnumi)
                      CEMACUMPWRELEASED(segnumi) = CEMACUMPWTORELEASE(segnumi)  &
-                       & /5.D0                                                        !Release over 100 installments
+                       & /5.D0                                                    !Release over 100 installments
                      APPLYCEMAPWRELEASE(segnumi) = .TRUE.
                      CEMASSAPPLIED(segnumi) = .TRUE.
                  endif
@@ -724,9 +723,9 @@
                  if(APPLYCEMAPWRELEASE(segnumi))then
                      NUMCEMAPWINST(segnumi) = NUMCEMAPWINST(segnumi) + 1
                      QSS(KB(segnumi), segnumi) = QSS(KB(segnumi), segnumi)     &
-                       & + CEMACUMPWRELEASED(segnumi)/dlt                                                    !m³/s
+                       & + CEMACUMPWRELEASED(segnumi)/dlt                         !m³/s
                      TSS(KB(segnumi), segnumi) = TSS(KB(segnumi), segnumi)     &
-                       & + CEMACUMPWRELEASED(segnumi)/dlt*SD_T(1)                                                      !Cm³/s      ! cb 5/22/15
+                       & + CEMACUMPWRELEASED(segnumi)/dlt*SD_T(1)                 !Cm³/s      ! cb 5/22/15
                      VOLCEMA(jb) = VOLCEMA(jb) + CEMACUMPWRELEASE(segnumi)
                  endif
  

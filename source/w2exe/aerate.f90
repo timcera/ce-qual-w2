@@ -136,7 +136,7 @@
      entry AERATEOUTPUT
                        ! FROM W2_MAIN CODE
  
-     write(aeratefn, '(F9.3,<NAER>(1X,E12.3,1X,E12.3,1X,F8.3))')jday,          &
+     write(aeratefn, '(F9.3,(1X,E12.3,1X,E12.3,1X,F8.3))')jday,          &
          & (actual_mass(ii), cumdomass(ii), O2(kprb(ii), iprb(ii)), ii = 1,    &
          & naer)
  

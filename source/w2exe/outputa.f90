@@ -6,7 +6,6 @@
      use NAMESC
      use GEOMC
      use LOGICC
-     use PREC
      use SURFHE
      use KINETIC
      use SHADEC
@@ -31,7 +30,7 @@
 !
 ! Local variables
 !
-     real(r8) :: cgas, dle, dlvbr, tgate, tspill
+     real(R8KIND) :: cgas, dle, dlvbr, tgate, tspill
      real :: cgasd, qsumm, tvolavg, voltot, xdum
      integer :: ic, iflag, itot, jad, jaf, jj, jjc, jwwd, nlines, numoutlets
      integer, dimension(100) :: jsss

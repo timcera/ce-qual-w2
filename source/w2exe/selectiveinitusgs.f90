@@ -10,7 +10,6 @@
      use NAMESC
      use GEOMC
      use LOGICC
-     use PREC
      use SURFHE
      use KINETIC
      use SHADEC
@@ -32,6 +31,7 @@
      real :: daytest
      integer :: ifile, jj, n, nj
      character(8) :: tsshare
+     character(20) :: fmtstr
 !
 !*** End of declarations rewritten by SPAG
 !
@@ -63,9 +63,10 @@
                      &status = 'unknown')
                  write(ifile, *)'Branch:', jb, ' # of structures:', NSTR(jb),  &
                                &' outlet temperatures'
+                 write(fmtstr, '(I20)') nstr(jb)
                  write(ifile,                                                  &
-     &'("      JDAY",<nstr(jb)>(6x,"T(C)"),<nstr(jb)>(3x,"Q(m3/s)"),<nstr(jb)>(&
-     &4x,"ELEVCL"))')
+     &'("      JDAY",'//trim(fmtstr)//'(6x,"T(C)"),'//trim(fmtstr)//'(3x,"Q(m3/s)"),'  &
+     &//trim(fmtstr)//'(4x,"ELEVCL"))')
              endif
          endif
      enddo
@@ -86,9 +87,10 @@
              open(ifile, file = 'wd_out.opt', status = 'unknown')
              write(ifile, *)'Withdrawals: # of withdrawals:', nwd,             &
                            &' outlet temperatures'
+             write(fmtstr, '(I20)') nwd
              write(ifile,                                                      &
-      &'("      JDAY",<nwd>(6x,"T(C)"),<nwd>(3x,"Q(m3/s)"),<nwd>(4x,"ELEVCL"))'&
-     & )
+      &'("      JDAY",'//trim(fmtstr)//'(6x,"T(C)"),'//trim(fmtstr)//'(3x,"Q(m3/s)"),'           &
+      &//trim(fmtstr)//'(4x,"ELEVCL"))')
          endif
      endif
  
@@ -250,7 +252,7 @@
                  &status = 'unknown')
              write(ifile, 9001)
  
-9001         format("jday    Volume    ", <tempn>("Volcrit      "))
+9001         format("jday    Volume    ", ("Volcrit      "))
          endif
      enddo
  

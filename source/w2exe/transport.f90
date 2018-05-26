@@ -11,7 +11,6 @@
      use TRANS
      use LOGICC
      use STRUCTURES
-     use PREC
      use f77kinds
      implicit none
 !
@@ -19,15 +18,15 @@
 !
 ! Local variables
 !
-     real(r8) :: acurz, adelc, c1x, c1z, c2x, c2z, c3x, c3z, calf, cart, cmax1,&
+     real(R8KIND) :: acurz, adelc, c1x, c1z, c2x, c2z, c3x, c3z, calf, cart, cmax1,&
                & cmin1, cour, cref, delc, dltdlxr, dlxmin, dlxt, flux, ftemp,  &
                & hb, hm, hmin, ht, ratdi, ratzi
-     real(r8), allocatable, dimension(:, :), save :: ad1x, ad1z, ad2x, ad2z,   &
+     real(R8KIND), allocatable, dimension(:, :), save :: ad1x, ad1z, ad2x, ad2z,   &
            & ad3x, ad3z, alfa, alfaz, curs1, curs1z, curs2, curs2z, curs3,     &
            & curs3z, dx1, dx2, dx3, rats, ratsz, sf1x, sf1z
-     real(r8), allocatable, dimension(:), save :: curx1, curx2, curx3, ratd
+     real(R8KIND), allocatable, dimension(:), save :: curx1, curx2, curx3, ratd
      integer :: k
-     real(r8), allocatable, dimension(:, :, :), save :: sf10x, sf10z, sf11x,   &
+     real(R8KIND), allocatable, dimension(:, :, :), save :: sf10x, sf10z, sf11x,   &
            & sf12x, sf13x, sf2x, sf2z, sf3x, sf3z, sf4x, sf4z, sf5x, sf5z,     &
            & sf6x, sf6z, sf7x, sf7z, sf8x, sf8z, sf9x, sf9z
 !

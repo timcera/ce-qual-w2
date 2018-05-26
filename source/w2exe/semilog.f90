@@ -10,8 +10,8 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: Ures, Ust, V, Y
-     real(r8) :: SEMILOG
+     real(R8KIND) :: Ures, Ust, V, Y
+     real(R8KIND) :: SEMILOG
      intent (in) Ures, Ust, V, Y
 !
 !*** End of declarations rewritten by SPAG

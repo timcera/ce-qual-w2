@@ -5,7 +5,6 @@
 !***********************************************************************************************************************************
  
      function BAREA(Depth, Dia)
-     use PREC
      use f77kinds
      implicit none
 !
@@ -13,18 +12,16 @@
 !
 ! PARAMETER definitions
 !
-     real(r8), parameter :: PI = 3.14159265359D0
+     real(R8KIND), parameter :: PI = 3.14159265359D0
 !
 ! Dummy arguments
 !
-     real(r8) :: Depth, Dia
+     real(R8KIND) :: Depth, Dia
      real :: BAREA
      intent (in) Depth, Dia
 !
 ! Local variables
 !
-     real :: PREC
-     real :: r8
 !
 !*** End of declarations rewritten by SPAG
 !

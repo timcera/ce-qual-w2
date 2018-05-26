@@ -12,14 +12,14 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: Depth, Flow
+     real(R8KIND) :: Depth, Flow
      real :: CDFUNC
      intent (in) Flow
 !
 ! Local variables
 !
-     real(r8) :: BAREA, TWIDTH
-     real :: dia, r8
+     real(R8KIND) :: BAREA, TWIDTH
+     real :: dia
      real :: STRUCTURES
 !
 !*** End of declarations rewritten by SPAG

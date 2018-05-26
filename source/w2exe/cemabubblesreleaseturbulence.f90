@@ -40,7 +40,7 @@
                                & 2.0*BUBBLESRADIUS(segnumi, nrelarr)
                              temprelvelocity = temprelvelocity +               &
                                & BUBBLESRISEV(segnumi, nrelarr)                &
-                               & + W(k - 1, segnumi)                                                            !Rise velocity is +ve upwards and W is +ve downwards
+                               & + W(k - 1, segnumi)                              !Rise velocity is +ve upwards and W is +ve downwards
                          endif
  
                      endif

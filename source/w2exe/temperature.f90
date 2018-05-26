@@ -6,7 +6,6 @@
      use NAMESC
      use GEOMC
      use LOGICC
-     use PREC
      use SURFHE
      use KINETIC
      use SHADEC
@@ -30,7 +29,7 @@
 !
 ! Local variables
 !
-     real(r8), dimension(1000) :: bta1, gma1
+     real(R8KIND), dimension(1000) :: bta1, gma1
      real :: rn1
      external RESTART_OUTPUT
 !

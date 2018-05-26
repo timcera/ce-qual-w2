@@ -5,7 +5,7 @@
 !***********************************************************************************************************************************
  
      function ZBRENT1(X1, X2, Tol, Barg)
-     use PREC
+     use f77kinds
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
@@ -16,18 +16,16 @@
 !
 ! Dummy arguments
 !
-     real(r8) :: Barg, Tol, X1, X2
+     real(R8KIND) :: Barg, Tol, X1, X2
      real :: ZBRENT1
      intent (in) Tol
      intent (inout) X1, X2
 !
 ! Local variables
 !
-     real(r8) :: b, ba, c, d, e, f1, f2, fa, fb, fc, p, q, r, s, tol1, xm
-     real(r8), external :: CDFUNC
+     real(R8KIND) :: b, ba, c, d, e, f1, f2, fa, fb, fc, p, q, r, s, tol1, xm
+     real(R8KIND), external :: CDFUNC
      integer :: i, iter, j
-     real :: PREC
-     real :: r8
 !
 !*** End of declarations rewritten by SPAG
 !

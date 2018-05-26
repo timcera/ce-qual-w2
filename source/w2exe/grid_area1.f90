@@ -7,25 +7,23 @@
      subroutine GRID_AREA1(El1, El2, Diff, Btop)
      use GLOBAL
      use GEOMC
-     use PREC
      implicit none
 !
 !*** Start of declarations rewritten by SPAG
 !
 ! Dummy arguments
 !
-     real(r8) :: Btop, Diff, El1, El2
+     real(R8KIND) :: Btop, Diff, El1, El2
      intent (in) El1, El2
      intent (out) Btop, Diff
 !
 ! Local variables
 !
      real :: B, BB, BH, EL, H
-     real(r8) :: barea1, barea2, dist, dist1, dist2, slpe
+     real(R8KIND) :: barea1, barea2, dist, dist1, dist2, slpe
      real :: GEOMC, GLOBAL, PREC
      integer :: i, jw, k, k1, k2
      integer :: KB
-     real :: r8
 !
 !*** End of declarations rewritten by SPAG
 !
