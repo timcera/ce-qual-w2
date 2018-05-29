@@ -1,6 +1,6 @@
 !*==cemasedimentdiagenesis.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
  
-     subroutine CEMASEDIMENTDIAGENESIS
+     recursive subroutine CEMASEDIMENTDIAGENESIS
 !!
  
     ! Type declarations
@@ -45,7 +45,7 @@
                     & lpom_resuspension, lw, lw0, lw1, maxit, molvisc_h2o,     &
                     & mw_constituent, nh3t, nh4t, o2ss, oh, oht, omct, phost
      real(8), allocatable, dimension(:), save :: cellarea
-     real(8), dimension(numgenbodconstituents, 2), save :: dissolved_bod_src,  &
+     real(8), dimension(numgenbodconstituents, 2) :: dissolved_bod_src,        &
           & sd_bodd
      integer, save :: genbodnum, iter1, n, sd_ch4compmethod, sd_pomresuspmethod
      integer(2), save :: initconregn, itemp, iter, regnnum
@@ -98,7 +98,7 @@
                     & sulfided_sd1, sulfided_sd2, sulfideg_sd1, sulfideg_sd2,  &
                     & t1k, tau, ts, u2, uorb, volwater, vscour, xjn, xnh4,     &
                     & z1ss, z2ss, z3ss, z4ss, z5ass, z5bss, z5ss, z6ss
-     real(8), dimension(numgenbodconstituents), save :: sedgenbodconc0
+     real(8), dimension(numgenbodconstituents) :: sedgenbodconc0
 !
 !*** End of declarations rewritten by SPAG
 !

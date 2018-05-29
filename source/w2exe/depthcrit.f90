@@ -17,8 +17,6 @@
 !
 ! Local variables
 !
-     real :: dia
-     real :: STRUCTURES
      real(R8KIND) :: tol, x1, x2
      real(R8KIND) :: ZBRENT1
 !

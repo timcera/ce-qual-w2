@@ -17,12 +17,9 @@
 !
 ! Local variables
 !
-     real :: CEMAVARS, GLOBAL, SCREENC
      real(8) :: consolidratetemp1, consolidratetemp2, factorinterp, timejd1,   &
               & timejd2
      real :: EOF
-     integer :: jday
-     integer :: MAIN
      logical :: skiploop
 !
 !*** End of declarations rewritten by SPAG

@@ -23,12 +23,7 @@
 !
 ! Local variables
 !
-     real :: B, EL, FRIC, SLOPEC
-     real :: EDDY, GEOMC, GLOBAL
      real :: fmann, hrad, wper, wsurf, xarea
-     integer :: i, jb, jw
-     integer :: KB, KTI, MANNINGS_N
-     integer :: LOGICC
 !
 !*** End of declarations rewritten by SPAG
 !

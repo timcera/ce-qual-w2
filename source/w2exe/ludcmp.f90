@@ -5,6 +5,7 @@
 !***********************************************************************************************************************************
  
      subroutine LUDCMP(A, N, Np, Indx, D)
+     use F77KINDS
      implicit none
 !
 !*** Start of declarations rewritten by SPAG

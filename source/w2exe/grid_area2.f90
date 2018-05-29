@@ -5,6 +5,7 @@
 !***********************************************************************************************************************************
  
      subroutine GRID_AREA2
+     use F77KINDS
      use GLOBAL
      use GEOMC
      use RSTART
@@ -15,11 +16,7 @@
 ! Local variables
 !
      real(R8KIND) :: area, a_coef, b_coef, c_coef, sl
-     real :: B, BB, BI, EL, H, SZ, Z
-     real :: GEOMC, GLOBAL, RSTART
-     integer :: i, jw, k, kt
-     integer :: KB
-     integer :: KTI
+     integer :: k
 !
 !*** End of declarations rewritten by SPAG
 !

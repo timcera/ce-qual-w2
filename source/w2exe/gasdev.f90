@@ -9,7 +9,7 @@
 !
      integer :: Idum3
      real :: GASDEV
-     intent (in) Idum3
+     intent (inout) Idum3
 !
 ! Local variables
 !

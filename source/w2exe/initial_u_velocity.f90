@@ -15,12 +15,7 @@
 !
 ! Local variables
 !
-     real :: BE, BS, CUS, DS, ELWS, QSSI, SLOPE
-     real :: GEOMC, GLOBAL
-     integer :: i, id, iu, jb, jw, k, kt, nwb
-     integer :: INITIALVELOCITY
-     integer :: KB, KTWB, LOOP_BRANCH
-     real :: U, UAVG
+     integer :: k
      real :: wsurf, xarea
 !
 !*** End of declarations rewritten by SPAG

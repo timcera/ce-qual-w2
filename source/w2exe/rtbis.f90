@@ -1,6 +1,7 @@
 !*==rtbis.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
  
      function RTBIS(X1, X2, Xacc, U, Y, V)
+     use F77KINDS
      use GLOBAL, ONLY:wrn, jw
      use EDDY, ONLY:AZC
      use SCREENC, ONLY:jday

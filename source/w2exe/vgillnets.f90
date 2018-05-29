@@ -26,6 +26,7 @@
      real :: fractionx, netxput, netylft, netyrgt, netzbot, netztop, newxdist, &
            & newydistfromcenter, newzdist, oldxdist, oldydistfromcenter,       &
            & oldzdist, xlocatnet, ydistatnet, zdistatnet, zlocatnet
+     real :: GILLNETS(2, 11)
      integer :: nnum
 !
 !*** End of declarations rewritten by SPAG

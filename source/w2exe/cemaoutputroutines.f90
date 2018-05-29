@@ -15,7 +15,7 @@
 !
 ! Local variables
 !
-     character(3), dimension(imx), save :: crackstatus
+     character(3), dimension(imx) :: crackstatus
      integer, save :: genbodnum, ngas
 !
 !*** End of declarations rewritten by SPAG

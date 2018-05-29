@@ -5,6 +5,7 @@
 !***********************************************************************************************************************************
  
      subroutine LUBKSB(A, N, Np, Indx, B)
+     use F77KINDS
      implicit none
 !
 !*** Start of declarations rewritten by SPAG

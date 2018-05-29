@@ -21,11 +21,7 @@
 !
 ! Local variables
 !
-     real :: BSAVE, EL, H
-     real :: GEOMC, GLOBAL
-     integer :: i, jw, k, kmx, kttop
-     integer :: INITIALVELOCITY, MAIN
-     integer :: KBI
+     integer :: kttop
 !
 !*** End of declarations rewritten by SPAG
 !

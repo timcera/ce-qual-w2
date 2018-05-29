@@ -5,6 +5,7 @@
 !***********************************************************************************************************************************
  
      subroutine SPILLWAY_FLOW
+     use F77KINDS
      use STRUCTURES
      use GLOBAL
      use GEOMC
@@ -14,13 +15,8 @@
 !
 ! Local variables
 !
-     real :: A1SP, A2SP, B1SP, B2SP, DLX, ELWS, ESP, U, US
      real(R8KIND) :: dlel, elid, eliu, henergy, htail
-     real :: g
-     real :: GEOMC, GLOBAL, STRUCTURES
-     integer :: IDSP, IUSP, JBDSP, JWUSP, KTWB, LATERAL_SPILLWAY
-     integer :: isub, js, nsp
-     real :: QSP
+     integer :: isub, js
 !
 !*** End of declarations rewritten by SPAG
 !

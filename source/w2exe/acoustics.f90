@@ -24,6 +24,7 @@
      real :: newxdist, newydistfromcenter, newzdist, oldxdist,                 &
            & oldydistfromcenter, oldzdist, sndylft, sndyrgt, sndzbot, sndztop, &
            & tagdepth, ydist
+     real :: HAOPERAT(2, 13), OLDHALOC(2, 13)
 !
 !*** End of declarations rewritten by SPAG
 !
@@ -36,7 +37,7 @@
      oldxdist = NODES(fkmp, fimp, 1) + oldfxloc                       ! Previous Distance Downstream from Dam (m) to Location of Fish
      oldydistfromcenter = oldfyloc - B(fkmp, fimp)/2                  ! Previous Width Distance (m) from Lake Center
      oldzdist = (NODES(fkmp, fimp, 2) - NODES(ktwbf, fimp, 2)) - oldfzloc
-_                                                                     ! Previous Depth (m) of Fish
+!                                                                     ! Previous Depth (m) of Fish
      newxdist = NODES(fkmp, fimp, 1) + fxloc                          ! New Distance Downstream from Dam (m) to Location of Fish
      newydistfromcenter = fyloc - B(fkmp, fimp)/2                     ! New Width Distance (m) from Lake Center
      newzdist = (NODES(fkmp, fimp, 2) - NODES(ktwbf, fimp, 2)) - fzloc

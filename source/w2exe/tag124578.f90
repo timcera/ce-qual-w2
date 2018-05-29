@@ -93,7 +93,7 @@
          avebrvel = usbrflow/totbrarea                 ! AVEBRVEL = Average BRanch VELocity, = Flow/X-sect Area
          if(debug)then
              write(datadebugfn, 9002)B(fkmptmp, fimptmp), cbid, avebrvel, fyloc
-9002         format(' B=', f9.2, ' CBID=', f9.2, ' AVEBRVEL=', e9.3,           &
+9002         format(' B=', f9.2, ' CBID=', f9.2, ' AVEBRVEL=', e10.3,          &
                    &' INITIAL FYLOC=', f9.3)
          endif
          if((tag==1) .OR. (tag==4) .OR. (tag==7))then                  !Incoming left branch

@@ -22,11 +22,7 @@
 ! Local variables
 !
      real :: dx, fmid, func1, funcval1, funcval2, rtbis, x1, x2, xacc, xmid
-     real :: EL
-     real :: ELWS
-     real :: GEOMC, GLOBAL
-     integer :: i, j, jj
-     integer :: KB
+     integer :: j, jj
 !
 !*** End of declarations rewritten by SPAG
 !

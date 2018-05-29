@@ -3,6 +3,7 @@
 ! Function declaration
  
      function DEG_F(X)
+     use F77KINDS
      implicit none
 !
 !*** Start of declarations rewritten by SPAG

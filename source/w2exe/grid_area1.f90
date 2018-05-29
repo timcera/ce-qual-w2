@@ -19,11 +19,9 @@
 !
 ! Local variables
 !
-     real :: B, BB, BH, EL, H
      real(R8KIND) :: barea1, barea2, dist, dist1, dist2, slpe
-     real :: GEOMC, GLOBAL, PREC
-     integer :: i, jw, k, k1, k2
-     integer :: KB
+     real :: PREC
+     integer :: k, k1, k2
 !
 !*** End of declarations rewritten by SPAG
 !

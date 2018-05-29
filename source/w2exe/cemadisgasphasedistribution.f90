@@ -16,8 +16,6 @@
 !
 ! Local variables
 !
-     real :: CEMAVARS
-     real :: gasconst_r
 !
 !*** End of declarations rewritten by SPAG
 !

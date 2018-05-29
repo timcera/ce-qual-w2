@@ -1,6 +1,6 @@
 !*==cemasedimentmodelw2.spg  processed by SPAG 6.70Rc at 14:33 on 22 May 2018
  
-     subroutine CEMASEDIMENTMODELW2
+     recursive subroutine CEMASEDIMENTMODELW2
  
     ! Type declarations
      use MAIN

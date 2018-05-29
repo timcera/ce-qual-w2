@@ -4,6 +4,7 @@
 !***********************************************************************************************************************************
  
      function DENSITY(T, Tds, Ss)
+     use F77KINDS
      use LOGICC, ONLY:susp_solids, FRESH_WATER, SALT_WATER
      use GLOBAL, ONLY:jw
      implicit none

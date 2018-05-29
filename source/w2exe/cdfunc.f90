@@ -5,6 +5,7 @@
 !***********************************************************************************************************************************
  
      function CDFUNC(Depth, Flow)
+     use F77KINDS
      use STRUCTURES
      implicit none
 !
@@ -19,8 +20,6 @@
 ! Local variables
 !
      real(R8KIND) :: BAREA, TWIDTH
-     real :: dia
-     real :: STRUCTURES
 !
 !*** End of declarations rewritten by SPAG
 !

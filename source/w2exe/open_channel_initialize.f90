@@ -32,11 +32,7 @@
                      & dltx2, phi, qavg, qsum, rad1, rad2, slope, vavg, vtot,  &
                      & wlslope
      real(R8KIND) :: BAREA, TWIDTH, WETPER
-     real :: BEGIN, VS, VST, WLFLAG, YS, YST
-     real, save :: clen, closs, dia, dnie, fman, g, upie
-     real :: DTP, QOLD, VMAX
-     real :: GLOBAL, STRUCTURES
-     integer, save :: i, j, n, nc, nn, np, nqcnt
+     integer, save :: j, n, np, nqcnt
      integer, allocatable, dimension(:), save :: indx
      logical, save :: smooth_water_levels
 !

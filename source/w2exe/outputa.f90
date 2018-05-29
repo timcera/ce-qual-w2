@@ -370,7 +370,7 @@
  
   ! Snapshot formats
  
-9001             format('CE-QUAL-W2 VERSION', f4.2/(1x, a72))
+9001             format('CE-QUAL-W2 VERSION', f5.2/(1x, a72))
                  write(SNP(jw), 9002)'Time Parameters', month, gday, year,     &
                                    & INT(jday), (jday - INT(jday))*24.0,       &
                                    & INT(eltmjd), (eltmjd - INT(eltmjd))*24.0, &
@@ -517,7 +517,7 @@
                  if(PRECIPITATION(jw))write(SNP(jw), 9027)                     &
                   & (jb, PR(jb), jb = BS(jw), BE(jw))
 9027             format(3x, 'Precipitation [PR]'/(3x, '  Branch ', i0, ' = ',  &
-                      & f8.6), ' m/s')
+                      & f9.6), ' m/s')
                  if(HEAD_BOUNDARY(jw))then
                      write(SNP(jw), 9028)
 9028                 format(/1x, 'External head boundary elevations'/)
